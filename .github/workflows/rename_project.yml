@@ -1,0 +1,59 @@
+# =============================================================================
+# @file    rename_project.yml
+# @brief   GitHub workflow configuration for renaming project from template
+# @created 2021-10-14
+# @license Please see the file named LICENSE in the project directory
+# @website https://github.com/caltechlibrary/py-cli-template
+#
+# This file was originally based on the file of the same name in the repo
+# https://github.com/rochacbruno/python-project-template by Bruno Rocha.
+# The original file was copied on 2021-10-14. Some changes from the original:
+#  - uses repo creator, not owner, as the author
+#  - does not change dashes to underscores in project names
+# =============================================================================
+
+name: Rename project files and make file substitutions
+
+on: [push]
+
+jobs:
+  Rename-and-replace:
+    if: ${{ github.repository != 'caltechlibrary/py-cli-template' }}
+    runs-on: ubuntu-latest
+    steps:
+      # For information about the github.* context variables available,
+      # see https://docs.github.com/en/actions/learn-github-actions/contexts
+
+      - uses: actions/checkout@v2
+        with:
+          # by default, it uses a depth of 1
+          # this fetches all history so that we can read each commit
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          
+      - run: echo "NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        shell: bash
+
+      - run: echo "URLNAME=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
+        shell: bash
+
+      - run: echo "AUTHOR=$(curl https://api.github.com/users/${{ github.actor }} | jq '.name')" >> $GITHUB_ENV
+        shell: bash
+        
+      - run: echo "DESCRIPTION=$(curl https://api.github.com/repos/${{ github.repository}} | jq '.description')" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Is this still a template
+        id: is_template
+        run: echo "::set-output name=is_template::$(ls .github/template.yml &> /dev/null && echo true || echo false)"
+
+      - name: Rename files and substitute variables
+        if: steps.is_template.outputs.is_template == 'true'
+        run: |
+          echo "Performing substitutions"
+          .github/rename_project.sh -a ${{ env.AUTHOR }} -n ${{ env.NAME }} -u ${{ env.URLNAME }} -d ${{ env.DESCRIPTION }}
+              
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Initial commit"
+          push_options: --force

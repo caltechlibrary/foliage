@@ -1,0 +1,10 @@
+# =============================================================================
+# @file    requirements.txt
+# @brief   Python dependencies for %PROJECT_URLNAME%
+# @created %CREATION_DATE%
+# @license Please see the file named LICENSE in the project directory
+# @website https://github.com/caltechlibrary/%PROJECT_URLNAME%
+# =============================================================================
+
+boltons
+sidetrack

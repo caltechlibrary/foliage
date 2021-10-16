@@ -1,0 +1,33 @@
+# YAML 1.2
+---
+authors: 
+  -
+    affiliation: "Caltech Library"
+    given-names: Michael
+    family-names: Hucka
+    orcid: "https://orcid.org/0000-0001-9105-5960"
+  -
+    affiliation: "Caltech Library"
+    given-names: Robert
+    family-names: Doiel
+    orcid: "https://orcid.org/0000-0003-0900-6903"
+  -
+    affiliation: "Caltech Library"
+    given-names: "Thomas E."
+    family-names: Morrell
+    orcid: "https://orcid.org/0000-0001-9266-5146"
+  -
+    affiliation: "Caltech Library"
+    given-names: Tommy
+    family-names: Keswick
+    orcid: "https://orcid.org/0000-0001-5644-440X"
+cff-version: "1.1.0"
+date-released: 2021-10-15
+doi: 
+keywords: 
+  - template
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/caltechlibrary/py-cli-template"
+title: "Caltech Library Python Software Repository Template"
+version: "1.2.0"
+...
