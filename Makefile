@@ -1,9 +1,9 @@
 # =============================================================================
 # @file    Makefile
 # @brief   Makefile for some steps in creating new releases on GitHub
-# @date    %CREATION_DATE%
+# @date    2021-10-16
 # @license Please see the file named LICENSE in the project directory
-# @website https://github.com/caltechlibrary/%PROJECT_URLNAME%
+# @website https://github.com/caltechlibrary/foliage
 # =============================================================================
 
 .ONESHELL: 				# Run all commands in the same shell.

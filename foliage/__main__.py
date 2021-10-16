@@ -1,10 +1,10 @@
 '''
-__main__.py: main function for %PROJECT_NAME%.
+__main__.py: main function for foliage.
 
 Copyright
 ---------
 
-Copyright (c) %CREATION_YEAR% by the California Institute of Technology.  This code
+Copyright (c) 2021 by the California Institute of Technology.  This code
 is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
@@ -12,7 +12,7 @@ file "LICENSE" for more information.
 import sys
 from   sys import exit as exit
 if sys.version_info <= (3, 8):
-    print('%PROJECT_NAME% requires Python version 3.8 or higher,')
+    print('foliage requires Python version 3.8 or higher,')
     print('but the current version of Python is ' +
           str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
     exit(1)
@@ -31,7 +31,7 @@ if __debug__:
 )
 
 def main(version = False, debug = 'OUT'):
-    '''%PROJECT_DESCRIPTION%'''
+    '''Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API'''
 
     # Set up debug logging as soon as possible, if requested ------------------
 
@@ -47,7 +47,7 @@ def main(version = False, debug = 'OUT'):
     # Preprocess arguments and handle early exits -----------------------------
 
     if version:
-        from %PROJECT_NAME% import print_version
+        from foliage import print_version
         print_version()
         exit()
 

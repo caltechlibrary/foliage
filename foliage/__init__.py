@@ -1,10 +1,10 @@
 '''
-__init__.py for %PROJECT_NAME%
+__init__.py for foliage
 
 Copyright
 ---------
 
-Copyright (c) %CREATION_YEAR% by the California Institute of Technology.  This code
+Copyright (c) 2021 by the California Institute of Technology.  This code
 is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
@@ -18,9 +18,9 @@ file "LICENSE" for more information.
 #  ╰────────────────────── Notice ── Notice ── Notice ─────────────────────╯
 
 __version__     = '0.0.0'
-__description__ = '%PROJECT_DESCRIPTION%'
-__url__         = 'https://github.com/caltechlibrary/%PROJECT_URLNAME%'
-__author__      = '%AUTHOR_NAME%'
+__description__ = 'Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API'
+__url__         = 'https://github.com/caltechlibrary/foliage'
+__author__      = 'Mike Hucka'
 __email__       = 'helpdesk@library.caltech.edu'
 __license__     = 'BSD 3-clause'
 
