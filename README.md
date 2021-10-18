@@ -1,4 +1,4 @@
-# foliage
+# Foliage<img width="12%" align="right" src="https://github.com/caltechlibrary/foliage/raw/main/.graphics/foliage-icon.png">
 
 Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API.
 
@@ -78,6 +78,8 @@ In this section, list the authors and contributors to your software project.  Ad
 ## Acknowledgments
 
 This work was funded by the California Institute of Technology Library.
+
+The [vector artwork](https://thenounproject.com/term/branch/1047074/) used as a starting point for the logo for this repository was created by [Alice Noir](https://thenounproject.com/AliceNoir/) for the [Noun Project](https://thenounproject.com).  It is licensed under the Creative Commons [Attribution 3.0 Unported](https://creativecommons.org/licenses/by/3.0/deed.en) license.  The vector graphics was modified by Mike Hucka to change the color.
 
 <div align="center">
   <br>
