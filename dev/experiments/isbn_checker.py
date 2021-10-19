@@ -28,8 +28,6 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio import start_server
 from   pywebio.session import run_js, eval_js
 import signal
-import time
-import tornado
 
 if __debug__:
     from sidetrack import set_debug, log
