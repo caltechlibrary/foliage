@@ -92,3 +92,5 @@ __pycache__/
 
 # Project-specific things to ignore:
 # .............................................................................
+
+dev/experiments/settings.ini
