@@ -17,32 +17,47 @@ if sys.version_info <= (3, 8):
           str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
     exit(1)
 
+from   commonpy.data_utils import timestamp
+from   commonpy.interrupt import config_interrupt
+from   commonpy.string_utils import antiformat
+from   fastnumbers import isint
+import plac
+import pywebio
+# Default server is tornado, and tornado mucks with logging.
+# aiohttp server does not.  Unfortunately, only tornado auto-reloads.
+# from   pywebio.platform.aiohttp import start_server
+from   pywebio import start_server
+
 if __debug__:
     from sidetrack import set_debug, log
+
+from .ui import JS_ADDITIONS, CSS_ADDITIONS, alert, warn
+from .foliage import foliage
 
 
 # Main program.
 # .............................................................................
 
-# For more info about how plac works see https://plac.readthedocs.io/en/latest/
 @plac.annotations(
+    port       = ('open browser on port "P" (default: 8080)',   'option', 'p'),
     version    = ('print version info and exit',                'flag',   'V'),
     debug      = ('log debug output to "OUT" ("-" is console)', 'option', '@'),
 )
 
-def main(version = False, debug = 'OUT'):
-    '''Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API'''
+def main(port = 'P', version = False, debug = 'OUT'):
+    '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
     # Set up debug logging as soon as possible, if requested ------------------
 
     if debug != 'OUT':
-        if __debug__: set_debug(True, debug)
+        set_debug(True, debug)
         import faulthandler
         faulthandler.enable()
-        if not sys.platform.startswith('win'):
+        if not sys.platform.startswith('win'): # This part doesn't work on win.
             import signal
             from boltons.debugutils import pdb_on_signal
             pdb_on_signal(signal.SIGUSR1)
+            warn('Running in debug mode. Use "kill -USR1 pid" to drop into pdb.')
 
     # Preprocess arguments and handle early exits -----------------------------
 
@@ -51,13 +66,37 @@ def main(version = False, debug = 'OUT'):
         print_version()
         exit()
 
-    # See the
-    # for information about how to work with the command-line arguments.
+    if port != 'P' and not isint(port):
+        alert(f'Port number value for option -p must be an integer.')
+        exit(1)
+    port = 8080 if port == 'P' else int(port)
 
+    # Do the real work --------------------------------------------------------
 
-   # Do the real work --------------------------------------------------------
+    log('='*8 + f' started {timestamp()} ' + '='*8)
+    exception = None
+    try:
+        pywebio.config(title = 'Foliage', js_code = JS_ADDITIONS)
+        start_server(foliage, port = port, auto_open_webbrowser = True,
+                     debug = (debug != 'OUT'))
+    except Exception as ex:
+        exception = sys.exc_info()
 
+    # Try to deal with exceptions gracefully ----------------------------------
 
+    if exception:
+        if isinstance(exception[0], KeyboardInterrupt):
+            log(f'received {exception.__class__.__name__}')
+        else:
+            from traceback import format_exception
+            summary = antiformat(exception[1])
+            details = antiformat(''.join(format_exception(*exception)))
+            log(f'Exception: {summary}\n{details}')
+            alert(summary)
+
+    # And exit ----------------------------------------------------------------
+
+    log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
 
 
 # Main entry point.
