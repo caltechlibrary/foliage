@@ -66,11 +66,6 @@ def folio(url, retry = 0):
 
 
 def checker():
-    put_html('''<script type="text/javascript">
-      function confirm_exit() { return confirm("Quit Foliage?"); }
-      function close_window() { window.close(); }
-    </script>''')
-
     put_markdown('## ISBN checker')
     put_text('Enter an ISBN number and click the "Check" button. This will'
              ' contact FOLIO to check if it\'s a valid ISBN number.')
@@ -142,6 +137,10 @@ def main(version = False, debug = 'OUT'):
 
     # Do the real work --------------------------------------------------------
 
+    pywebio.config(js_code = '''
+      function confirm_exit() { return confirm("Quit Foliage?"); }
+      function close_window() { window.close(); }
+    ''')
     start_server(checker, port = 8080, auto_open_webbrowser = True, debug = debug)
 
 
