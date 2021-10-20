@@ -1,6 +1,6 @@
 
 import csv
-from   commonpy.data_utils import unique
+from   commonpy.data_utils import unique, pluralized
 from   commonpy.file_utils import exists
 from   commonpy.interrupt import wait
 from   functools import partial
@@ -22,7 +22,7 @@ from   pywebio.session import run_js, eval_js
 if __debug__:
     from sidetrack import set_debug, log
 
-from .folio import folio, json_for_barcode
+from .folio import folio_data
 from .ui import quit_app, show_error
 
 
@@ -44,7 +44,6 @@ def foliage():
         ])
 
     log(f'page layout finished; waiting for user input')
-
     barcodes = None
     record_type = 'items'
     while True:
@@ -56,12 +55,16 @@ def foliage():
             barcodes = event['value']
         elif event_type == 'do_find':
             if not barcodes:
-                toast('No barcodes given -- nothing to do', color = 'error')
+                toast('Please input at least one barcode.', color = 'error')
             else:
-                for barcode in unique(barcodes.splitlines()):
-                    data = json_for_barcode(barcode, record_type)
-                    put_markdown(f'Raw data for barcode **{barcode}**:')
-                    put_code(pformat(data, indent = 2))
+                clear('output')
+                with use_scope('output'):
+                    given = unique(list_from_string(barcodes))
+                    put_markdown(f'Found {pluralized("unique barcode", given, True)}.')
+                    for barcode in given:
+                        data = folio_data(barcode, record_type)
+                        put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
+                        put_code(pformat(data, indent = 2))
 
 
 def logo_image():
@@ -88,7 +91,11 @@ def delete_items(button, barcodes = []):
 
 def find_records_tab():
     return [
-        put_textarea('set_barcodes', rows = 4, label = 'Barcodes:'),
+        put_markdown('Given one or more barcode numbers, this will look up'
+                     ' the FOLIO records corresponding to those numbers and'
+                     ' display the raw FOLIO inventory record data. Write the'
+                     ' barcode numbers below, one per line.'),
+        put_textarea('set_barcodes', rows = 4),
         put_radio('set_record_type', label = 'Type of record to retrieve:',
                   inline = True, options = [
                       ('Item', 'items', True),
@@ -105,3 +112,7 @@ def change_records_tab():
 
 def delete_records_tab():
     return 'Forthcoming ...'
+
+
+def list_from_string(barcodes):
+    return [number.strip(',.') for number in barcodes.splitlines()]

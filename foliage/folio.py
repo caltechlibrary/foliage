@@ -62,7 +62,7 @@ def folio(operation, endpoint, result_parser, retry = 0):
         raise RuntimeError(f'Problem contacting {endpoint}: {antiformat(error)}')
 
 
-def json_for_barcode(barcode, record_type):
+def folio_data(barcode, record_type):
     if record_type not in RECORD_ENDPOINTS:
         raise RuntimeError(f'Unrecognzied record_type value {record_type}')
 
