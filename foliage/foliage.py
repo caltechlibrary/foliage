@@ -1,4 +1,5 @@
 
+from   boltons.iterutils import flatten
 import csv
 from   commonpy.data_utils import unique, pluralized
 from   commonpy.file_utils import exists
@@ -18,6 +19,7 @@ from   pywebio.output import put_tabs, put_image, put_scrollable, put_code
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio
 from   pywebio.session import run_js, eval_js
+import re
 
 if __debug__:
     from sidetrack import set_debug, log
@@ -62,11 +64,14 @@ def foliage():
             clear('find_tab_output')
             with use_scope('find_tab_output'):
                 given = unique(list_from_string(barcodes))
-                put_markdown(f'Given {pluralized("unique barcode", given, True)}.')
+                put_markdown(f'Looking up {pluralized("unique barcode", given, True)}.')
                 for barcode in given:
                     data = folio_data(barcode, record_type)
-                    put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
-                    put_code(pformat(data, indent = 2))
+                    if data:
+                        put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
+                        put_code(pformat(data, indent = 2))
+                    else:
+                        put_error(f'No record for barcode {barcode} found.')
         elif event_type == 'do_delete':
             if not barcodes:
                 toast('Please input at least one barcode.', color = 'error')
@@ -88,7 +93,7 @@ def logo_image():
         with open(image_file, 'rb') as f:
             return f.read()
     else:
-        log(f'could not find logo image in {here}')
+        log(f'could not find logo image in {image_file}')
 
 
 def find_records_tab():
@@ -121,8 +126,8 @@ def delete_records_tab():
                       # ('Holdings', 'holdings')
                   ]),
         put_actions('do_delete',
-                    buttons = [dict(label = 'Delete records', value = 'delete',
-                                    color = 'danger')]),
+                    buttons = [dict(label = 'Delete FOLIO records',
+                                    value = 'delete', color = 'danger')]),
     ]
 
 
@@ -131,4 +136,5 @@ def change_records_tab():
 
 
 def list_from_string(barcodes):
-    return [number.strip(',.') for number in barcodes.splitlines()]
+    lines = barcodes.splitlines()
+    return flatten(re.split(r' |,|\.', line) for line in lines)
