@@ -23,7 +23,7 @@ if __debug__:
     from sidetrack import set_debug, log
 
 from .folio import folio_data
-from .ui import quit_app, show_error
+from .ui import quit_app, show_error, confirm
 
 
 # Overall main page structure
@@ -32,11 +32,12 @@ from .ui import quit_app, show_error
 def foliage():
     put_image(logo_image(), width='90px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
-    put_markdown('_Foliage ("FOLIo chAnGe Editor") is an application that runs'
-                 ' on your computer and lets you perform bulk operations in'
-                 ' FOLIO over the network. Foliage uses this web page as a way'
-                 ' of implementing its user interface._')
-
+    put_html('<div class="text-muted font-italic font-weight-light">'
+             ' Foliage ("FOLIo chAnGe Editor") is an application that runs'
+             ' on your computer and lets you perform bulk operations in'
+             ' FOLIO over the network. Foliage uses this web page as a way'
+             ' of implementing its user interface.'
+             '</div>')
     put_tabs([
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
@@ -47,24 +48,37 @@ def foliage():
     barcodes = None
     record_type = 'items'
     while True:
-        event = pin_wait_change('set_record_type', 'set_barcodes', 'do_find')
+        event = pin_wait_change('set_record_type_find', 'edit_barcodes_find',
+                                'edit_barcodes_delete', 'do_find', 'do_delete')
         event_type = event['name']
-        if event_type == 'set_record_type':
+        if event_type == 'set_record_type_find':
             record_type = event['value']
-        elif event_type == 'set_barcodes':
+        elif event_type in ['edit_barcodes_find', 'edit_barcodes_delete']:
             barcodes = event['value']
         elif event_type == 'do_find':
             if not barcodes:
                 toast('Please input at least one barcode.', color = 'error')
-            else:
-                clear('output')
-                with use_scope('output'):
-                    given = unique(list_from_string(barcodes))
-                    put_markdown(f'Found {pluralized("unique barcode", given, True)}.')
-                    for barcode in given:
-                        data = folio_data(barcode, record_type)
-                        put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
-                        put_code(pformat(data, indent = 2))
+                continue
+            clear('find_tab_output')
+            with use_scope('find_tab_output'):
+                given = unique(list_from_string(barcodes))
+                put_markdown(f'Given {pluralized("unique barcode", given, True)}.')
+                for barcode in given:
+                    data = folio_data(barcode, record_type)
+                    put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
+                    put_code(pformat(data, indent = 2))
+        elif event_type == 'do_delete':
+            if not barcodes:
+                toast('Please input at least one barcode.', color = 'error')
+                continue
+            clear('delete_tab_output')
+            clear('find_tab_output')
+            if not confirm('Danger: this cannot be undone. Really delete the records?'):
+                continue
+            with use_scope('delete_tab_output'):
+                given = unique(list_from_string(barcodes))
+                for barcode in given:
+                    put_text(f'Deleting {record_type} record for {barcode}:')
 
 
 def logo_image():
@@ -77,26 +91,14 @@ def logo_image():
         log(f'could not find logo image in {here}')
 
 
-def delete_items(button, barcodes = []):
-    if button == 'cancel':
-        put_markdown('**Cancelled**')
-    elif eval_js('confirm_action("This cannot be undone. Confirm deletions?")'):
-        put_markdown('**Proceeding with deletions ...**')
-        for barcode in barcodes:
-            put_text(f'Deleting {barcode}')
-        put_markdown('**Done.**')
-    else:
-        put_markdown('**Cancelled**')
-
-
 def find_records_tab():
     return [
         put_markdown('Given one or more barcode numbers, this will look up'
                      ' the FOLIO records corresponding to those numbers and'
                      ' display the raw FOLIO inventory record data. Write the'
                      ' barcode numbers below, one per line.'),
-        put_textarea('set_barcodes', rows = 4),
-        put_radio('set_record_type', label = 'Type of record to retrieve:',
+        put_textarea('edit_barcodes_find', rows = 4),
+        put_radio('set_record_type_find', label = 'Type of record to retrieve:',
                   inline = True, options = [
                       ('Item', 'items', True),
                       ('Instance', 'instances'),
@@ -106,11 +108,25 @@ def find_records_tab():
     ]
 
 
-def change_records_tab():
-    return 'Forthcoming ...'
-
-
 def delete_records_tab():
+    return [
+        put_markdown('Given one or more barcode numbers, this will delete the'
+                     ' corresponding FOLIO records to those numbers. Write the'
+                     ' barcode numbers below, one per line.'),
+        put_textarea('edit_barcodes_delete', rows = 4),
+        put_radio('set_record_type_delete', label = 'Type of record to delete:',
+                  inline = True, options = [
+                      ('Item', 'items', True),
+                      ('Instance', 'instances'),
+                      # ('Holdings', 'holdings')
+                  ]),
+        put_actions('do_delete',
+                    buttons = [dict(label = 'Delete records', value = 'delete',
+                                    color = 'danger')]),
+    ]
+
+
+def change_records_tab():
     return 'Forthcoming ...'
 
 
