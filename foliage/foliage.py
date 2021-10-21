@@ -14,7 +14,7 @@ from   pywebio.input import input, select, checkbox, radio, file_upload
 from   pywebio.input import NUMBER, TEXT
 from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import toast, popup, close_popup, put_buttons, put_error
-from   pywebio.output import use_scope, set_scope, clear, remove
+from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio
@@ -24,7 +24,7 @@ import re
 if __debug__:
     from sidetrack import set_debug, log
 
-from .folio import folio_data
+from .folio import Folio
 from .ui import quit_app, show_error, confirm
 
 
@@ -46,9 +46,11 @@ def foliage():
         {'title': 'Change records', 'content': change_records_tab()},
         ])
 
-    log(f'page layout finished; waiting for user input')
+    folio = Folio()
     text = None
     record_type = 'items'
+
+    log(f'page layout finished; waiting for user input')
     while True:
         event = pin_wait_change('set_record_type_find', 'edit_barcodes_find',
                                 'edit_barcodes_delete', 'do_find', 'do_delete')
@@ -66,24 +68,27 @@ def foliage():
                 barcodes = unique_barcodes(text)
                 put_markdown(f'Looking up {pluralized("unique barcode", barcodes, True)} ...')
                 for barcode in barcodes:
-                    data = folio_data(barcode, record_type)
-                    if data:
-                        put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
-                        put_code(pformat(data, indent = 2))
-                    else:
+                    record = folio.record(barcode, record_type)
+                    if not record:
                         put_error(f'No record for barcode {barcode} found.')
+                    put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
+                    put_code(pformat(record, indent = 2))
         elif event_type == 'do_delete':
             if not text:
                 toast('Please input at least one barcode.', color = 'error')
                 continue
+            if not confirm('WARNING: this cannot be undone. Proceed?'):
+                continue
             clear('delete_tab_output')
             clear('find_tab_output')
-            if not confirm('Danger: this cannot be undone. Really delete the records?'):
-                continue
             with use_scope('delete_tab_output'):
                 barcodes = unique_barcodes(text)
                 put_markdown(f'Deleting {pluralized("record", barcodes, True)} ...')
                 for barcode in barcodes:
+                    record = folio.record(barcode, record_type)
+                    if not record:
+                        put_warning(f'Skipping unrecognzied barcode {barcode}.')
+                        continue
                     put_text(f'Deleting {record_type} record for {barcode}:')
 
 

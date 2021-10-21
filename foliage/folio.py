@@ -23,69 +23,87 @@ if __debug__:
 # Internal constants
 # .............................................................................
 
-RECORD_ENDPOINTS = {
+_RECORD_ENDPOINTS = {
     'items'     : '/inventory/items?query=barcode%3D%3D{}',
     'instances' : '/inventory/instances?query=item.barcode%3D%3D{}',
 #    'holdings'  : '/inventory/holdings?query=item.barcode%3D%3D{}',
 }
 
+# Number of times we retry an api call that return an HTTP error.
+_MAX_RETRY = 3
+
+# Time between retries, multiplied by retry number.
+_RETRY_TIME_FACTOR = 2
+
 
-# Exported functions
+# Class definition.
 # .............................................................................
 
-def folio(operation, endpoint, result_parser, retry = 0):
-    '''Do a GET on "endpoint" & return result of calling result_parser on it.'''
-    headers = {
-        "x-okapi-token": config('FOLIO_OKAPI_TOKEN'),
-        "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
-        "content-type": "application/json",
-    }
+class Folio():
+    '''Interface to a FOLIO server using Okapi.'''
 
-    request_url = config('FOLIO_OKAPI_URL') + endpoint
-    (response, error) = net(operation, request_url, headers = headers)
-    if not error:
-        log(f'got result from {request_url}')
-        return result_parser(response)
-    elif isinstance(error, NoContent):
-        log(f'got empty content from {request_url}')
-        return result_parser(None)
-    elif isinstance(error, RateLimitExceeded):
-        retry += 1
-        if retry > 3:
-            raise FolioError(f'Rate limit exceeded for {request_url}')
-        else:
-            # Wait and then call ourselves recursively.
-            log(f'hit rate limit; pausing 2s')
-            wait(2)
-            return folio(operation, endpoint, result_parser, retry = retry)
-    else:
+    def __init__(self):
+        '''Create an interface to the FOLIO server.'''
+
+        self.okapi_base_url = config('FOLIO_OKAPI_URL')
+        self.okapi_token = config('FOLIO_OKAPI_TOKEN')
+        self.tenant_id = config('FOLIO_OKAPI_TENANT_ID')
+
+
+    def _folio(self, op, endpoint, convert, retry = 0):
+        '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
+        headers = {
+            "x-okapi-token": self.okapi_token,
+            "x-okapi-tenant": self.tenant_id,
+            "content-type": "application/json",
+        }
+
+        request_url = self.okapi_base_url + endpoint
+        (response, error) = net(op, request_url, headers = headers)
+        if not error:
+            log(f'got result from {request_url}')
+            return convert(response)
+        elif isinstance(error, NoContent):
+            log(f'got empty content from {request_url}')
+            return convert(None)
+        elif isinstance(error, RateLimitExceeded):
+            retry += 1
+            if retry > _MAX_RETRY:
+                raise FolioError(f'Rate limit exceeded for {request_url}')
+            else:
+                # Wait and then call ourselves recursively.
+                wait_time = retry * _RETRY_TIME_FACTOR
+                log(f'hit rate limit; pausing {wait_time}s')
+                wait(wait_time)
+                return self._folio(op, endpoint, convert, retry = retry)
         raise RuntimeError(f'Problem contacting {endpoint}: {antiformat(error)}')
 
 
-def folio_data(barcode, record_type):
-    if record_type not in RECORD_ENDPOINTS:
-        raise RuntimeError(f'Unrecognzied record_type value {record_type}')
+    def record(self, barcode, record_type):
+        if record_type not in _RECORD_ENDPOINTS:
+            raise RuntimeError(f'Unrecognized record_type value {record_type}')
 
-    def parser(resp):
-        if not resp or not resp.text:
-            log(f'FOLIO returned no result for {barcode}')
-            return None
-        data_dict = json.loads(resp.text)
-        # Depending on the way we're getting it, the record might be
-        # directly provided or it might be in a list of records.
-        if not 'totalRecords' in data_dict:
-            if 'title' in data_dict:
-                # It's a record directly and not a list of records.
-                return data_dict
-            else:
-                raise RuntimeError('Unexpected data returned by FOLIO')
-        elif data_dict['totalRecords'] == 0:
-            log(f'got 0 records for {barcode}')
-            return None
-        elif data_dict['totalRecords'] > 1:
-            total = data_dict['totalRecords']
-            log(f'got {total} records for {barcode}')
-            log(f'using only first value')
-        return data_dict[record_type][0]
+        def record_as_dict(response):
+            if not response or not response.text:
+                log(f'FOLIO returned no result for {barcode}')
+                return None
+            data_dict = json.loads(response.text)
+            # Depending on the way we're getting it, the record might be
+            # directly provided or it might be in a list of records.
+            if not 'totalRecords' in data_dict:
+                if 'title' in data_dict:
+                    # It's a record directly and not a list of records.
+                    return data_dict
+                else:
+                    raise RuntimeError('Unexpected data returned by FOLIO')
+            elif data_dict['totalRecords'] == 0:
+                log(f'got 0 records for {barcode}')
+                return None
+            elif data_dict['totalRecords'] > 1:
+                total = data_dict['totalRecords']
+                log(f'got {total} records for {barcode}')
+                log(f'using only first value')
+            return data_dict[record_type][0]
 
-    return folio('get', RECORD_ENDPOINTS[record_type].format(barcode), parser)
+        endpoint = _RECORD_ENDPOINTS[record_type].format(barcode)
+        return self._folio('get', endpoint, record_as_dict)
