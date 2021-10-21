@@ -56,7 +56,7 @@ def foliage():
         if event_type == 'set_record_type_find':
             record_type = event['value']
         elif event_type in ['edit_barcodes_find', 'edit_barcodes_delete']:
-            text = event['value']
+            text = event['value'].strip()
         elif event_type == 'do_find':
             if not text:
                 toast('Please input at least one barcode.', color = 'error')
