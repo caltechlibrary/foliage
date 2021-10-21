@@ -42,6 +42,10 @@ CSS_ADDITIONS = ''
 # Exported functions
 # .............................................................................
 
+def confirm(question):
+    return eval_js(f'confirm_action("{question}")')
+
+
 def quit_app():
     if __debug__: log(f'user clicked the quit button')
     if eval_js('confirm_exit()'):
