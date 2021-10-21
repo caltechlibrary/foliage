@@ -30,13 +30,21 @@ if __debug__:
 # Exported constants.
 # .............................................................................
 
-JS_ADDITIONS = '''
+JS_CODE = '''
   function confirm_action(msg) { return confirm(msg); }
   function confirm_exit() { return confirm("This will exit the application."); }
   function close_window() { window.close(); }
 '''
 
-CSS_ADDITIONS = ''
+# Hiding the footer is only done because in my environment, the footer causes
+# the whole page to scroll down, thus hiding part of the top.  I don't mind
+# the mention of PyWebIO in the footer, but the page behavior is a problem.
+
+CSS_CODE = '''
+footer {
+  display: none;
+}
+'''
 
 
 # Exported functions

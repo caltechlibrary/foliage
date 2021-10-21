@@ -31,7 +31,7 @@ from   pywebio import start_server
 if __debug__:
     from sidetrack import set_debug, log
 
-from .ui import JS_ADDITIONS, CSS_ADDITIONS, alert, warn
+from .ui import JS_CODE, CSS_CODE, alert, warn
 from .foliage import foliage
 
 
@@ -76,7 +76,7 @@ def main(port = 'P', version = False, debug = 'OUT'):
     log('='*8 + f' started {timestamp()} ' + '='*8)
     exception = None
     try:
-        pywebio.config(title = 'Foliage', js_code = JS_ADDITIONS)
+        pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
         start_server(foliage, port = port, auto_open_webbrowser = True,
                      debug = (debug != 'OUT'))
     except Exception as ex:
