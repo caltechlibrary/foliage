@@ -47,7 +47,7 @@ def foliage():
         ])
 
     log(f'page layout finished; waiting for user input')
-    barcodes = None
+    text = None
     record_type = 'items'
     while True:
         event = pin_wait_change('set_record_type_find', 'edit_barcodes_find',
@@ -56,16 +56,16 @@ def foliage():
         if event_type == 'set_record_type_find':
             record_type = event['value']
         elif event_type in ['edit_barcodes_find', 'edit_barcodes_delete']:
-            barcodes = event['value']
+            text = event['value']
         elif event_type == 'do_find':
-            if not barcodes:
+            if not text:
                 toast('Please input at least one barcode.', color = 'error')
                 continue
             clear('find_tab_output')
             with use_scope('find_tab_output'):
-                given = unique(list_from_string(barcodes))
-                put_markdown(f'Looking up {pluralized("unique barcode", given, True)}.')
-                for barcode in given:
+                barcodes = unique_barcodes(text)
+                put_markdown(f'Looking up {pluralized("unique barcode", barcodes, True)} ...')
+                for barcode in barcodes:
                     data = folio_data(barcode, record_type)
                     if data:
                         put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
@@ -73,7 +73,7 @@ def foliage():
                     else:
                         put_error(f'No record for barcode {barcode} found.')
         elif event_type == 'do_delete':
-            if not barcodes:
+            if not text:
                 toast('Please input at least one barcode.', color = 'error')
                 continue
             clear('delete_tab_output')
@@ -81,8 +81,9 @@ def foliage():
             if not confirm('Danger: this cannot be undone. Really delete the records?'):
                 continue
             with use_scope('delete_tab_output'):
-                given = unique(list_from_string(barcodes))
-                for barcode in given:
+                barcodes = unique_barcodes(text)
+                put_markdown(f'Deleting {pluralized("record", barcodes, True)} ...')
+                for barcode in barcodes:
                     put_text(f'Deleting {record_type} record for {barcode}:')
 
 
@@ -135,6 +136,7 @@ def change_records_tab():
     return 'Forthcoming ...'
 
 
-def list_from_string(barcodes):
+def unique_barcodes(barcodes):
     lines = barcodes.splitlines()
-    return flatten(re.split(r' |,|\.', line) for line in lines)
+    items = flatten(re.split(r'\s+|,+|\.+', line) for line in lines)
+    return unique(filter(None, items))
