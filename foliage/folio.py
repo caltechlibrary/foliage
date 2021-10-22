@@ -20,13 +20,12 @@ if __debug__:
     from sidetrack import set_debug, log
 
 
-# Internal constants
+# Internal constants.
 # .............................................................................
 
 _RECORD_ENDPOINTS = {
-    'items'     : '/inventory/items?query=barcode%3D%3D{}',
-    'instances' : '/inventory/instances?query=item.barcode%3D%3D{}',
-#    'holdings'  : '/inventory/holdings?query=item.barcode%3D%3D{}',
+    'item'     : ('items', '/inventory/items?query=barcode%3D%3D{}'),
+    'instance' : ('instances', '/inventory/instances?query=item.barcode%3D%3D{}'),
 }
 
 # Number of times we retry an api call that return an HTTP error.
@@ -82,6 +81,8 @@ class Folio():
     def record(self, barcode, record_type):
         if record_type not in _RECORD_ENDPOINTS:
             raise RuntimeError(f'Unrecognized record_type value {record_type}')
+        key = _RECORD_ENDPOINTS[record_type][0]
+        endpoint = _RECORD_ENDPOINTS[record_type][1].format(barcode)
 
         def record_as_dict(response):
             if not response or not response.text:
@@ -103,7 +104,25 @@ class Folio():
                 total = data_dict['totalRecords']
                 log(f'got {total} records for {barcode}')
                 log(f'using only first value')
-            return data_dict[record_type][0]
+            return data_dict[key][0]
 
-        endpoint = _RECORD_ENDPOINTS[record_type].format(barcode)
-        return self._folio('get', endpoint, record_as_dict)
+        result_dict = self._folio('get', endpoint, record_as_dict)
+        if result_dict and 'id' not in result_dict:
+            # Something's wrong if what we get back doesn't have an 'id' field.
+            raise RuntimeError(f'No id in record returned from {endpoint}')
+        return result_dict
+
+
+    def operation(self, op, endpoint):
+        '''Do 'op' on 'endpoint' and return a tuple (success, error_msg).'''
+
+        def result_parser(response):
+            if not response:
+                return (False, '')
+            elif response.status_code == 200:
+                return (True, None)
+            else:
+                return (False, response.text)
+
+        # return self._folio(op, endpoint, result_parser)
+        return self._folio('get', endpoint, result_parser)
