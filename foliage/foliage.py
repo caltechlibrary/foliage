@@ -15,9 +15,10 @@ from   pywebio.input import NUMBER, TEXT
 from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import toast, popup, close_popup, put_buttons, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
+from   pywebio.output import put_success, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
-from   pywebio.pin import put_textarea, put_radio
+from   pywebio.pin import put_textarea, put_radio, put_checkbox
 from   pywebio.session import run_js, eval_js
 import re
 
@@ -48,48 +49,63 @@ def foliage():
 
     folio = Folio()
     text = None
-    record_type = 'items'
+    record_type = 'item'
+    show_raw = False
 
     log(f'page layout finished; waiting for user input')
     while True:
         event = pin_wait_change('set_record_type_find', 'edit_barcodes_find',
-                                'edit_barcodes_delete', 'do_find', 'do_delete')
+                                'edit_barcodes_delete', 'do_find', 'do_delete',
+                                'set_raw')
         event_type = event['name']
         if event_type == 'set_record_type_find':
             record_type = event['value']
+            log(f'selected record type {record_type}')
+            clear('output')
+        elif event_type == 'set_raw':
+            show_raw = not show_raw
+            log(f'show_raw = {show_raw}')
+            clear('output')
         elif event_type in ['edit_barcodes_find', 'edit_barcodes_delete']:
             text = event['value'].strip()
+            clear('output')
         elif event_type == 'do_find':
+            log(f'do_find invoked')
             if not text:
                 toast('Please input at least one barcode.', color = 'error')
                 continue
-            clear('find_tab_output')
-            with use_scope('find_tab_output'):
+            clear('output')
+            with use_scope('output'):
                 barcodes = unique_barcodes(text)
                 put_markdown(f'Looking up {pluralized("unique barcode", barcodes, True)} ...')
                 for barcode in barcodes:
                     record = folio.record(barcode, record_type)
                     if not record:
                         put_error(f'No record for barcode {barcode} found.')
-                    put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
-                    put_code(pformat(record, indent = 2))
+                        continue
+                    print_record(record, barcode, record_type, show_raw)
         elif event_type == 'do_delete':
+            log(f'do_delete invoked')
             if not text:
                 toast('Please input at least one barcode.', color = 'error')
                 continue
             if not confirm('WARNING: this cannot be undone. Proceed?'):
                 continue
-            clear('delete_tab_output')
-            clear('find_tab_output')
-            with use_scope('delete_tab_output'):
+            clear('output')
+            with use_scope('output'):
                 barcodes = unique_barcodes(text)
-                put_markdown(f'Deleting {pluralized("record", barcodes, True)} ...')
                 for barcode in barcodes:
                     record = folio.record(barcode, record_type)
                     if not record:
                         put_warning(f'Skipping unrecognzied barcode {barcode}.')
                         continue
-                    put_text(f'Deleting {record_type} record for {barcode}:')
+                    id = record['id']
+                    put_text(f'Deleting barcode {barcode} ({record_type} record id {id}) ...')
+                    (success, error) = folio.operation('delete', f'/inventory/items/{id}')
+                    if success:
+                        put_success(f'Deleted {record_type} record for {barcode}.')
+                    else:
+                        put_error(f'Error: {error}')
 
 
 def logo_image():
@@ -109,12 +125,14 @@ def find_records_tab():
                      ' display the raw FOLIO inventory record data. Write the'
                      ' barcode numbers below, one per line.'),
         put_textarea('edit_barcodes_find', rows = 4),
-        put_radio('set_record_type_find', label = 'Type of record to retrieve:',
-                  inline = True, options = [
-                      ('Item', 'items', True),
-                      ('Instance', 'instances'),
-                      # ('Holdings', 'holdings')
-                  ]),
+        put_row([
+            put_radio('set_record_type_find', inline = True,
+                      label = 'Type of record to retrieve:',
+                      options = [ ('Item', 'item', True),
+                                  ('Instance', 'instance')]),
+            put_text(''),
+            put_checkbox('set_raw', options = ['Show raw data from FOLIO']),
+        ]),
         put_actions('do_find', buttons = ['Look up barcodes']),
     ]
 
@@ -127,9 +145,8 @@ def delete_records_tab():
         put_textarea('edit_barcodes_delete', rows = 4),
         put_radio('set_record_type_delete', label = 'Type of record to delete:',
                   inline = True, options = [
-                      ('Item', 'items', True),
-                      ('Instance', 'instances'),
-                      # ('Holdings', 'holdings')
+                      ('Item', 'item', True),
+                      ('Instance', 'instance'),
                   ]),
         put_actions('do_delete',
                     buttons = [dict(label = 'Delete FOLIO records',
@@ -139,6 +156,36 @@ def delete_records_tab():
 
 def change_records_tab():
     return 'Forthcoming ...'
+
+
+def print_record(record, barcode, record_type, show_raw):
+    if show_raw:
+        put_markdown(f'Raw FOLIO data for barcode **{barcode}**:')
+        put_code(pformat(record, indent = 2))
+    elif record_type == 'item':
+        put_html('<br>')
+        put_grid([[put_markdown(f'**{barcode}**'),
+                   put_table([
+                       ['Title', record['title']],
+                       ['Call number', record['callNumber']],
+                       ['Effective location', record['effectiveLocation']['name']],
+                       ['Permanent location', record['permanentLocation']['name']],
+                       ['Status', record['status']['name']],
+                       ['Tags', ', '.join(tags for tags in record['tags']['tagList'])],
+                       ['Notes', '\n'.join(record['notes'])],
+                       ['HRID', record['hrid']],
+                       [f'{record_type.title()} id', record['id']]])]],
+                 cell_widths = "20% 80%")
+    elif record_type == 'instance':
+        put_html('<br>')
+        put_grid([[put_markdown(f'**{barcode}**'),
+                   put_table([
+                       ['Title', record['title']],
+                       ['Call number', record['classifications'][0]['classificationNumber']],
+                       ['Tags', ', '.join(tags for tags in record['tags']['tagList'])],
+                       ['HRID', record['hrid']],
+                       [f'{record_type.title()} id', record['id']]])]],
+                 cell_widths = "20% 80%")
 
 
 def unique_barcodes(barcodes):
