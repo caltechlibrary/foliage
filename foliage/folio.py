@@ -113,15 +113,33 @@ class Folio():
         return result_dict
 
 
+    # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
+
     def operation(self, op, endpoint):
         '''Do 'op' on 'endpoint' and return a tuple (success, error_msg).'''
 
         def result_parser(response):
             if not response:
                 return (False, '')
-            elif response.status_code == 200:
+            elif 200 <= response.status_code < 300:
                 return (True, None)
-            else:
+            elif response.status_code == 400:
+                # "Bad request, e.g. malformed request body or query
+                # parameter. Details of the error (e.g. name of the parameter
+                # or line/character number with malformed data) provided in
+                # the response."
+                return (False, response.text)
+            elif response.status_code == 401:
+                # "Not authorized to perform requested action"
+                return (False, response.text)
+            elif response.status_code == 404:
+                # "Item with a given ID not found"
+                return (False, response.text)
+            elif response.status_code == 422:
+                # "Validation error"
+                return (False, response.text)
+            elif response.status_code in [409, 500]:
+                # "internal server error"
                 return (False, response.text)
 
         # return self._folio(op, endpoint, result_parser)
