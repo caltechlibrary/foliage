@@ -50,6 +50,24 @@ footer {
 # Exported functions
 # .............................................................................
 
+def alert(text, popup = True):
+    log(f'alert: {text}')
+    if popup:
+        toast(text, color = 'error')
+    else:
+        width = 79 if len(text) > 75 else (len(text) + 4)
+        print(Panel(text, style = Style.parse('red'), width = width))
+
+
+def warn(text, popup = True):
+    log(f'warning: {text}')
+    if popup:
+        toast(text, color = 'warning')
+    else:
+        width = 79 if len(text) > 75 else (len(text) + 4)
+        print(Panel(text, style = Style.parse('yellow'), width = width))
+
+
 def confirm(question):
     return eval_js(f'confirm_action("{question}")')
 
@@ -61,23 +79,3 @@ def quit_app():
         run_js('close_window()')
         wait(0.5)
         os._exit(0)
-
-
-def show_error(msg):
-    log(f'showing error popup: {msg}')
-    popup('Error', [
-        put_html(f'<p class="text-danger">{msg}</p>'),
-        put_buttons(['Close'], onclick = lambda _: close_popup())
-        ], implicit_close = True)
-
-
-def alert(text):
-    log(f'alert: {text}')
-    width = 79 if len(text) > 75 else (len(text) + 4)
-    print(Panel(text, style = Style.parse('red'), width = width))
-
-
-def warn(text):
-    log(f'warning: {text}')
-    width = 79 if len(text) > 75 else (len(text) + 4)
-    print(Panel(text, style = Style.parse('yellow'), width = width))
