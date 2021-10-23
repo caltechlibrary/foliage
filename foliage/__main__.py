@@ -31,8 +31,8 @@ from   pywebio import start_server
 if __debug__:
     from sidetrack import set_debug, log
 
-from .ui import JS_CODE, CSS_CODE, alert, warn
 from .foliage import foliage
+from .ui import JS_CODE, CSS_CODE, alert, warn
 
 
 # Main program.
@@ -57,7 +57,7 @@ def main(port = 'P', version = False, debug = 'OUT'):
             import signal
             from boltons.debugutils import pdb_on_signal
             pdb_on_signal(signal.SIGUSR1)
-            warn('Running in debug mode. Use "kill -USR1 pid" to drop into pdb.')
+            warn('Debug mode on. Use "kill -USR1 pid" to drop into pdb.', False)
 
     # Preprocess arguments and handle early exits -----------------------------
 
@@ -67,7 +67,7 @@ def main(port = 'P', version = False, debug = 'OUT'):
         exit()
 
     if port != 'P' and not isint(port):
-        alert(f'Port number value for option -p must be an integer.')
+        alert(f'Port number value for option -p must be an integer.', False)
         exit(1)
     port = 8080 if port == 'P' else int(port)
 
@@ -92,7 +92,7 @@ def main(port = 'P', version = False, debug = 'OUT'):
             summary = antiformat(exception[1])
             details = antiformat(''.join(format_exception(*exception)))
             log(f'Exception: {summary}\n{details}')
-            alert(summary)
+            alert(summary, False)
 
     # And exit ----------------------------------------------------------------
 
