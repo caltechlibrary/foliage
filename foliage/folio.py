@@ -14,6 +14,8 @@ from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
 from   commonpy.network_utils import net
 from   decouple import config
+from   enum import Enum
+from   fastnumbers import isint
 import json
 
 if __debug__:
@@ -23,19 +25,32 @@ if __debug__:
 # Internal constants.
 # .............................................................................
 
-_RECORD_ENDPOINTS = {
-    'item'     : ('items', '/inventory/items?query=barcode%3D%3D{}'),
-    'instance' : ('instances', '/inventory/instances?query=item.barcode%3D%3D{}'),
-}
-
 # Number of times we retry an api call that return an HTTP error.
 _MAX_RETRY = 3
 
 # Time between retries, multiplied by retry number.
 _RETRY_TIME_FACTOR = 2
 
+# Endpoints for getting data.
+_RECORD_ENDPOINTS = {
+    'item'     : ('items', '/inventory/items?query=barcode%3D%3D{}'),
+    'instance' : ('instances', '/inventory/instances?query=item.barcode%3D%3D{}'),
+}
+
 
-# Class definition.
+# Public data types.
+# .............................................................................
+
+class IdType(Enum):
+    UNKNOWN    = 'unknown'
+    BARCODE    = 'barcode'
+    HRID       = 'hrid'
+    ITEMID     = 'item id'
+    INSTANCEID = 'instance id'
+    HOLDINGSID = 'holdings id'
+
+
+# Public class definitions.
 # .............................................................................
 
 class Folio():
@@ -49,7 +64,7 @@ class Folio():
         self.tenant_id = config('FOLIO_OKAPI_TENANT_ID')
 
 
-    def _folio(self, op, endpoint, convert, retry = 0):
+    def _folio(self, op, endpoint, convert = None, retry = 0):
         '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
         headers = {
             "x-okapi-token": self.okapi_token,
@@ -61,10 +76,10 @@ class Folio():
         (response, error) = net(op, request_url, headers = headers)
         if not error:
             log(f'got result from {request_url}')
-            return convert(response)
+            return response if convert is None else convert(response)
         elif isinstance(error, NoContent):
             log(f'got empty content from {request_url}')
-            return convert(None)
+            return None if convert is None else convert(None)
         elif isinstance(error, RateLimitExceeded):
             retry += 1
             if retry > _MAX_RETRY:
@@ -76,6 +91,40 @@ class Folio():
                 wait(wait_time)
                 return self._folio(op, endpoint, convert, retry = retry)
         raise RuntimeError(f'Problem contacting {endpoint}: {antiformat(error)}')
+
+
+    def id_type(self, identifier):
+        '''Infer the type of identifier given.'''
+        if isint(identifier):
+            return IdType.BARCODE
+        elif '-' not in identifier:
+            return IdType.HRID
+        else:
+            # Id's look the same. Try different cases to see if they exist
+            # using the storage API, which is the fastest/lowest-level API.
+            response = self._folio('get', f'/item-storage/items/{identifier}')
+            if response:
+                if response.status_code == 200:
+                    return IdType.ITEMID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            response = self._folio('get', f'/instance-storage/instances/{identifier}')
+            if response:
+                if response.status_code == 200:
+                    return IdType.INSTANCEID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            response = self._folio('get', f'/holdings-storage/holdings/{identifier}')
+            if response:
+                if response.status_code == 200:
+                    return IdType.HOLDINGSID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            # We're out of ideas.
+            return IdType.UNKNOWN
 
 
     def record(self, barcode, record_type):
