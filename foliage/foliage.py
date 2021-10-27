@@ -4,6 +4,7 @@ import csv
 from   commonpy.data_utils import unique, pluralized
 from   commonpy.file_utils import exists
 from   commonpy.interrupt import wait
+from   commonpy.string_utils import antiformat
 from   functools import partial
 import json
 import os
@@ -46,7 +47,7 @@ def foliage():
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
-        {'title': 'Show ID types', 'content': list_types_tab()},
+        {'title': 'List ID types', 'content': list_types_tab()},
         ])
 
     folio = Folio()
@@ -67,7 +68,11 @@ def foliage():
                 put_processbar('bar')
                 set_processbar('bar', 1/2)
                 type_name = pin.list_type.replace('-', ' ')
-                types = folio.types(pin.list_type)
+                try:
+                    types = folio.types(pin.list_type)
+                except Exception as ex:
+                    alert(f'Error: {antiformat(str(ex))}')
+                    continue
                 set_processbar('bar', 2/2)
                 put_html('<br>')
                 put_markdown(f'There are {len(types)} possible values for {type_name}:')
@@ -95,7 +100,11 @@ def foliage():
                         continue
 
                     record_kind = pin.select_kind_find
-                    records = folio.records(id, id_type, record_kind)
+                    try:
+                        records = folio.records(id, id_type, record_kind)
+                    except Exception as ex:
+                        alert(f'Error: {antiformat(str(ex))}')
+                        break
                     set_processbar('bar', index/steps)
                     this = pluralized(record_kind + " record", records, True)
                     how = f'by searching for {id_type.value} {id}'
@@ -129,7 +138,11 @@ def foliage():
                                   + ' or accession number.')
                         set_processbar('bar', index/steps)
                         continue
-                    records = folio.records(id, id_type, record_kind)
+                    try:
+                        records = folio.records(id, id_type, record_kind)
+                    except Exception as ex:
+                        alert(f'Error: {antiformat(str(ex))}')
+                        break
                     set_processbar('bar', index/steps)
                     if not records:
                         put_error('Could not find a record for'
@@ -162,20 +175,34 @@ def list_types_tab():
         put_grid([[put_markdown('Select a FOLIO type to list:'),
                    put_select('list_type',
                               options=[
+                                  {'label': 'Address types', 'value': TypeKind.ADDRESS.value},
                                   {'label': 'Alternative title types', 'value': TypeKind.ALT_TITLE.value},
                                   {'label': 'Call number types', 'value': TypeKind.CALL_NUMBER.value},
                                   {'label': 'Classification types', 'value': TypeKind.CLASSIFICATION.value},
-                                  {'label': 'Contributor name types', 'value': TypeKind.CONTRIBUTOR_NAME.value},
                                   {'label': 'Contributor types', 'value': TypeKind.CONTRIBUTOR.value},
-                                  {'label': 'Holdings note types', 'value': TypeKind.HOLDINGS_NOTE.value},
+                                  {'label': 'Contributor name types', 'value': TypeKind.CONTRIBUTOR_NAME.value},
+                                  {'label': 'Department types', 'value': TypeKind.DEPARTMENT.value},
+                                  {'label': 'Group types', 'value': TypeKind.GROUP.value},
                                   {'label': 'Holdings types', 'value': TypeKind.HOLDINGS.value},
+                                  {'label': 'Holdings note types', 'value': TypeKind.HOLDINGS_NOTE.value},
+                                  {'label': 'Holdings source types', 'value': TypeKind.HOLDINGS_SOURCE.value},
                                   {'label': 'Identifier types', 'value': TypeKind.ID.value},
+                                  {'label': 'ILL policy types', 'value': TypeKind.ILL_POLICY.value},
+                                  {'label': 'Instance types', 'value': TypeKind.INSTANCE.value},
+                                  {'label': 'Instance format types', 'value': TypeKind.INSTANCE_FORMAT.value},
                                   {'label': 'Instance note types', 'value': TypeKind.INSTANCE_NOTE.value},
                                   {'label': 'Instance relationship types', 'value': TypeKind.INSTANCE_REL.value},
-                                  {'label': 'Instance types', 'value': TypeKind.INSTANCE.value},
+                                  {'label': 'Instance status types', 'value': TypeKind.INSTANCE_STATUS.value},
                                   {'label': 'Item note types', 'value': TypeKind.ITEM_NOTE.value},
+                                  {'label': 'Item damaged status types', 'value': TypeKind.ITEM_DAMAGED_STATUS.value},
                                   {'label': 'Loan types', 'value': TypeKind.LOAN.value},
+                                  {'label': 'Location types', 'value': TypeKind.LOCATION.value},
                                   {'label': 'Material types', 'value': TypeKind.MATERIAL.value},
+                                  {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT.value},
+                                  {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT.value},
+                                  {'label': 'Service point user types', 'value': TypeKind.SERVICE_POINT_USER.value},
+                                  {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION.value},
+                                  {'label': 'Statistical code types', 'value': TypeKind.STATISTICAL_CODE.value},
                               ]),
                    put_actions('do_list', buttons = ['Get list']).style('margin-left: 10px'),
                   ]])

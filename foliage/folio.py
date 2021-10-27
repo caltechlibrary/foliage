@@ -56,20 +56,36 @@ class RecordIdKind(ExtendedEnum):
     ACCESSION  = 'accession number'
 
 class TypeKind(ExtendedEnum):
-    ALT_TITLE        = 'alternative-title-types'
-    CALL_NUMBER      = 'call-number-types'
-    CLASSIFICATION   = 'classification-types'
-    CONTRIBUTOR      = 'contributor-types'
-    CONTRIBUTOR_NAME = 'contributor-name-types'
-    HOLDINGS         = 'holdings-types'
-    HOLDINGS_NOTE    = 'holdings-note-types'
-    ID               = 'identifier-types'
-    INSTANCE         = 'instance-types'
-    INSTANCE_NOTE    = 'instance-note-types'
-    INSTANCE_REL     = 'instance-relationship-types'
-    ITEM_NOTE        = 'item-note-types'
-    LOAN             = 'loan-types'
-    MATERIAL         = 'material-types'
+    ADDRESS             = 'addresstypes'
+    ALT_TITLE           = 'alternative-title-types'
+    CALL_NUMBER         = 'call-number-types'
+    CLASSIFICATION      = 'classification-types'
+    CONTRIBUTOR         = 'contributor-types'
+    CONTRIBUTOR_NAME    = 'contributor-name-types'
+    DEPARTMENT          = 'departments'
+    GROUP               = 'groups'
+    HOLDINGS            = 'holdings-types'
+    HOLDINGS_NOTE       = 'holdings-note-types'
+    HOLDINGS_SOURCE     = 'holdings-sources'
+    ID                  = 'identifier-types'
+    ILL_POLICY          = 'ill-policies'
+    INSTANCE            = 'instance-types'
+    INSTANCE_FORMAT     = 'instance-formats'
+    INSTANCE_NOTE       = 'instance-note-types'
+    INSTANCE_REL        = 'instance-relationship-types'
+    INSTANCE_STATUS     = 'instance-statuses'
+    ITEM_NOTE           = 'item-note-types'
+    ITEM_DAMAGED_STATUS = 'item-damaged-statuses'
+    LOAN                = 'loan-types'
+    LOCATION            = 'locations'
+    MATERIAL            = 'material-types'
+    MODE_OF_ISSUANCE    = 'mode-of-issuance'
+    NATURE_OF_CONTENT   = 'nature-of-content-terms'
+    PROXYFOR            = 'proxiesfor'
+    SERVICE_POINT       = 'service-points'
+    SERVICE_POINT_USER  = 'service-point-users'
+    SHELF_LOCATION      = 'shelf-locations'
+    STATISTICAL_CODE    = 'statistical-code-types'
 
 
 # Internal constants.
@@ -122,7 +138,7 @@ class Folio():
                 log(f'hit rate limit; pausing {wait_time}s')
                 wait(wait_time)
                 return self._folio(op, endpoint, convert, retry = retry)
-        raise RuntimeError(f'Problem contacting {endpoint}: {antiformat(error)}')
+        raise error
 
 
     def record_id_type(self, identifier):
@@ -237,7 +253,8 @@ class Folio():
 
         endpoint = '/' + TypeKind(type_kind).value + '?limit=1000'
         type_list = self._folio('get', endpoint, result_parser)
-        return [(item['name'], item['id']) for item in type_list]
+        name_key = 'group' if type_kind == TypeKind.GROUP.value else 'name'
+        return [(item[name_key], item['id']) for item in type_list]
 
 
     # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
