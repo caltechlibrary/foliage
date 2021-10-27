@@ -45,10 +45,11 @@ def foliage():
              '</div>')
     put_tabs([
         {'title': 'Look up records', 'content': find_records_tab()},
+        {'title': 'Show ID types', 'content': list_types_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
-        {'title': 'List ID types', 'content': list_types_tab()},
         ])
+
 
     folio = Folio()
 
@@ -58,7 +59,7 @@ def foliage():
                                 'reset_delete', 'do_delete')
         event_type = event['name']
 
-        if event_type.startswith('reset'):
+        if event_type.startswith('reset'):  # catches all reset_* buttons.
             pin.textbox_find = ''
             pin.textbox_delete = ''
             clear('output')
@@ -138,6 +139,7 @@ def foliage():
                                   + ' or accession number.')
                         set_processbar('bar', index/steps)
                         continue
+                    record_kind = pin.select_kind_find
                     try:
                         records = folio.records(id, id_type, record_kind)
                     except Exception as ex:
