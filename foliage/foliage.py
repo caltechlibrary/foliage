@@ -50,7 +50,6 @@ def foliage():
         ])
 
     folio = Folio()
-    text = None
     record_kind = RecordKind.ITEM.value
     list_type = TypeKind.ALT_TITLE.value
     show_raw = False
@@ -58,13 +57,15 @@ def foliage():
     log(f'page layout finished; waiting for user input')
     while True:
         event = pin_wait_change('set_record_kind', 'set_raw', 'set_list_type',
-                                'edit_ids_find', 'edit_ids_delete',
-                                'reset_delete_page', 'reset_find_page',
-                                'do_find', 'do_delete', 'do_list')
+                                'reset_find', 'do_find',
+                                'reset_delete', 'do_delete',
+                                'do_list')
         event_type = event['name']
 
         if event_type.startswith('reset'):
-            reload_page()
+            pin.textbox_find = ''
+            pin.textbox_delete = ''
+            clear('output')
 
         elif event_type == 'set_list_type':
             list_type = event['value']
@@ -77,10 +78,6 @@ def foliage():
         elif event_type == 'set_raw':
             show_raw = not show_raw
             log(f'show_raw = {show_raw}')
-            clear('output')
-
-        elif event_type in ['edit_ids_find', 'edit_ids_delete']:
-            text = event['value'].strip()
             clear('output')
 
         elif event_type == 'do_list':
@@ -97,11 +94,11 @@ def foliage():
 
         elif event_type == 'do_find':
             log(f'do_find invoked')
-            if not text:
+            if not pin.textbox_find:
                 alert('Please input at least one barcode or other id.')
                 continue
             with use_scope('output', clear = True):
-                identifiers = unique_identifiers(text)
+                identifiers = unique_identifiers(pin.textbox_find)
                 steps = len(identifiers) + 1
                 put_processbar('bar');
                 set_processbar('bar', 1/steps)
@@ -118,25 +115,26 @@ def foliage():
                     records = folio.records(id, id_type, record_kind)
                     set_processbar('bar', index/steps)
                     this = pluralized(record_kind + " record", records, True)
-                    put_success(f'Found {this} for {id}').style('text-align: center')
+                    how = f'by searching for {id_type.value} {id}'
+                    put_success(f'Found {this} {how}').style('text-align: center')
                     show_index = (len(records) > 1)
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
                                      index, show_index, show_raw)
                     if not records:
-                        put_error('No record(s) for {id_type.value} "{id}".')
+                        put_error(f'No record(s) for {id_type.value} "{id}".')
 
         elif event_type == 'do_delete':
             # fixme
             log(f'do_delete invoked')
-            if not text:
+            if not pin.textbox_delete:
                 alert('Please input at least one barcode or other id.')
                 continue
             if not confirm('WARNING: you are about to delete records in FOLIO'
                            + ' permanently. This cannot be undone.\\n\\nProceed?'):
                 continue
             with use_scope('output', clear = True):
-                identifiers = unique_identifiers(text)
+                identifiers = unique_identifiers(pin.textbox_delete)
                 steps = len(identifiers) + 1
                 put_processbar('bar');
                 set_processbar('bar', 1/steps)
@@ -208,7 +206,7 @@ def find_records_tab():
                      + ' or accession number in the field below, then press'
                      + ' the button to look up the item or instance records'
                      + ' that correspond to them.'),
-        put_textarea('edit_ids_find', rows = 4),
+        put_textarea('textbox_find', rows = 4),
         put_radio('set_record_kind', inline = True,
                   label = 'Type of record to retrieve:',
                   options = [ ('Item', 'item', True), ('Instance', 'instance')]),
@@ -217,8 +215,8 @@ def find_records_tab():
         put_row([
             put_actions('do_find', buttons = ['Look up records']),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_actions('reset_find_page',
-                        buttons = [dict(label = 'Reset page', value = 'reset',
+            put_actions('reset_find',
+                        buttons = [dict(label = 'Reset', value = 'reset',
                                         color = 'info')]).style('text-align: right')
         ])
     ]
@@ -227,7 +225,7 @@ def delete_records_tab():
     return [
         put_markdown('Write one or more barcode, HRID, item id, or instance '
                      + ' id in the field below to delete the FOLIO records.'),
-        put_textarea('edit_ids_delete', rows = 4),
+        put_textarea('textbox_delete', rows = 4),
         put_radio('set_record_kind_delete', inline = True,
                   label = 'Type of record to delete:',
                   options = [ ('Item', 'item', True),
@@ -237,8 +235,8 @@ def delete_records_tab():
                         buttons = [dict(label = 'Delete FOLIO records',
                                         value = 'delete', color = 'danger')]),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_actions('reset_delete_page',
-                        buttons = [dict(label = 'Reset page', value = 'reset',
+            put_actions('reset_delete',
+                        buttons = [dict(label = 'Reset', value = 'reset',
                                         color = 'info')]).style('text-align: right')
         ])
     ]
