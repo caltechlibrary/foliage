@@ -21,12 +21,14 @@ from   commonpy.data_utils import timestamp
 from   commonpy.interrupt import config_interrupt
 from   commonpy.string_utils import antiformat
 from   fastnumbers import isint
+from   os.path import exists, dirname, join, basename, abspath, realpath
 import plac
 import pywebio
 # Default server is tornado, and tornado mucks with logging.
 # aiohttp server does not.  Unfortunately, only tornado auto-reloads.
 # from   pywebio.platform.aiohttp import start_server
 from   pywebio import start_server
+from   tornado.template import Template
 
 if __debug__:
     from sidetrack import set_debug, log
@@ -77,6 +79,15 @@ def main(port = 'P', version = False, debug = 'OUT'):
     exception = None
     try:
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
+
+        # This uses a custom index page template created by copying the PyWebIO
+        # default and modifying it. Among other things, the following were
+        # removed because Foliage doesn't need them: Prism, Plotly, Codemirror.
+        here = realpath(dirname(__file__))
+        with open(join(here, 'data', 'index.tpl')) as index_tpl:
+            index_page_template = Template(index_tpl.read())
+        pywebio.platform.utils._index_page_tpl = index_page_template
+
         start_server(foliage, port = port, auto_open_webbrowser = True,
                      debug = (debug != 'OUT'))
     except Exception as ex:

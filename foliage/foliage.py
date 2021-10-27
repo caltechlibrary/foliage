@@ -50,19 +50,27 @@ def foliage():
         {'title': 'Change records', 'content': change_records_tab()},
         ])
 
+    put_actions('quit',
+                buttons = [dict(label = 'Quit Foliage', value = 'quit',
+                                color = 'danger')]
+                ).style('position: absolute; bottom: -20px; left: calc(50% - 2.5em); z-index: 2')
 
     folio = Folio()
 
     log(f'page layout finished; waiting for user input')
     while True:
         event = pin_wait_change('do_list', 'reset_find', 'do_find',
-                                'reset_delete', 'do_delete')
+                                'reset_delete', 'do_delete', 'quit')
         event_type = event['name']
 
         if event_type.startswith('reset'):  # catches all reset_* buttons.
             pin.textbox_find = ''
             pin.textbox_delete = ''
             clear('output')
+
+        elif event_type == 'quit':
+            log(f'quit button clicked')
+            quit_app()
 
         elif event_type == 'do_list':
             with use_scope('output', clear = True):

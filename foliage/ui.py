@@ -32,7 +32,7 @@ if __debug__:
 
 JS_CODE = '''
   function confirm_action(msg) { return confirm(msg) }
-  function confirm_exit() { return confirm("This will exit the application.") }
+  function confirm_exit() { return confirm("This will exit Foliage.") }
   function close_window() { window.close() }
   function reload_page() { location.reload() }
 '''
@@ -41,15 +41,33 @@ JS_CODE = '''
 # the whole page to scroll down, thus hiding part of the top.  I don't mind
 # the mention of PyWebIO in the footer, but the page behavior is a problem.
 
+# The footer height and pywebio min-height interact. I found these numbers by
+# trial and error.
+
 CSS_CODE = '''
+html {
+    position: relative;
+}
+body {
+    padding-bottom: 66px;
+}
+.pywebio {
+    min-height: calc(100vh - 70px);
+    padding-top: 10px;
+    padding-bottom: 1px; /* if set 0, safari has min-height issue */
+}
 footer {
-  display: none;
+    position: absolute;
+    width: 100%;
+    bottom: -2px;
+    left: 0;
+    height: 55px !important;
 }
 .markdown-body table {
-  display: inline-table;
+    display: inline-table;
 }
 .alert p {
-  margin-bottom: 0
+    margin-bottom: 0
 }
 '''
 
