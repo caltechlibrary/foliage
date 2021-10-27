@@ -130,6 +130,8 @@ class Folio():
         if isint(identifier):
             log(f'recognized {identifier} as a barcode')
             return RecordIdKind.BARCODE
+        elif identifier.startswith('clc') and '.' in identifier:
+            return RecordIdKind.ACCESSION
         elif '-' not in identifier:
             log(f'recognized {identifier} as an hrid')
             return RecordIdKind.HRID

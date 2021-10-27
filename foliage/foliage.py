@@ -257,5 +257,5 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
 
 def unique_identifiers(text):
     lines = text.splitlines()
-    identifiers = flatten(re.split(r'\s+|,+|\.+', line) for line in lines)
+    identifiers = flatten(re.split(r'\s+|,+', line) for line in lines)
     return unique(filter(None, identifiers))
