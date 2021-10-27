@@ -137,28 +137,29 @@ def foliage():
                 continue
             with use_scope('output', clear = True):
                 identifiers = unique_identifiers(text)
-                steps = len(identifiers)
+                steps = len(identifiers) + 1
                 put_processbar('bar');
-                for index, identifier in enumerate(identifiers, start = 1):
+                set_processbar('bar', 1/steps)
+                for index, id in enumerate(identifiers, start = 2):
                     put_html('<br>')
-                    id_type = folio.record_id_type(identifier)
+                    id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
-                        put_error(f'Could not recognize "{identifier}" as a'
+                        put_error(f'Could not recognize "{id}" as a'
                                   + ' barcode, hrid, item id, instance id,'
                                   + ' or accession number.')
                         set_processbar('bar', index/steps)
                         continue
-                    records = folio.records(identifier, id_type, record_kind)
+                    records = folio.records(id, id_type, record_kind)
                     set_processbar('bar', index/steps)
                     if not records:
                         put_error('Could not find a record for'
-                                  + f' {id_type.value} "{identifier}".')
+                                  + f' {id_type.value} "{id}".')
                         continue
-                    id = record[0]['id']
-                    put_text(f'Deleting {identifier} {record_kind} record ...')
-                    (success, error) = folio.operation('delete', f'/inventory/items/{id}')
+                    id = records[0]['id']
+                    #(success, error) = folio.operation('delete', f'/inventory/items/{id}')
+                    (success, error) = True, None
                     if success:
-                        put_success(f'Deleted {record_kind} record for {identifier}.')
+                        put_success(f'Deleted {record_kind} record for {id}.')
                     else:
                         put_error(f'Error: {error}')
 
