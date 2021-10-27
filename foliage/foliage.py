@@ -52,7 +52,7 @@ def foliage():
 
     put_actions('quit',
                 buttons = [dict(label = 'Quit Foliage', value = 'quit',
-                                color = 'danger')]
+                                color = 'warning')]
                 ).style('position: absolute; bottom: -20px; left: calc(50% - 2.5em); z-index: 2')
 
     folio = Folio()
