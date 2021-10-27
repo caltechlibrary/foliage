@@ -102,22 +102,23 @@ def foliage():
                 continue
             with use_scope('output', clear = True):
                 identifiers = unique_identifiers(text)
-                num_identifiers = len(identifiers)
+                steps = len(identifiers) + 1
                 put_processbar('bar');
-                for index, id in enumerate(identifiers, start = 1):
-                    set_processbar('bar', index/num_identifiers)
+                set_processbar('bar', 1/steps)
+                for index, id in enumerate(identifiers, start = 2):
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
                         put_error(f'Could not recognize "{id}" as a barcode,'
                                   + ' hrid, item id, instance id,'
                                   + ' or accession number.')
+                        set_processbar('bar', index/steps)
                         continue
 
                     records = folio.records(id, id_type, record_kind)
-                    put_success('Found'
-                                + f' {pluralized(record_kind + " record", records, True)}'
-                                + f' for {id}').style('text-align: center')
+                    set_processbar('bar', index/steps)
+                    this = pluralized(record_kind + " record", records, True)
+                    put_success(f'Found {this} for {id}').style('text-align: center')
                     show_index = (len(records) > 1)
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
@@ -136,18 +137,19 @@ def foliage():
                 continue
             with use_scope('output', clear = True):
                 identifiers = unique_identifiers(text)
-                num_identifiers = len(identifiers)
+                steps = len(identifiers)
                 put_processbar('bar');
                 for index, identifier in enumerate(identifiers, start = 1):
-                    set_processbar('bar', index/num_identifiers)
                     put_html('<br>')
                     id_type = folio.record_id_type(identifier)
                     if id_type == RecordIdKind.UNKNOWN:
                         put_error(f'Could not recognize "{identifier}" as a'
                                   + ' barcode, hrid, item id, instance id,'
                                   + ' or accession number.')
+                        set_processbar('bar', index/steps)
                         continue
                     records = folio.records(identifier, id_type, record_kind)
+                    set_processbar('bar', index/steps)
                     if not records:
                         put_error('Could not find a record for'
                                   + f' {id_type.value} "{identifier}".')
@@ -246,12 +248,12 @@ def change_records_tab():
 
 
 def print_record(record, record_kind, identifier, id_type, index, show_index, show_raw):
-    index_text = (f' {index}' if show_index else '')
+    if show_index:
+        put_markdown(f'{record_kind.title()} record #{index}:')
+
     if show_raw:
-        put_markdown(f'Raw data of record{index_text} for **{identifier}**:')
         put_code(pformat(record, indent = 2))
     elif record_kind == 'item':
-        put_markdown(f'{record_kind.title()} record{index_text} for {id_type.value} **{identifier}**:')
         put_table([
             ['Title', record['title']],
             ['Call number', record['callNumber']],
@@ -263,7 +265,6 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
             ['HRID', record['hrid']],
             [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em')
     elif record_kind == 'instance':
-        put_markdown(f'{record_kind.title()} record{index_text} for {id_type.value} **{identifier}**:')
         put_table([
             ['Title', record['title']],
             ['Call number', record['classifications'][0]['classificationNumber']],
