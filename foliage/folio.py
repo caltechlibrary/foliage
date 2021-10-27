@@ -14,12 +14,62 @@ from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
 from   commonpy.network_utils import net
 from   decouple import config
-from   enum import Enum
+from   enum import Enum, EnumMeta
+from   functools import partial
 from   fastnumbers import isint
 import json
 
 if __debug__:
     from sidetrack import set_debug, log
+
+
+# Public data types.
+# .............................................................................
+
+# The following class was based in part on the posting by user "Pierre D" at
+# https://stackoverflow.com/a/65225753/743730 made on 2020-12-09.
+
+class MetaEnum(EnumMeta):
+    def __contains__(cls, item):
+        try:
+            cls(item)
+        except ValueError:
+            return False
+        return True
+
+class ExtendedEnum(Enum, metaclass = MetaEnum):
+    '''Extend Enum class with a function allowing a test for containment.'''
+    pass
+
+class RecordKind(ExtendedEnum):
+    ITEM     = 'item'
+    INSTANCE = 'instance'
+    HOLDINGS = 'holdings'
+
+class RecordIdKind(ExtendedEnum):
+    UNKNOWN    = 'unknown'
+    BARCODE    = 'barcode'
+    HRID       = 'hrid'
+    ITEMID     = 'item id'
+    INSTANCEID = 'instance id'
+    HOLDINGSID = 'holdings id'
+    ACCESSION  = 'accession number'
+
+class TypeKind(ExtendedEnum):
+    ALT_TITLE        = 'alternative-title-types'
+    CALL_NUMBER      = 'call-number-types'
+    CLASSIFICATION   = 'classification-types'
+    CONTRIBUTOR      = 'contributor-types'
+    CONTRIBUTOR_NAME = 'contributor-name-types'
+    HOLDINGS         = 'holdings-types'
+    HOLDINGS_NOTE    = 'holdings-note-types'
+    ID               = 'identifier-types'
+    INSTANCE         = 'instance-types'
+    INSTANCE_NOTE    = 'instance-note-types'
+    INSTANCE_REL     = 'instance-relationship-types'
+    ITEM_NOTE        = 'item-note-types'
+    LOAN             = 'loan-types'
+    MATERIAL         = 'material-types'
 
 
 # Internal constants.
@@ -30,24 +80,6 @@ _MAX_RETRY = 3
 
 # Time between retries, multiplied by retry number.
 _RETRY_TIME_FACTOR = 2
-
-# Endpoints for getting data.
-_RECORD_ENDPOINTS = {
-    'item'     : ('items', '/inventory/items?query=barcode%3D%3D{}'),
-    'instance' : ('instances', '/inventory/instances?query=item.barcode%3D%3D{}'),
-}
-
-
-# Public data types.
-# .............................................................................
-
-class IdType(Enum):
-    UNKNOWN    = 'unknown'
-    BARCODE    = 'barcode'
-    HRID       = 'hrid'
-    ITEMID     = 'item id'
-    INSTANCEID = 'instance id'
-    HOLDINGSID = 'holdings id'
 
 
 # Public class definitions.
@@ -93,73 +125,117 @@ class Folio():
         raise RuntimeError(f'Problem contacting {endpoint}: {antiformat(error)}')
 
 
-    def id_type(self, identifier):
+    def record_id_type(self, identifier):
         '''Infer the type of identifier given.'''
         if isint(identifier):
-            return IdType.BARCODE
+            log(f'recognized {identifier} as a barcode')
+            return RecordIdKind.BARCODE
         elif '-' not in identifier:
-            return IdType.HRID
+            log(f'recognized {identifier} as an hrid')
+            return RecordIdKind.HRID
         else:
             # Id's look the same. Try different cases to see if they exist
             # using the storage API, which is the fastest/lowest-level API.
-            response = self._folio('get', f'/item-storage/items/{identifier}')
+            response = self._folio('get', f'/item-storage/items/{identifier}?limit=0')
             if response:
                 if response.status_code == 200:
-                    return IdType.ITEMID
+                    log(f'recognized {identifier} as an item id')
+                    return RecordIdKind.ITEMID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
-            response = self._folio('get', f'/instance-storage/instances/{identifier}')
+            response = self._folio('get', f'/instance-storage/instances/{identifier}?limit=0')
             if response:
                 if response.status_code == 200:
-                    return IdType.INSTANCEID
+                    log(f'recognized {identifier} as an instance id')
+                    return RecordIdKind.INSTANCEID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
-            response = self._folio('get', f'/holdings-storage/holdings/{identifier}')
+            response = self._folio('get', f'/holdings-storage/holdings/{identifier}?limit=0')
             if response:
                 if response.status_code == 200:
-                    return IdType.HOLDINGSID
+                    log(f'recognized {identifier} as a holdings id')
+                    return RecordIdKind.HOLDINGSID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
             # We're out of ideas.
-            return IdType.UNKNOWN
+            return RecordIdKind.UNKNOWN
 
 
-    def record(self, barcode, record_type):
-        if record_type not in _RECORD_ENDPOINTS:
-            raise RuntimeError(f'Unrecognized record_type value {record_type}')
-        key = _RECORD_ENDPOINTS[record_type][0]
-        endpoint = _RECORD_ENDPOINTS[record_type][1].format(barcode)
-
-        def record_as_dict(response):
+    def records(self, identifier, id_type, record_type):
+        def record_list(key, response):
             if not response or not response.text:
-                log(f'FOLIO returned no result for {barcode}')
-                return None
+                log(f'FOLIO returned no result for {identifier}')
+                return []
             data_dict = json.loads(response.text)
-            # Depending on the way we're getting it, the record might be
-            # directly provided or it might be in a list of records.
             if not 'totalRecords' in data_dict:
                 if 'title' in data_dict:
                     # It's a record directly and not a list of records.
-                    return data_dict
+                    return [data_dict]
                 else:
                     raise RuntimeError('Unexpected data returned by FOLIO')
-            elif data_dict['totalRecords'] == 0:
-                log(f'got 0 records for {barcode}')
-                return None
-            elif data_dict['totalRecords'] > 1:
-                total = data_dict['totalRecords']
-                log(f'got {total} records for {barcode}')
-                log(f'using only first value')
-            return data_dict[key][0]
+            log(f'got {data_dict["totalRecords"]} records for {identifier}')
+            return data_dict[key]
 
-        result_dict = self._folio('get', endpoint, record_as_dict)
-        if result_dict and 'id' not in result_dict:
-            # Something's wrong if what we get back doesn't have an 'id' field.
-            raise RuntimeError(f'No id in record returned from {endpoint}')
-        return result_dict
+        if record_type == 'item':
+            data_extractor = partial(record_list, 'items')
+            if id_type == RecordIdKind.ITEMID:
+                endpoint = f'/inventory/items/{identifier}'
+            elif id_type == RecordIdKind.BARCODE:
+                endpoint = f'/inventory/items?query=barcode%3D%3D{identifier}'
+            elif id_type == RecordIdKind.INSTANCEID:
+                endpoint = f'/inventory/items?query=instance.id%3D%3D{identifier}'
+            elif id_type == RecordIdKind.HRID:
+                endpoint = f'/inventory/items?query=instance.hrid%3D%3D{identifier}'
+            elif id_type == RecordIdKind.ACCESSION:
+                inst_id = instance_id_from_accession(identifier)
+                endpoint = f'/inventory/items?query=instance.id%3D%3D{inst_id}'
+            else:
+                raise RuntimeError(f'Unrecognized id_type value {id_type}')
+        elif record_type == 'instance':
+            data_extractor = partial(record_list, 'instances')
+            if id_type == RecordIdKind.INSTANCEID:
+                endpoint = f'/inventory/instances/{identifier}'
+            elif id_type == RecordIdKind.BARCODE:
+                endpoint = f'/inventory/instances?query=item.barcode%3D%3D{identifier}'
+            elif id_type == RecordIdKind.ITEMID:
+                endpoint = f'/inventory/instances?query=item.id%3D%3D{identifier}'
+            elif id_type == RecordIdKind.HRID:
+                endpoint = f'/inventory/instances?query=hrid%3D%3D{identifier}'
+            elif id_type == RecordIdKind.ACCESSION:
+                inst_id = instance_id_from_accession(identifier)
+                endpoint = f'/inventory/instances/{inst_id}'
+            else:
+                raise RuntimeError(f'Unrecognized id_type value {id_type}')
+        else:
+            raise RuntimeError(f'Unrecognized record_type value {record_type}')
+
+        return self._folio('get', endpoint, data_extractor)
+
+
+    def types(self, type_kind):
+        '''Return a list of (name, id) tuples.'''
+        if type_kind not in TypeKind:
+            raise RuntimeError(f'Unknown type kind {type_kind}')
+
+        def result_parser(response):
+            if not response:
+                return {}
+            elif 200 <= response.status_code < 300:
+                data_dict = json.loads(response.text)
+                if 'totalRecords' in data_dict:
+                    key = set(set(data_dict.keys()) - {'totalRecords'}).pop()
+                    return data_dict[key]
+                else:
+                    raise RuntimeError('Unexpected data returned by FOLIO')
+            else:
+                raise RuntimeError('Problem retrieving list of types')
+
+        endpoint = '/' + TypeKind(type_kind).value + '?limit=1000'
+        type_list = self._folio('get', endpoint, result_parser)
+        return [(item['name'], item['id']) for item in type_list]
 
 
     # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
@@ -193,3 +269,13 @@ class Folio():
 
         # return self._folio(op, endpoint, result_parser)
         return self._folio('get', endpoint, result_parser)
+
+
+
+# Misc. utilities
+# .............................................................................
+
+def instance_id_from_accession(an):
+    start = an.find('.')
+    id_part = an[start + 1:]
+    return id_part.replace('.', '-')

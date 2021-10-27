@@ -31,9 +31,10 @@ if __debug__:
 # .............................................................................
 
 JS_CODE = '''
-  function confirm_action(msg) { return confirm(msg); }
-  function confirm_exit() { return confirm("This will exit the application."); }
-  function close_window() { window.close(); }
+  function confirm_action(msg) { return confirm(msg) }
+  function confirm_exit() { return confirm("This will exit the application.") }
+  function close_window() { window.close() }
+  function reload_page() { location.reload() }
 '''
 
 # Hiding the footer is only done because in my environment, the footer causes
@@ -43,6 +44,12 @@ JS_CODE = '''
 CSS_CODE = '''
 footer {
   display: none;
+}
+.markdown-body table {
+  display: inline-table;
+}
+.alert p {
+  margin-bottom: 0
 }
 '''
 
@@ -79,3 +86,7 @@ def quit_app():
         run_js('close_window()')
         wait(0.5)
         os._exit(0)
+
+
+def reload_page():
+    run_js('reload_page()')
