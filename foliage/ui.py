@@ -91,7 +91,7 @@ def alert(text, popup = True):
 def warn(text, popup = True):
     log(f'warning: {text}')
     if popup:
-        toast(text, color = 'warning')
+        toast(text, color = 'warn')
     else:
         width = 79 if len(text) > 75 else (len(text) + 4)
         print(Panel(text, style = Style.parse('yellow'), width = width))
