@@ -83,7 +83,6 @@ class TypeKind(ExtendedEnum):
     NATURE_OF_CONTENT   = 'nature-of-content-terms'
     PROXYFOR            = 'proxiesfor'
     SERVICE_POINT       = 'service-points'
-    SERVICE_POINT_USER  = 'service-point-users'
     SHELF_LOCATION      = 'shelf-locations'
     STATISTICAL_CODE    = 'statistical-code-types'
 
@@ -96,6 +95,39 @@ _MAX_RETRY = 3
 
 # Time between retries, multiplied by retry number.
 _RETRY_TIME_FACTOR = 2
+
+# Keys to look up the name field in id lists.
+NAME_KEYS = {
+    TypeKind.ADDRESS.value             : 'addressType',
+    TypeKind.ALT_TITLE.value           : 'name',
+    TypeKind.CALL_NUMBER.value         : 'name',
+    TypeKind.CLASSIFICATION.value      : 'name',
+    TypeKind.CONTRIBUTOR.value         : 'name',
+    TypeKind.CONTRIBUTOR_NAME.value    : 'name',
+    TypeKind.DEPARTMENT.value          : 'name',
+    TypeKind.GROUP.value               : 'group',
+    TypeKind.HOLDINGS.value            : 'name',
+    TypeKind.HOLDINGS_NOTE.value       : 'name',
+    TypeKind.HOLDINGS_SOURCE.value     : 'name',
+    TypeKind.ID.value                  : 'name',
+    TypeKind.ILL_POLICY.value          : 'name',
+    TypeKind.INSTANCE.value            : 'name',
+    TypeKind.INSTANCE_FORMAT.value     : 'name',
+    TypeKind.INSTANCE_NOTE.value       : 'name',
+    TypeKind.INSTANCE_REL.value        : 'name',
+    TypeKind.INSTANCE_STATUS.value     : 'name',
+    TypeKind.ITEM_NOTE.value           : 'name',
+    TypeKind.ITEM_DAMAGED_STATUS.value : 'name',
+    TypeKind.LOAN.value                : 'name',
+    TypeKind.LOCATION.value            : 'name',
+    TypeKind.MATERIAL.value            : 'name',
+    TypeKind.MODE_OF_ISSUANCE.value    : 'name',
+    TypeKind.NATURE_OF_CONTENT.value   : 'name',
+    TypeKind.PROXYFOR.value            : 'name',
+    TypeKind.SERVICE_POINT.value       : 'name',
+     TypeKind.SHELF_LOCATION.value      : 'name',
+    TypeKind.STATISTICAL_CODE.value    : 'name',
+}
 
 
 # Public class definitions.
@@ -253,7 +285,7 @@ class Folio():
 
         endpoint = '/' + TypeKind(type_kind).value + '?limit=1000'
         type_list = self._folio('get', endpoint, result_parser)
-        name_key = 'group' if type_kind == TypeKind.GROUP.value else 'name'
+        name_key = NAME_KEYS[type_kind] if type_kind in NAME_KEYS else 'name'
         return [(item[name_key], item['id']) for item in type_list]
 
 
