@@ -47,6 +47,7 @@
 </footer>
 
 <script src="{{ base_url }}js/mustache.min.js"></script>  <!--template system-->
+<script src="{{ base_url }}js/prism.min.js"></script>  <!-- markdown code highlight -->
 <script src="{{ base_url }}js/FileSaver.min.js"></script>  <!-- saving files on the client-side -->
 <script src="{{ base_url }}js/jquery.min.js"></script>
 <script src="{{ base_url }}js/popper.min.js"></script>  <!-- tooltip engine -->
