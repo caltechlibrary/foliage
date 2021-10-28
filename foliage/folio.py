@@ -125,7 +125,7 @@ NAME_KEYS = {
     TypeKind.NATURE_OF_CONTENT.value   : 'name',
     TypeKind.PROXYFOR.value            : 'name',
     TypeKind.SERVICE_POINT.value       : 'name',
-     TypeKind.SHELF_LOCATION.value      : 'name',
+    TypeKind.SHELF_LOCATION.value      : 'name',
     TypeKind.STATISTICAL_CODE.value    : 'name',
 }
 
@@ -175,7 +175,7 @@ class Folio():
 
     def record_id_type(self, identifier):
         '''Infer the type of identifier given.'''
-        if isint(identifier):
+        if isint(identifier) and len(identifier) > 7:
             log(f'recognized {identifier} as a barcode')
             return RecordIdKind.BARCODE
         elif identifier.startswith('clc') and '.' in identifier:
@@ -214,7 +214,7 @@ class Folio():
             return RecordIdKind.UNKNOWN
 
 
-    def records(self, identifier, id_type, record_type):
+    def records(self, identifier, id_type, record_type = None):
         def record_list(key, response):
             if not response or not response.text:
                 log(f'FOLIO returned no result for {identifier}')
@@ -229,6 +229,17 @@ class Folio():
             log(f'got {data_dict["totalRecords"]} records for {identifier}')
             return data_dict[key]
 
+        # If we not given an explicit record type to retrieve, return the same
+        # kind implied by the id type.
+        if not record_type:
+            if id_type in [RecordIdKind.ITEMID, RecordIdKind.BARCODE]:
+                record_type = 'item'
+            elif id_type == RecordIdKind.HOLDINGSID:
+                record_type = 'holdings'
+            else:
+                record_type = 'instance'
+
+        # Figure out the appropriate API endpoint.
         if record_type == 'item':
             data_extractor = partial(record_list, 'items')
             if id_type == RecordIdKind.ITEMID:
@@ -236,12 +247,12 @@ class Folio():
             elif id_type == RecordIdKind.BARCODE:
                 endpoint = f'/inventory/items?query=barcode%3D%3D{identifier}'
             elif id_type == RecordIdKind.INSTANCEID:
-                endpoint = f'/inventory/items?query=instance.id%3D%3D{identifier}'
+                endpoint = f'/inventory/items?query=instance.id%3D%3D{identifier}&limit=10000'
             elif id_type == RecordIdKind.HRID:
-                endpoint = f'/inventory/items?query=instance.hrid%3D%3D{identifier}'
+                endpoint = f'/inventory/items?query=instance.hrid%3D%3D{identifier}&limit=10000'
             elif id_type == RecordIdKind.ACCESSION:
                 inst_id = instance_id_from_accession(identifier)
-                endpoint = f'/inventory/items?query=instance.id%3D%3D{inst_id}'
+                endpoint = f'/inventory/items?query=instance.id%3D%3D{inst_id}&limit=10000'
             else:
                 raise RuntimeError(f'Unrecognized id_type value {id_type}')
         elif record_type == 'instance':
@@ -257,6 +268,23 @@ class Folio():
             elif id_type == RecordIdKind.ACCESSION:
                 inst_id = instance_id_from_accession(identifier)
                 endpoint = f'/inventory/instances/{inst_id}'
+            else:
+                raise RuntimeError(f'Unrecognized id_type value {id_type}')
+        elif record_type == 'holdings':
+            data_extractor = partial(record_list, 'holdingsRecords')
+            if id_type == RecordIdKind.HOLDINGSID:
+                endpoint = f'/holdings-storage/holdings/{identifier}'
+            elif id_type == RecordIdKind.INSTANCEID:
+                endpoint = f'/holdings-storage/holdings?query=instanceId%3D%3D{identifier}&limit=10000'
+            elif id_type == RecordIdKind.BARCODE:
+                endpoint = f'/holdings-storage/holdings?query=item.barcode%3D%3D{identifier}'
+            elif id_type == RecordIdKind.ITEMID:
+                endpoint = f'/holdings-storage/holdings?query=item.id%3D%3D{identifier}'
+            elif id_type == RecordIdKind.HRID:
+                endpoint = f'/holdings-storage/holdings?query=hrid%3D%3D{identifier}'
+            elif id_type == RecordIdKind.ACCESSION:
+                inst_id = instance_id_from_accession(identifier)
+                endpoint = f'/holdings-storage/holdings?query=instanceId%3D%3D{inst_id}&limit=10000'
             else:
                 raise RuntimeError(f'Unrecognized id_type value {id_type}')
         else:
@@ -283,7 +311,7 @@ class Folio():
             else:
                 raise RuntimeError('Problem retrieving list of types')
 
-        endpoint = '/' + TypeKind(type_kind).value + '?limit=1000'
+        endpoint = '/' + TypeKind(type_kind).value + '&limit=1000'
         type_list = self._folio('get', endpoint, result_parser)
         name_key = NAME_KEYS[type_kind] if type_kind in NAME_KEYS else 'name'
         return [(item[name_key], item['id']) for item in type_list]
