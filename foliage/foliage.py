@@ -2,7 +2,7 @@
 from   boltons.iterutils import flatten
 import csv
 from   commonpy.data_utils import unique, pluralized
-from   commonpy.file_utils import exists
+from   commonpy.file_utils import exists, readable
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
 from   datetime import datetime as dt
@@ -26,6 +26,7 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
 import re
+import webbrowser
 
 if __debug__:
     from sidetrack import set_debug, log
@@ -37,7 +38,8 @@ from .ui import quit_app, reload_page, alert, warn, confirm, image_data
 # Overall main page structure
 # .............................................................................
 
-def foliage_main_page(backup_dir):
+def foliage_main_page(log_file, backup_dir):
+    log(f'creating index page')
     put_image(image_data('foliage-icon-r.png'), width='90px').style('float: left')
     put_image(image_data('foliage-icon.png'), width='90px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
@@ -53,20 +55,36 @@ def foliage_main_page(backup_dir):
         {'title': 'Show IDs', 'content': list_types_tab()},
         ])
 
+    put_actions('show_log',
+                buttons = [dict(label = 'Show log file', value = 'show_log',
+                                color = 'secondary')]
+                ).style('position: absolute; bottom: -20px; left: 1em; z-index: 2')
+
     put_actions('quit',
                 buttons = [dict(label = 'Quit Foliage', value = 'quit',
                                 color = 'warning')]
-                ).style('position: absolute; bottom: -20px; left: calc(50% - 2.5em); z-index: 2')
+                ).style('position: absolute; bottom: -20px; left: calc(50% - 3.5em); z-index: 2')
 
+    put_actions('show_backups',
+                buttons = [dict(label = 'Show backups', value = 'show_backups',
+                                color = 'secondary')]
+                ).style('position: absolute; bottom: -20px; right: 1em; z-index: 2')
+
+    # Start the infinite loop for processing user input.
+    run_main_loop(log_file, backup_dir)
+
+
+def run_main_loop(log_file, backup_dir):
+    log(f'running main loop')
     folio = Folio()
-
-    log(f'page layout finished; waiting for user input')
     while True:
         event = pin_wait_change('do_list', 'reset_find', 'do_find',
-                                'reset_delete', 'do_delete', 'quit')
+                                'reset_delete', 'do_delete', 'quit',
+                                'show_log', 'show_backups')
         event_type = event['name']
 
         if event_type.startswith('reset'):  # catches all reset_* buttons.
+            log(f'resetting page')
             pin.textbox_find = ''
             pin.textbox_delete = ''
             clear('output')
@@ -75,7 +93,23 @@ def foliage_main_page(backup_dir):
             log(f'quit button clicked')
             quit_app()
 
+        elif event_type == 'show_log':
+            log(f'opening log file')
+            if log_file and exists(log_file):
+                if readable(log_file):
+                    webbrowser.open_new("file://" + log_file)
+                else:
+                    alert(f'Log file is unreadable -- please report this error.')
+            elif not log_file:
+                warn('No log file -- log output is directed to the terminal.')
+
+        elif event_type == 'show_backups':
+            log(f'showing backup directory')
+            webbrowser.open_new("file://" + backup_dir)
+
+
         elif event_type == 'do_list':
+            log(f'listing id types')
             with use_scope('output', clear = True):
                 put_processbar('bar')
                 set_processbar('bar', 1/2)
