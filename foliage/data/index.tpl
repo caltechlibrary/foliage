@@ -85,12 +85,6 @@
             httpPullInterval: parseInt(urlparams.get('_pywebio_http_pull_interval') || 1000)
         },
     });
-
-    function quit_app() {
-        if (confirm("This will exit the application.")) {
-            window.close();
-        }
-    };
 </script>
 {% end %}
 {% if js_code %}
