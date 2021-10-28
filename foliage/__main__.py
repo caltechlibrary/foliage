@@ -17,13 +17,15 @@ if sys.version_info <= (3, 8):
           str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
     exit(1)
 
-from   appdirs import user_log_dir, user_data_dir
+from   appdirs import AppDirs
 from   commonpy.data_utils import timestamp
+from   commonpy.file_utils import writable
 from   commonpy.interrupt import config_interrupt
 from   commonpy.string_utils import antiformat
 from   getpass import getuser
 from   fastnumbers import isint
 import faulthandler
+from   functools import partial
 from   os import makedirs
 from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 import plac
@@ -37,20 +39,27 @@ from   tornado.template import Template
 if __debug__:
     from sidetrack import set_debug, log
 
-from .foliage import foliage
+from .foliage import foliage_main_page
 from .ui import JS_CODE, CSS_CODE, alert, warn
+
+
+# Internal constants.
+# .............................................................................
+
+_DIRS = AppDirs('Foliage', 'CaltechLibrary')
 
 
 # Main program.
 # .............................................................................
 
 @plac.annotations(
+    backup_dir = ('save copies of records in directory "B"',    'option', 'b'),
     port       = ('open browser on port "P" (default: 8080)',   'option', 'p'),
     version    = ('print version info and exit',                'flag',   'V'),
     debug      = ('log debug output to "OUT" ("-" is console)', 'option', '@'),
 )
 
-def main(port = 'P', version = False, debug = 'OUT'):
+def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
     # Set up debug logging as soon as possible --------------------------------
@@ -65,7 +74,7 @@ def main(port = 'P', version = False, debug = 'OUT'):
         warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
     else:
         # Store debug log in user's log directory.
-        log_dir = user_log_dir('Foliage', getuser())
+        log_dir = _DIRS.user_log_dir
         try:
             if not isdir(log_dir):
                 makedirs(log_dir)
@@ -80,6 +89,16 @@ def main(port = 'P', version = False, debug = 'OUT'):
         from foliage import print_version
         print_version()
         exit()
+
+    if backup_dir != 'B':
+        if not exists(backup_dir) or not isdir(backup_dir):
+            alert(f'Backup directory does not exist: {backup_dir}')
+            exit(1)
+        elif not writable(backup_dir):
+            alert(f'Cannot write in backup directory: {backup_dir}')
+            exit(1)
+    else:
+        backup_dir = _DIRS.user_log_dir
 
     if port != 'P' and not isint(port):
         alert(f'Port number value for option -p must be an integer.', False)
@@ -101,6 +120,12 @@ def main(port = 'P', version = False, debug = 'OUT'):
             index_page_template = Template(index_tpl.read())
         pywebio.platform.utils._index_page_tpl = index_page_template
 
+        if not exists(backup_dir):
+            makedirs(backup_dir)
+        log(f'using {backup_dir} for backing up records')
+
+        foliage = partial(foliage_main_page, backup_dir)
+        log(f'starting server')
         start_server(foliage, port = port, auto_open_webbrowser = True,
                      debug = (debug != 'OUT'))
     except Exception as ex:

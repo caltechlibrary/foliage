@@ -5,7 +5,10 @@ from   commonpy.data_utils import unique, pluralized
 from   commonpy.file_utils import exists
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
+from   datetime import datetime as dt
+from   dateutil import tz
 from   functools import partial
+from   getpass import getuser
 import json
 import os
 from   os.path import exists, dirname, join, basename, abspath
@@ -34,7 +37,7 @@ from .ui import quit_app, reload_page, alert, warn, confirm
 # Overall main page structure
 # .............................................................................
 
-def foliage():
+def foliage_main_page(backup_dir):
     put_image(logo_image(), width='90px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
     put_html('<div class="text-muted font-italic font-weight-light">'
@@ -159,6 +162,7 @@ def foliage():
                     if not records:
                         put_error('Could not find a record for {id_type.value} {id}.')
                         continue
+                    backup_record(records[0], backup_dir)
                     id = records[0]['id']
                     (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
                     if success:
@@ -295,3 +299,12 @@ def unique_identifiers(text):
     lines = text.splitlines()
     identifiers = flatten(re.split(r'\s+|,+', line) for line in lines)
     return unique(filter(None, identifiers))
+
+
+def backup_record(record, backup_dir):
+    timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
+    id = record['id']
+    file = join(backup_dir, id + '.' + timestamp + '.json')
+    with open(file, 'w') as f:
+        log(f'backing up record {id} to {file}')
+        json.dump(record, f, indent = 2)
