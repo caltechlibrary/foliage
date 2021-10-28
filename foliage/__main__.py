@@ -17,11 +17,15 @@ if sys.version_info <= (3, 8):
           str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
     exit(1)
 
+from   appdirs import user_log_dir, user_data_dir
 from   commonpy.data_utils import timestamp
 from   commonpy.interrupt import config_interrupt
 from   commonpy.string_utils import antiformat
+from   getpass import getuser
 from   fastnumbers import isint
-from   os.path import exists, dirname, join, basename, abspath, realpath
+import faulthandler
+from   os import makedirs
+from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 import plac
 import pywebio
 # Default server is tornado, and tornado mucks with logging.
@@ -49,17 +53,26 @@ from .ui import JS_CODE, CSS_CODE, alert, warn
 def main(port = 'P', version = False, debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
-    # Set up debug logging as soon as possible, if requested ------------------
+    # Set up debug logging as soon as possible --------------------------------
 
     if debug != 'OUT':
         set_debug(True, debug)
-        import faulthandler
         faulthandler.enable()
         if not sys.platform.startswith('win'): # This part doesn't work on win.
             import signal
             from boltons.debugutils import pdb_on_signal
             pdb_on_signal(signal.SIGUSR1)
-            warn('Debug mode on. Use "kill -USR1 pid" to drop into pdb.', False)
+        warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
+    else:
+        # Store debug log in user's log directory.
+        log_dir = user_log_dir('Foliage', getuser())
+        try:
+            if not isdir(log_dir):
+                makedirs(log_dir)
+            set_debug(True, join(log_dir, 'Foliage.log'))
+        except Exception as ex:
+            set_debug(True)
+            log(f'Unable to create directory for log file in {log_dir}')
 
     # Preprocess arguments and handle early exits -----------------------------
 
