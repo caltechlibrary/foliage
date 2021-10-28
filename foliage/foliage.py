@@ -194,7 +194,7 @@ def run_main_loop(log_file, backup_dir):
                         break
                     set_processbar('bar', index/steps)
                     if not records:
-                        put_error('Could not find a record for {id_type.value} {id}.')
+                        put_error(f'Could not find a record for {id_type.value} {id}.')
                         continue
                     backup_record(records[0], backup_dir)
                     id = records[0]['id']
@@ -270,8 +270,11 @@ def find_records_tab():
 
 def delete_records_tab():
     return [
-        put_markdown('Write one or more barcode, HRID, item id, or instance '
-                     + ' id in the field below to delete the FOLIO records.'),
+        put_markdown('Write one or more barcode, HRID, item id, or instance id'
+                     + ' in the field below, then press he button to delete'
+                     + ' the corresponding FOLIO records. Note that **deleting'
+                     + ' instance records will cause multiple holdings and item'
+                     + ' records to be deleted**. Handle with extreme caution!'),
         put_textarea('textbox_delete', rows = 4),
         put_radio('select_kind_delete', inline = True,
                   label = 'Type of record to delete:',
