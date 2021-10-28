@@ -59,9 +59,9 @@ body {
 footer {
     position: absolute;
     width: 100%;
-    bottom: -2px;
+    bottom: -1px;
     left: 0;
-    height: 55px !important;
+    height: 58px !important;
 }
 .markdown-body table {
     display: inline-table;

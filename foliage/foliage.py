@@ -45,9 +45,9 @@ def foliage():
              '</div>')
     put_tabs([
         {'title': 'Look up records', 'content': find_records_tab()},
-        {'title': 'Show ID types', 'content': list_types_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
+        {'title': 'Show ID types', 'content': list_types_tab()},
         ])
 
     put_actions('quit',
@@ -184,7 +184,7 @@ def logo_image():
 
 def list_types_tab():
     return [
-        put_grid([[put_markdown('Select a FOLIO type to list:'),
+        put_grid([[put_markdown('Select a FOLIO type to list:').style('margin-top: 5px'),
                    put_select('list_type',
                               options=[
                                   {'label': 'Address types', 'value': TypeKind.ADDRESS.value},
