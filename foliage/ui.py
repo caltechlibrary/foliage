@@ -32,7 +32,7 @@ if __debug__:
 
 JS_CODE = '''
   function confirm_action(msg) { return confirm(msg) }
-  function confirm_exit() { return confirm("This will exit Foliage.") }
+  function confirm_exit() { return confirm("This will exit Foliage. Proceed?") }
   function close_window() { window.close() }
   function reload_page() { location.reload() }
 '''
