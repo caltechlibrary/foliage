@@ -292,13 +292,13 @@ class Folio():
     # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
 
     def operation(self, op, endpoint):
-        '''Do 'op' on 'endpoint' and return a tuple (success, error_msg).'''
+        '''Do 'op' on 'endpoint' and return a tuple (success, response text).'''
 
         def result_parser(response):
             if not response:
                 return (False, '')
             elif 200 <= response.status_code < 300:
-                return (True, None)
+                return (True, response.text)
             elif response.status_code == 400:
                 # "Bad request, e.g. malformed request body or query
                 # parameter. Details of the error (e.g. name of the parameter
@@ -319,7 +319,8 @@ class Folio():
                 return (False, response.text)
 
         # return self._folio(op, endpoint, result_parser)
-        return self._folio('get', endpoint, result_parser)
+        log(f'issuing operation {op} on {endpoint}')
+        return self._folio(op, endpoint, result_parser)
 
 
 

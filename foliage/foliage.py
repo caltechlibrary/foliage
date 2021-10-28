@@ -104,8 +104,8 @@ def foliage():
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
-                        put_error(f'Could not recognize "{id}" as a barcode,'
-                                  + ' hrid, item id, instance id,'
+                        put_error(f'Could not recognize {id} as an existing'
+                                  + ' barcode, hrid, item id, instance id,'
                                   + ' or accession number.')
                         set_processbar('bar', index/steps)
                         continue
@@ -144,7 +144,7 @@ def foliage():
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
-                        put_error(f'Could not recognize "{id}" as a'
+                        put_error(f'Could not recognize {id} as an existing'
                                   + ' barcode, hrid, item id, instance id,'
                                   + ' or accession number.')
                         set_processbar('bar', index/steps)
@@ -157,12 +157,10 @@ def foliage():
                         break
                     set_processbar('bar', index/steps)
                     if not records:
-                        put_error('Could not find a record for'
-                                  + f' {id_type.value} "{id}".')
+                        put_error('Could not find a record for {id_type.value} {id}.')
                         continue
                     id = records[0]['id']
-                    #(success, error) = folio.operation('delete', f'/inventory/items/{id}')
-                    (success, error) = True, None
+                    (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
                     if success:
                         put_success(f'Deleted {record_kind} record for {id}.')
                     else:
