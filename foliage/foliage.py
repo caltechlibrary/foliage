@@ -19,7 +19,7 @@ from   pywebio.input import NUMBER, TEXT
 from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import toast, popup, close_popup, put_buttons, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
-from   pywebio.output import put_success, put_table, put_grid, span
+from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code
 from   pywebio.output import put_processbar, set_processbar, put_loading
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
@@ -51,7 +51,7 @@ def foliage_main_page(log_file, backup_dir):
     put_tabs([
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
-        {'title': 'Change records', 'content': change_records_tab()},
+#        {'title': 'Change records', 'content': change_records_tab()},
         {'title': 'Show IDs', 'content': list_types_tab()},
         ])
 
@@ -186,24 +186,21 @@ def run_main_loop(log_file, backup_dir):
                                   + ' or accession number.')
                         set_processbar('bar', index/steps)
                         continue
-                    record_kind = pin.select_kind_find
                     try:
-                        records = folio.records(id, id_type, record_kind)
+                        record = folio.records(id, id_type)[0]
                     except Exception as ex:
                         alert(f'Error: {antiformat(str(ex))}')
                         break
                     set_processbar('bar', index/steps)
-                    if not records:
+                    if not record:
                         put_error(f'Could not find a record for {id_type.value} {id}.')
                         continue
-                    backup_record(records[0], backup_dir)
-                    id = records[0]['id']
-                    (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
-                    if success:
-                        put_success(f'Deleted {record_kind} record for {id}.')
+                    backup_record(record, backup_dir)
+                    if id_type in [RecordIdKind.ITEMID, RecordIdKind.BARCODE]:
+                        delete_item(folio, record, id)
                     else:
-                        put_error(f'Error: {error}')
-
+                        put_warning('Instance record deletion is currently turned off.')
+                        # delete_instance(folio, record, id)
 
 # permanent loan type
 # note type
@@ -276,10 +273,6 @@ def delete_records_tab():
                      + ' instance records will cause multiple holdings and item'
                      + ' records to be deleted**. Handle with extreme caution!'),
         put_textarea('textbox_delete', rows = 4),
-        put_radio('select_kind_delete', inline = True,
-                  label = 'Type of record to delete:',
-                  options = [ ('Item', 'item', True),
-                              ('Instance', 'instance')]),
         put_row([
             put_actions('do_delete',
                         buttons = [dict(label = 'Delete FOLIO records',
@@ -335,3 +328,59 @@ def backup_record(record, backup_dir):
     with open(file, 'w') as f:
         log(f'backing up record {id} to {file}')
         json.dump(record, f, indent = 2)
+
+
+def delete_item(folio, record, for_id = None):
+    id = record['id']
+    (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
+    if success:
+        why = " (for request to delete " + (for_id if for_id else '') + ")"
+        put_success(f'Deleted item record {id}{why}')
+    else:
+        put_error(f'Error: {msg}')
+
+
+def delete_holdings(folio, record, for_id = None):
+    id = record['id']
+    (success, msg) = folio.operation('delete', f'/holdings-storage/holdings/{id}')
+    if success:
+        why = " (for request to delete " + (for_id if for_id else '') + ")"
+        put_success(f'Deleted holdings record {id}{why}.')
+    else:
+        put_error(f'Error: {msg}')
+
+
+# The following is based on
+# https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
+
+def delete_instance(folio, record, for_id = None):
+    inst_id = record['id']
+
+    # Starting at the bottom, delete the item records.
+    items = folio.records(inst_id, RecordIdKind.INSTANCEID, RecordKind.ITEM.value)
+    put_warning(f'Deleting {pluralized("item record", items, True)} due to'
+                + f' the deletion of instance record {inst_id}.')
+    for item in items:
+        delete_item(folio, item, for_id)
+
+    # Now delete the holdings records.
+    holdings = folio.records(inst_id, RecordIdKind.INSTANCEID, RecordKind.HOLDINGS.value)
+    put_warning(f'Deleting {pluralized("holdings record", holdings, True)} due to'
+                + f' the deletion of instance record {inst_id}.')
+    for hr in holdings:
+        delete_holdings(folio, hr, for_id)
+
+    # Finally, the instance record. There are two parts to this.
+    (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}/source-record')
+    if success:
+        (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}')
+        if success:
+            why = " (for request to delete " + (for_id if for_id else '') + ")"
+            put_info(f'Deleted instance record {inst_id}{why}.')
+        else:
+            put_error(f'Error: {msg}')
+    else:
+        put_error(f'Error: {msg}')
+
+    # FIXME
+    # Need to deal with EDS update.
