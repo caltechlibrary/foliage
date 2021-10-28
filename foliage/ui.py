@@ -11,6 +11,7 @@ file "LICENSE" for more information.
 
 from   commonpy.interrupt import wait
 import os
+from   os.path import exists, dirname, join, basename, abspath
 import pywebio
 from   pywebio.input import input
 from   pywebio.output import put_text, put_markdown, put_row, put_html, put_error
@@ -111,3 +112,13 @@ def quit_app():
 
 def reload_page():
     run_js('reload_page()')
+
+
+def image_data(file_name):
+    here = dirname(__file__)
+    image_file = join(here, 'data', file_name)
+    if exists(image_file):
+        with open(image_file, 'rb') as f:
+            return f.read()
+    log(f'could not find image in {image_file}')
+    return b''

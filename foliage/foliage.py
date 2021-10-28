@@ -31,26 +31,26 @@ if __debug__:
     from sidetrack import set_debug, log
 
 from .folio import Folio, RecordKind, RecordIdKind, TypeKind
-from .ui import quit_app, reload_page, alert, warn, confirm
+from .ui import quit_app, reload_page, alert, warn, confirm, image_data
 
 
 # Overall main page structure
 # .............................................................................
 
 def foliage_main_page(backup_dir):
-    put_image(logo_image(), width='90px').style('float: right')
+    put_image(image_data('foliage-icon-r.png'), width='90px').style('float: left')
+    put_image(image_data('foliage-icon.png'), width='90px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
-    put_html('<div class="text-muted font-italic font-weight-light">'
-             ' Foliage ("FOLIo chAnGe Editor") is an application that runs'
-             ' on your computer and lets you perform bulk operations in'
-             ' FOLIO over the network. Foliage uses this web page as a way'
-             ' of implementing its user interface.'
-             '</div>')
+    put_html('<div class="font-italic text-muted font-weight-light text-center mx-auto">'
+             ' Foliage ("FOLIo chAnGe Editor") is an app that runs'
+             ' on your computer and lets you perform FOLIO operations over'
+             ' the network. This web page is its user interface.'
+             '</div>').style('width: 85%')
     put_tabs([
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
-        {'title': 'Show ID types', 'content': list_types_tab()},
+        {'title': 'Show IDs', 'content': list_types_tab()},
         ])
 
     put_actions('quit',
@@ -169,16 +169,6 @@ def foliage_main_page(backup_dir):
                         put_success(f'Deleted {record_kind} record for {id}.')
                     else:
                         put_error(f'Error: {error}')
-
-
-def logo_image():
-    here = dirname(__file__)
-    image_file = join(here, 'data', 'foliage-icon.png')
-    if exists(image_file):
-        with open(image_file, 'rb') as f:
-            return f.read()
-    else:
-        log(f'could not find logo image in {image_file}')
 
 
 # permanent loan type
