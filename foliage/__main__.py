@@ -46,7 +46,7 @@ from .ui import JS_CODE, CSS_CODE, alert, warn
 # Internal constants.
 # .............................................................................
 
-_DIRS = AppDirs('Foliage', 'CaltechLibrary')
+_APP_DIRS = AppDirs('Foliage', 'CaltechLibrary')
 
 
 # Main program.
@@ -64,24 +64,40 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
 
     # Set up debug logging as soon as possible --------------------------------
 
-    if debug != 'OUT':
-        set_debug(True, debug)
-        faulthandler.enable()
-        if not sys.platform.startswith('win'): # This part doesn't work on win.
-            import signal
-            from boltons.debugutils import pdb_on_signal
-            pdb_on_signal(signal.SIGUSR1)
-        warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
-    else:
-        # Store debug log in user's log directory.
-        log_dir = _DIRS.user_log_dir
-        try:
-            if not isdir(log_dir):
+    log_file = None
+    try:
+        if debug == 'OUT':
+            # Store debug log in user's log directory.
+            log_dir = _APP_DIRS.user_log_dir
+            log_file = join(log_dir, 'log.txt')
+            if not exists(log_dir):
                 makedirs(log_dir)
-            set_debug(True, join(log_dir, 'Foliage.log'))
-        except Exception as ex:
-            set_debug(True)
-            log(f'Unable to create directory for log file in {log_dir}')
+            with open(log_file, 'w'):
+                # Empty out the file for each new run.
+                pass
+        else:
+            if debug != '-':
+                log_file = debug
+                if not writable(dirname(log_file)):
+                    alert(f'Can\'t write debug ouput file in {dirname(debug)}', False)
+                    exit()
+            faulthandler.enable()
+            if not sys.platform.startswith('win'): # This part doesn't work on win.
+                import signal
+                from boltons.debugutils import pdb_on_signal
+                pdb_on_signal(signal.SIGUSR1)
+            warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
+        set_debug(True, log_file or '-')
+    except PermissionError:
+        warn(f'Permission denied trying to create log file {log_file}', False)
+    except FileNotFoundError:
+        warn(f'Cannot write debug output file {log_file}', False)
+    except KeyboardInterrupt:
+        # Need to catch this separately or else it will end up ignored by
+        # virtue of the next clause catching any Exception.
+        exit()
+    except Exception as ex:
+        warn(f'Unable to create log file {log_file}', False)
 
     # Preprocess arguments and handle early exits -----------------------------
 
@@ -92,13 +108,13 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
 
     if backup_dir != 'B':
         if not exists(backup_dir) or not isdir(backup_dir):
-            alert(f'Backup directory does not exist: {backup_dir}')
+            alert(f'Directory for -b does not exist: {backup_dir}')
             exit(1)
         elif not writable(backup_dir):
             alert(f'Cannot write in backup directory: {backup_dir}')
             exit(1)
     else:
-        backup_dir = _DIRS.user_log_dir
+        backup_dir = _APP_DIRS.user_log_dir
 
     if port != 'P' and not isint(port):
         alert(f'Port number value for option -p must be an integer.', False)
@@ -114,7 +130,7 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
 
         # This uses a custom index page template created by copying the PyWebIO
         # default and modifying it. Among other things, the following were
-        # removed because Foliage doesn't need them: Prism, Plotly, Codemirror.
+        # removed because Foliage doesn't need them: Plotly, Codemirror.
         here = realpath(dirname(__file__))
         with open(join(here, 'data', 'index.tpl')) as index_tpl:
             index_page_template = Template(index_tpl.read())
@@ -122,12 +138,16 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
 
         if not exists(backup_dir):
             makedirs(backup_dir)
-        log(f'using {backup_dir} for backing up records')
 
-        foliage = partial(foliage_main_page, backup_dir)
+        log(f'using {backup_dir} for backing up records')
+        log(f'debug log output is going to {log_file if log_file else "stdout"}')
         log(f'starting server')
+
+        foliage = partial(foliage_main_page, log_file, backup_dir)
         start_server(foliage, port = port, auto_open_webbrowser = True,
                      debug = (debug != 'OUT'))
+    except KeyboardInterrupt as ex:
+        pass
     except Exception as ex:
         exception = sys.exc_info()
 
@@ -145,6 +165,7 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
 
     # And exit ----------------------------------------------------------------
 
+    log('Exiting normally.')
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
 
 
