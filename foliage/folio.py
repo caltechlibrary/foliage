@@ -311,7 +311,7 @@ class Folio():
             else:
                 raise RuntimeError('Problem retrieving list of types')
 
-        endpoint = '/' + TypeKind(type_kind).value + '&limit=1000'
+        endpoint = '/' + type_kind + '?limit=1000'
         type_list = self._folio('get', endpoint, result_parser)
         name_key = NAME_KEYS[type_kind] if type_kind in NAME_KEYS else 'name'
         return [(item[name_key], item['id']) for item in type_list]
