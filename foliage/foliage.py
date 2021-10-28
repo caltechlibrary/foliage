@@ -80,9 +80,11 @@ def foliage():
                 try:
                     types = folio.types(pin.list_type)
                 except Exception as ex:
-                    alert(f'Error: {antiformat(str(ex))}')
+                    put_html('<br>')
+                    put_error(f'Error: {antiformat(str(ex))}')
                     continue
-                set_processbar('bar', 2/2)
+                finally:
+                    set_processbar('bar', 2/2)
                 put_html('<br>')
                 put_markdown(f'There are {len(types)} possible values for {type_name}:')
                 put_table(sorted([[item[0], item[1]] for item in types]),
@@ -112,7 +114,7 @@ def foliage():
                     try:
                         records = folio.records(id, id_type, record_kind)
                     except Exception as ex:
-                        alert(f'Error: {antiformat(str(ex))}')
+                        put_error(f'Error: {antiformat(str(ex))}')
                         break
                     set_processbar('bar', index/steps)
                     this = pluralized(record_kind + " record", records, True)
@@ -210,7 +212,6 @@ def list_types_tab():
                                   {'label': 'Material types', 'value': TypeKind.MATERIAL.value},
                                   {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT.value},
                                   {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT.value},
-                                  {'label': 'Service point user types', 'value': TypeKind.SERVICE_POINT_USER.value},
                                   {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION.value},
                                   {'label': 'Statistical code types', 'value': TypeKind.STATISTICAL_CODE.value},
                               ]),
