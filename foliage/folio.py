@@ -245,14 +245,14 @@ class Folio():
             if id_type == RecordIdKind.ITEMID:
                 endpoint = f'/inventory/items/{identifier}'
             elif id_type == RecordIdKind.BARCODE:
-                endpoint = f'/inventory/items?query=barcode%3D%3D{identifier}'
+                endpoint = f'/inventory/items?query=barcode=={identifier}'
             elif id_type == RecordIdKind.INSTANCEID:
-                endpoint = f'/inventory/items?query=instance.id%3D%3D{identifier}&limit=10000'
+                endpoint = f'/inventory/items?query=instance.id=={identifier}&limit=10000'
             elif id_type == RecordIdKind.HRID:
-                endpoint = f'/inventory/items?query=instance.hrid%3D%3D{identifier}&limit=10000'
+                endpoint = f'/inventory/items?query=instance.hrid=={identifier}&limit=10000'
             elif id_type == RecordIdKind.ACCESSION:
                 inst_id = instance_id_from_accession(identifier)
-                endpoint = f'/inventory/items?query=instance.id%3D%3D{inst_id}&limit=10000'
+                endpoint = f'/inventory/items?query=instance.id=={inst_id}&limit=10000'
             else:
                 raise RuntimeError(f'Unrecognized id_type value {id_type}')
         elif record_type == 'instance':
@@ -260,11 +260,11 @@ class Folio():
             if id_type == RecordIdKind.INSTANCEID:
                 endpoint = f'/inventory/instances/{identifier}'
             elif id_type == RecordIdKind.BARCODE:
-                endpoint = f'/inventory/instances?query=item.barcode%3D%3D{identifier}'
+                endpoint = f'/inventory/instances?query=item.barcode=={identifier}'
             elif id_type == RecordIdKind.ITEMID:
-                endpoint = f'/inventory/instances?query=item.id%3D%3D{identifier}'
+                endpoint = f'/inventory/instances?query=item.id=={identifier}'
             elif id_type == RecordIdKind.HRID:
-                endpoint = f'/inventory/instances?query=hrid%3D%3D{identifier}'
+                endpoint = f'/inventory/instances?query=hrid=={identifier}'
             elif id_type == RecordIdKind.ACCESSION:
                 inst_id = instance_id_from_accession(identifier)
                 endpoint = f'/inventory/instances/{inst_id}'
@@ -275,16 +275,16 @@ class Folio():
             if id_type == RecordIdKind.HOLDINGSID:
                 endpoint = f'/holdings-storage/holdings/{identifier}'
             elif id_type == RecordIdKind.INSTANCEID:
-                endpoint = f'/holdings-storage/holdings?query=instanceId%3D%3D{identifier}&limit=10000'
+                endpoint = f'/holdings-storage/holdings?query=instanceId=={identifier}&limit=10000'
             elif id_type == RecordIdKind.BARCODE:
-                endpoint = f'/holdings-storage/holdings?query=item.barcode%3D%3D{identifier}'
+                endpoint = f'/holdings-storage/holdings?query=item.barcode=={identifier}'
             elif id_type == RecordIdKind.ITEMID:
-                endpoint = f'/holdings-storage/holdings?query=item.id%3D%3D{identifier}'
+                endpoint = f'/holdings-storage/holdings?query=item.id=={identifier}'
             elif id_type == RecordIdKind.HRID:
-                endpoint = f'/holdings-storage/holdings?query=hrid%3D%3D{identifier}'
+                endpoint = f'/holdings-storage/holdings?query=hrid=={identifier}'
             elif id_type == RecordIdKind.ACCESSION:
                 inst_id = instance_id_from_accession(identifier)
-                endpoint = f'/holdings-storage/holdings?query=instanceId%3D%3D{inst_id}&limit=10000'
+                endpoint = f'/holdings-storage/holdings?query=instanceId=={inst_id}&limit=10000'
             else:
                 raise RuntimeError(f'Unrecognized id_type value {id_type}')
         else:
