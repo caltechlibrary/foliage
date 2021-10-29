@@ -156,13 +156,15 @@ def run_main_loop(log_file, backup_dir):
                     set_processbar('bar', index/steps)
                     this = pluralized(record_kind + " record", records, True)
                     how = f'by searching for {id_type.value} {id}'
+                    if not records or len(records) == 0:
+                        put_error(f'No record(s) for {id_type.value} "{id}".')
+                        continue
                     put_success(f'Found {this} {how}').style('text-align: center')
                     show_index = (len(records) > 1)
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
                                      index, show_index, pin.show_raw)
-                    if not records:
-                        put_error(f'No record(s) for {id_type.value} "{id}".')
+
 
         elif event_type == 'do_delete':
             log(f'do_delete invoked')
