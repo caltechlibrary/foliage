@@ -21,7 +21,7 @@ from   pywebio.output import toast, popup, close_popup, put_buttons, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code
-from   pywebio.output import put_processbar, set_processbar, put_loading
+from   pywebio.output import put_processbar, set_processbar, put_loading, span
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
@@ -298,23 +298,25 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
     if show_raw:
         put_code(pformat(record, indent = 2))
     elif record_kind == 'item':
+        # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
             ['Title', record['title']],
             ['Call number', record['callNumber']],
-            ['Effective location', record['effectiveLocation']['name']],
-            ['Permanent location', record['permanentLocation']['name']],
+            ['Effective location', record['effectiveLocation']['name']],
+            ['Permanent location', record['permanentLocation']['name']],
             ['Status', record['status']['name']],
             ['Tags', ', '.join(tags for tags in record['tags']['tagList'])],
             ['Notes', '\n'.join(record['notes'])],
             ['HRID', record['hrid']],
-            [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em')
+            [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em; font-size: 90%')
     elif record_kind == 'instance':
+        # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
             ['Title', record['title']],
-            ['Call number', record['classifications'][0]['classificationNumber']],
+            ['Call number', record['classifications'][0]['classificationNumber']],
             ['Tags', ', '.join(tags for tags in record['tags']['tagList'])],
             ['HRID', record['hrid']],
-            [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em')
+            [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em; font-size: 90%')
 
 
 def unique_identifiers(text):
