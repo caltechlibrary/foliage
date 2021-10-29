@@ -61,8 +61,8 @@ footer {
     position: absolute;
     width: 100%;
     bottom: -1px;
-    left: 0;
     height: 58px !important;
+    background-color: white !important;
 }
 .markdown-body table {
     display: inline-table;

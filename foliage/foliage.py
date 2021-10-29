@@ -57,23 +57,14 @@ def foliage_main_page(log_file, backup_dir, demo_mode):
         {'title': 'Delete records', 'content': delete_records_tab()},
 #        {'title': 'Change records', 'content': change_records_tab()},
         {'title': 'Show IDs', 'content': list_types_tab()},
+        {'title': 'Other', 'content': other_tab()},
         ])
-
-    put_actions('show_log',
-                buttons = [dict(label = 'Show log file', value = 'show_log',
-                                color = 'secondary')]
-                ).style('position: absolute; bottom: -20px; left: 1em; z-index: 2')
 
     put_actions('quit',
                 buttons = [dict(label = 'Quit Foliage', value = 'quit',
                                 color = 'warning')]
-                ).style('position: absolute; bottom: -20px;'
+                ).style('position: absolute; bottom: -10px;'
                         + 'left: calc(50% - 3.5em); z-index: 2')
-
-    put_actions('show_backups',
-                buttons = [dict(label = 'Show backups', value = 'show_backups',
-                                color = 'secondary')]
-                ).style('position: absolute; bottom: -20px; right: 1em; z-index: 2')
 
     # Start the infinite loop for processing user input.
     run_main_loop(log_file, backup_dir, demo_mode)
@@ -194,7 +185,8 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                         set_processbar('bar', index/steps)
                         continue
                     try:
-                        record = folio.records(id, id_type)[0]
+                        records = folio.records(id, id_type)
+                        record = records[0] if records else None
                     except Exception as ex:
                         alert(f'Error: {antiformat(str(ex))}')
                         break
@@ -204,7 +196,10 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                         continue
                     backup_record(record, backup_dir)
                     if id_type in [RecordIdKind.ITEMID, RecordIdKind.BARCODE]:
-                        delete_item(folio, record, id)
+                        if demo_mode:
+                            put_success(f'Deleted item record {id}')
+                        else:
+                            delete_item(folio, record, id)
                     else:
                         put_warning('Instance record deletion is currently turned off.')
                         # delete_instance(folio, record, id)
@@ -268,7 +263,7 @@ def find_records_tab():
             put_text(''),    # Adds a column, pushing next item to the right.
             put_actions('reset_find',
                         buttons = [dict(label = 'Reset', value = 'reset',
-                                        color = 'info')]).style('text-align: right')
+                                        color = 'secondary')]).style('text-align: right')
         ])
     ]
 
@@ -287,13 +282,39 @@ def delete_records_tab():
             put_text(''),    # Adds a column, pushing next item to the right.
             put_actions('reset_delete',
                         buttons = [dict(label = 'Reset', value = 'reset',
-                                        color = 'info')]).style('text-align: right')
+                                        color = 'secondary')]).style('text-align: right')
         ])
     ]
 
 
 def change_records_tab():
     return 'Forthcoming ...'
+
+
+def other_tab():
+    return [
+        put_grid([[
+            put_markdown('When performing destructive operations, Foliage'
+                         + ' saves a copy of records before modifying them.'
+                         + ' Click this button to open the folder containing'
+                         + ' the files. A given record may have multiple backup'
+                         + ' files with different time stamps.'),
+            put_actions('show_backups',
+                        buttons = [dict(label = 'Show backups',
+                                        value = 'show_backups',
+                                        color = 'info')]
+                        ).style('margin-left: 10px; text-align: left'),
+        ], [
+            put_markdown('The debug log file contains a detailed trace of'
+                         + ' every action that Foliage takes. This can be'
+                         + ' useful when trying to resolve bugs and other'
+                         + ' problems.'),
+            put_actions('show_log',
+                        buttons = [dict(label = 'Show log file', value = 'show_log',
+                                        color = 'info')]
+                        ).style('margin-left: 10px; text-align: left'),
+        ]], cell_widths = 'auto 150px'),
+    ]
 
 
 def print_record(record, record_kind, identifier, id_type, index, show_index, show_raw):
@@ -340,6 +361,7 @@ def backup_record(record, backup_dir):
 
 
 def delete_item(folio, record, for_id = None):
+    import pdb; pdb.set_trace()
     id = record['id']
     (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
     if success:
