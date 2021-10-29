@@ -53,51 +53,20 @@ _APP_DIRS = AppDirs('Foliage', 'CaltechLibrary')
 # .............................................................................
 
 @plac.annotations(
-    backup_dir = ('save copies of records in directory "B"',    'option', 'b'),
-    port       = ('open browser on port "P" (default: 8080)',   'option', 'p'),
-    version    = ('print version info and exit',                'flag',   'V'),
-    debug      = ('log debug output to "OUT" ("-" is console)', 'option', '@'),
+    backup_dir = ('save copies of records in directory "B"',          'option', 'b'),
+    demo_mode  = ('demo mode: don\'t perform destructive operations', 'flag',   'd'),
+    port       = ('open browser on port "P" (default: 8080)',         'option', 'p'),
+    version    = ('print version info and exit',                      'flag',   'V'),
+    debug      = ('log debug output to "OUT" ("-" is console)',       'option', '@'),
 )
 
-def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
+def main(backup_dir = 'B', demo_mode = False, port = 'P',
+         version = False, debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
     # Set up debug logging as soon as possible --------------------------------
 
-    log_file = None
-    try:
-        if debug == 'OUT':
-            # Store debug log in user's log directory.
-            log_dir = _APP_DIRS.user_log_dir
-            log_file = join(log_dir, 'log.txt')
-            if not exists(log_dir):
-                makedirs(log_dir)
-            with open(log_file, 'w'):
-                # Empty out the file for each new run.
-                pass
-        else:
-            if debug != '-':
-                log_file = debug
-                if not writable(dirname(log_file)):
-                    alert(f'Can\'t write debug ouput file in {dirname(debug)}', False)
-                    exit()
-            faulthandler.enable()
-            if not sys.platform.startswith('win'): # This part doesn't work on win.
-                import signal
-                from boltons.debugutils import pdb_on_signal
-                pdb_on_signal(signal.SIGUSR1)
-            warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
-        set_debug(True, log_file or '-')
-    except PermissionError:
-        warn(f'Permission denied trying to create log file {log_file}', False)
-    except FileNotFoundError:
-        warn(f'Cannot write debug output file {log_file}', False)
-    except KeyboardInterrupt:
-        # Need to catch this separately or else it will end up ignored by
-        # virtue of the next clause catching any Exception.
-        exit()
-    except Exception as ex:
-        warn(f'Unable to create log file {log_file}', False)
+    debug_mode, log_file = _debug_config(debug)
 
     # Preprocess arguments and handle early exits -----------------------------
 
@@ -126,6 +95,9 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
     log('='*8 + f' started {timestamp()} ' + '='*8)
     exception = None
     try:
+        if not exists(backup_dir):
+            makedirs(backup_dir)
+
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
 
         # This uses a custom index page template created by copying the PyWebIO
@@ -136,17 +108,19 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
             index_page_template = Template(index_tpl.read())
         pywebio.platform.utils._index_page_tpl = index_page_template
 
-        if not exists(backup_dir):
-            makedirs(backup_dir)
-
         log(f'using {backup_dir} for backing up records')
         log(f'debug log output is going to {log_file if log_file else "stdout"}')
         log(f'starting server')
 
-        foliage = partial(foliage_main_page, log_file, backup_dir)
+        if demo_mode:
+            warn('Demo mode is on: changes to FOLIO will not be made', False)
+
+        foliage = partial(foliage_main_page, log_file, backup_dir, demo_mode)
         start_server(foliage, port = port, auto_open_webbrowser = True,
-                     debug = (debug != 'OUT'))
+                     debug = debug_mode)
     except KeyboardInterrupt as ex:
+        # Catch it, but don't treat it as an error; just stop execution.
+        log(f'keyboard interrupt received')
         pass
     except Exception as ex:
         exception = sys.exc_info()
@@ -167,6 +141,48 @@ def main(backup_dir = 'B', port = 'P', version = False, debug = 'OUT'):
 
     log('Exiting normally.')
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
+
+
+# Miscellaneous utilities local to this module.
+# .............................................................................
+
+def _debug_config(debug_arg):
+    log_file = None
+    try:
+        if debug_arg == 'OUT':
+            # Store debug log in user's log directory.
+            log_dir = _APP_DIRS.user_log_dir
+            log_file = join(log_dir, 'log.txt')
+            if not exists(log_dir):
+                makedirs(log_dir)
+            with open(log_file, 'w'):
+                # Empty out the file for each new run.
+                pass
+        else:
+            if debug_arg != '-':
+                log_file = debug_arg
+                if not writable(dirname(log_file)):
+                    alert(f'Can\'t write debug ouput in {dirname(debug_arg)}', False)
+                    exit()
+            faulthandler.enable()
+            if not sys.platform.startswith('win'): # This part doesn't work on win.
+                import signal
+                from boltons.debugutils import pdb_on_signal
+                pdb_on_signal(signal.SIGUSR1)
+            warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
+        set_debug(True, log_file or '-')
+    except PermissionError:
+        warn(f'Permission denied trying to create log file {log_file}', False)
+    except FileNotFoundError:
+        warn(f'Cannot write debug output file {log_file}', False)
+    except KeyboardInterrupt:
+        # Need to catch this separately or else it will end up ignored by
+        # virtue of the next clause catching any Exception.
+        exit()
+    except Exception as ex:
+        warn(f'Unable to create log file {log_file}', False)
+
+    return (debug_arg != 'OUT', log_file)
 
 
 # Main entry point.

@@ -38,8 +38,12 @@ from .ui import quit_app, reload_page, alert, warn, confirm, image_data
 # Overall main page structure
 # .............................................................................
 
-def foliage_main_page(log_file, backup_dir):
+def foliage_main_page(log_file, backup_dir, demo_mode):
     log(f'creating index page')
+    if demo_mode:
+        put_warning('Demo mode in effect').style(
+            'position: absolute; left: calc(50% - 5.5em); width: 11em;'
+            + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
     put_image(image_data('foliage-icon-r.png'), width='90px').style('float: left')
     put_image(image_data('foliage-icon.png'), width='90px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
@@ -63,7 +67,8 @@ def foliage_main_page(log_file, backup_dir):
     put_actions('quit',
                 buttons = [dict(label = 'Quit Foliage', value = 'quit',
                                 color = 'warning')]
-                ).style('position: absolute; bottom: -20px; left: calc(50% - 3.5em); z-index: 2')
+                ).style('position: absolute; bottom: -20px;'
+                        + 'left: calc(50% - 3.5em); z-index: 2')
 
     put_actions('show_backups',
                 buttons = [dict(label = 'Show backups', value = 'show_backups',
@@ -71,10 +76,10 @@ def foliage_main_page(log_file, backup_dir):
                 ).style('position: absolute; bottom: -20px; right: 1em; z-index: 2')
 
     # Start the infinite loop for processing user input.
-    run_main_loop(log_file, backup_dir)
+    run_main_loop(log_file, backup_dir, demo_mode)
 
 
-def run_main_loop(log_file, backup_dir):
+def run_main_loop(log_file, backup_dir, demo_mode):
     log(f'running main loop')
     folio = Folio()
     while True:
