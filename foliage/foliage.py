@@ -74,12 +74,12 @@ def run_main_loop(log_file, backup_dir, demo_mode):
     log(f'running main loop')
     folio = Folio()
     while True:
-        event = pin_wait_change('do_list', 'reset_find', 'do_find',
-                                'reset_delete', 'do_delete', 'quit',
-                                'show_log', 'show_backups')
+        event = pin_wait_change('do_list', 'do_find', 'do_delete',
+                                'clear_list', 'clear_find', 'clear_delete',
+                                'quit', 'show_log', 'show_backups')
         event_type = event['name']
 
-        if event_type.startswith('reset'):  # catches all reset_* buttons.
+        if event_type.startswith('clear'):  # catches all clear_* buttons.
             log(f'resetting page')
             pin.textbox_find = ''
             pin.textbox_delete = ''
@@ -107,8 +107,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
         elif event_type == 'do_list':
             log(f'listing id types')
             with use_scope('output', clear = True):
-                put_processbar('bar')
-                set_processbar('bar', 1/2)
+                put_processbar('bar', init = 1/2)
                 type_name = pin.list_type.replace('-', ' ')
                 try:
                     types = folio.types(pin.list_type)
@@ -131,15 +130,12 @@ def run_main_loop(log_file, backup_dir, demo_mode):
             with use_scope('output', clear = True):
                 identifiers = unique_identifiers(pin.textbox_find)
                 steps = len(identifiers) + 1
-                put_processbar('bar');
-                set_processbar('bar', 1/steps)
+                put_processbar('bar', init = 1/steps);
                 for index, id in enumerate(identifiers, start = 2):
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
-                        put_error(f'Could not recognize {id} as an existing'
-                                  + ' barcode, hrid, item id, instance id,'
-                                  + ' or accession number.')
+                        put_error(f'Could not recognize the identifier type of {id}.')
                         set_processbar('bar', index/steps)
                         continue
 
@@ -149,13 +145,14 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                     except Exception as ex:
                         put_error(f'Error: {antiformat(str(ex))}')
                         break
-                    set_processbar('bar', index/steps)
-                    this = pluralized(record_kind + " record", records, True)
-                    how = f'by searching for {id_type.value} {id}'
+                    finally:
+                        set_processbar('bar', index/steps)
                     if not records or len(records) == 0:
                         put_error(f'No record(s) for {id_type.value} "{id}".')
                         continue
-                    put_success(f'Found {this} {how}').style('text-align: center')
+                    this = pluralized(record_kind + " record", records, True)
+                    how = f'by searching for {id_type.value} **{id}**'
+                    put_success(put_markdown(f'Found {this} {how}')).style('text-align: center')
                     show_index = (len(records) > 1)
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
@@ -173,15 +170,12 @@ def run_main_loop(log_file, backup_dir, demo_mode):
             with use_scope('output', clear = True):
                 identifiers = unique_identifiers(pin.textbox_delete)
                 steps = len(identifiers) + 1
-                put_processbar('bar');
-                set_processbar('bar', 1/steps)
+                put_processbar('bar', init = 1/steps);
                 for index, id in enumerate(identifiers, start = 2):
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
-                        put_error(f'Could not recognize {id} as an existing'
-                                  + ' barcode, hrid, item id, instance id,'
-                                  + ' or accession number.')
+                        put_error(f'Could not recognize the identifier type of {id}.')
                         set_processbar('bar', index/steps)
                         continue
                     try:
@@ -190,22 +184,21 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                     except Exception as ex:
                         alert(f'Error: {antiformat(str(ex))}')
                         break
-                    set_processbar('bar', index/steps)
+                    finally:
+                        set_processbar('bar', index/steps)
                     if not record:
                         put_error(f'Could not find a record for {id_type.value} {id}.')
                         continue
                     backup_record(record, backup_dir)
-                    if id_type in [RecordIdKind.ITEMID, RecordIdKind.BARCODE]:
+                    if id_type in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
                         if demo_mode:
-                            put_success(f'Deleted item record {id}')
+                            put_success(put_markdown(f'Deleted item record **{id}**'))
                         else:
                             delete_item(folio, record, id)
                     else:
                         put_warning('Instance record deletion is currently turned off.')
                         # delete_instance(folio, record, id)
 
-# permanent loan type
-# note type
 
 def list_types_tab():
     return [
@@ -236,33 +229,40 @@ def list_types_tab():
                                   {'label': 'Location types', 'value': TypeKind.LOCATION.value},
                                   {'label': 'Material types', 'value': TypeKind.MATERIAL.value},
                                   {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT.value},
+                                  {'label': 'Organizations', 'value': TypeKind.ORGANIZATION.value},
                                   {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT.value},
                                   {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION.value},
                                   {'label': 'Statistical code types', 'value': TypeKind.STATISTICAL_CODE.value},
-                              ]),
-                   put_actions('do_list', buttons = ['Get list']).style('margin-left: 10px'),
+                              ]).style('margin-left: 10px'),
+                   put_actions('do_list', buttons = ['Get list']).style('margin-left: 10px; text-align: left'),
+                   put_actions('clear_list',
+                               buttons = [dict(label = 'Clear', value = 'clear',
+                                               color = 'secondary')]).style('margin-left: 10px; text-align: right')
                   ]])
     ]
 
 
 def find_records_tab():
     return [
-        put_markdown('Write one or more barcode, item id, instance id, hrid,'
-                     + ' or accession number in the field below, then press'
-                     + ' the button to look up the item or instance records'
-                     + ' that correspond to them.'),
+        put_markdown('Input one or more item barcode, item id, instance id,'
+                     + ' hrid, accession number, user id or user barcode in the'
+                     + ' field below, then press the button to look up records.'
+                     + ' (Searching for items by instance records may return'
+                     + ' multiple results.)'),
         put_textarea('textbox_find', rows = 4),
         put_radio('select_kind_find', inline = True,
                   label = 'Type of record to retrieve:',
                   options = [ ('Item', RecordKind.ITEM.value, True),
-                              ('Instance', RecordKind.INSTANCE.value)]),
+                              ('Instance', RecordKind.INSTANCE.value),
+                              ('User', RecordKind.USER.value),
+                              ('Loan', RecordKind.LOAN.value)]),
         put_text(''), # Adds a column, pushing next item to the right.
         put_checkbox('show_raw', options = ['Show raw data from FOLIO']),
         put_row([
             put_actions('do_find', buttons = ['Look up records']),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_actions('reset_find',
-                        buttons = [dict(label = 'Reset', value = 'reset',
+            put_actions('clear_find',
+                        buttons = [dict(label = 'Clear', value = 'clear',
                                         color = 'secondary')]).style('text-align: right')
         ])
     ]
@@ -280,8 +280,8 @@ def delete_records_tab():
                         buttons = [dict(label = 'Delete FOLIO records',
                                         value = 'delete', color = 'danger')]),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_actions('reset_delete',
-                        buttons = [dict(label = 'Reset', value = 'reset',
+            put_actions('clear_delete',
+                        buttons = [dict(label = 'Clear', value = 'clear',
                                         color = 'secondary')]).style('text-align: right')
         ])
     ]
@@ -326,28 +326,55 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
     elif record_kind == 'item':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
-            ['Title', record['title']],
-            ['Call number', record['callNumber']],
-            ['Effective location', record['effectiveLocation']['name']],
-            ['Permanent location', record['permanentLocation']['name']],
-            ['Status', record['status']['name']],
-            ['Tags', ', '.join(tags for tags in record['tags']['tagList'])],
-            ['Notes', '\n'.join(record['notes'])],
-            ['HRID', record['hrid']],
-            [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em; font-size: 90%')
+            ['Title'                     , record['title']],
+            ['Call number'               , record['callNumber']],
+            [f'FOLIO {record_kind.title()} id' , record['id']],
+            ['Effective location'        , record['effectiveLocation']['name']],
+            ['Permanent location'        , record['permanentLocation']['name']],
+            ['Status'                    , record['status']['name']],
+            ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
+            ['Notes'                     , '\n'.join(record['notes'])],
+            ['HRID'                      , record['hrid']],
+            ['Created'                   , record['metadata']['createdDate']],
+            ['Updated'                   , record['metadata']['updatedDate']],
+        ]).style('margin-left: 2em; font-size: 90%')
     elif record_kind == 'instance':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
-            ['Title', record['title']],
-            ['Call number', record['classifications'][0]['classificationNumber']],
-            ['Tags', ', '.join(tags for tags in record['tags']['tagList'])],
-            ['HRID', record['hrid']],
-            [f'{record_kind.title()} id', record['id']]]).style('margin-left: 2em; font-size: 90%')
+            ['Title'                     , record['title']],
+            ['Call number'               , record['classifications'][0]['classificationNumber']],
+            [f'FOLIO {record_kind.title()} id' , record['id']],
+            ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
+            ['HRID'                      , record['hrid']],
+            ['Created'                   , record['metadata']['createdDate']],
+            ['Updated'                   , record['metadata']['updatedDate']],
+        ]).style('margin-left: 2em; font-size: 90%')
+    elif record_kind == 'user':
+        # Caution: left-hand values contain nonbreaking spaces (invisible here).
+        put_table([
+            ['Username'                  , record['username']],
+            ['Barcode'                   , record['barcode']],
+            [f'FOLIO {record_kind.title()} id' , record['id']],
+            ['Patron group'              , record['patronGroup']],
+            ['Created'                   , record['metadata']['createdDate']],
+            ['Updated'                   , record['metadata']['updatedDate']],
+        ]).style('margin-left: 2em; font-size: 90%')
+    elif record_kind == 'loan':
+        put_table([
+            [f'FOLIO {record_kind.title()} id' , record['id']],
+            ['User id'                   , record['userId']],
+            ['Item id'                   , record['itemId']],
+            ['Loan date'                 , record['loanDate']],
+            ['Due date'                  , record['dueDate']],
+            ['Created'                   , record['metadata']['createdDate']],
+            ['Updated'                   , record['metadata']['updatedDate']],
+        ]).style('margin-left: 2em; font-size: 90%')
 
 
 def unique_identifiers(text):
     lines = text.splitlines()
     identifiers = flatten(re.split(r'\s+|,+', line) for line in lines)
+    identifiers = [id.replace('"', '') for id in identifiers]
     return unique(filter(None, identifiers))
 
 
@@ -388,14 +415,14 @@ def delete_instance(folio, record, for_id = None):
     inst_id = record['id']
 
     # Starting at the bottom, delete the item records.
-    items = folio.records(inst_id, RecordIdKind.INSTANCEID, RecordKind.ITEM.value)
+    items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM.value)
     put_warning(f'Deleting {pluralized("item record", items, True)} due to'
                 + f' the deletion of instance record {inst_id}.')
     for item in items:
         delete_item(folio, item, for_id)
 
     # Now delete the holdings records.
-    holdings = folio.records(inst_id, RecordIdKind.INSTANCEID, RecordKind.HOLDINGS.value)
+    holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS.value)
     put_warning(f'Deleting {pluralized("holdings record", holdings, True)} due to'
                 + f' the deletion of instance record {inst_id}.')
     for hr in holdings:

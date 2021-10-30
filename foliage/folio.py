@@ -30,6 +30,7 @@ if __debug__:
 # https://stackoverflow.com/a/65225753/743730 made on 2020-12-09.
 
 class MetaEnum(EnumMeta):
+    '''Meta class for enums that implements "contain" test ability.'''
     def __contains__(cls, item):
         try:
             cls(item)
@@ -37,23 +38,32 @@ class MetaEnum(EnumMeta):
             return False
         return True
 
+
 class ExtendedEnum(Enum, metaclass = MetaEnum):
     '''Extend Enum class with a function allowing a test for containment.'''
     pass
+
 
 class RecordKind(ExtendedEnum):
     ITEM     = 'item'
     INSTANCE = 'instance'
     HOLDINGS = 'holdings'
+    USER     = 'user'
+    LOAN     = 'loan'
+
 
 class RecordIdKind(ExtendedEnum):
-    UNKNOWN    = 'unknown'
-    BARCODE    = 'barcode'
-    HRID       = 'hrid'
-    ITEMID     = 'item id'
-    INSTANCEID = 'instance id'
-    HOLDINGSID = 'holdings id'
-    ACCESSION  = 'accession number'
+    UNKNOWN      = 'unknown'
+    ITEM_BARCODE = 'item barcode'
+    ITEM_ID      = 'item id'
+    HRID         = 'hrid'
+    INSTANCE_ID  = 'instance id'
+    HOLDINGS_ID  = 'holdings id'
+    ACCESSION    = 'accession number'
+    USER_ID      = 'user id'
+    USER_BARCODE = 'user barcode'
+    LOAN_ID      = 'loan id'
+
 
 class TypeKind(ExtendedEnum):
     ADDRESS             = 'addresstypes'
@@ -81,6 +91,7 @@ class TypeKind(ExtendedEnum):
     MATERIAL            = 'material-types'
     MODE_OF_ISSUANCE    = 'mode-of-issuance'
     NATURE_OF_CONTENT   = 'nature-of-content-terms'
+    ORGANIZATION        = 'organizations/organizations'
     PROXYFOR            = 'proxiesfor'
     SERVICE_POINT       = 'service-points'
     SHELF_LOCATION      = 'shelf-locations'
@@ -123,6 +134,7 @@ NAME_KEYS = {
     TypeKind.MATERIAL.value            : 'name',
     TypeKind.MODE_OF_ISSUANCE.value    : 'name',
     TypeKind.NATURE_OF_CONTENT.value   : 'name',
+    TypeKind.ORGANIZATION              : 'name',
     TypeKind.PROXYFOR.value            : 'name',
     TypeKind.SERVICE_POINT.value       : 'name',
     TypeKind.SHELF_LOCATION.value      : 'name',
@@ -175,22 +187,21 @@ class Folio():
 
     def record_id_type(self, identifier):
         '''Infer the type of identifier given.'''
-        if isint(identifier) and len(identifier) > 7:
-            log(f'recognized {identifier} as a barcode')
-            return RecordIdKind.BARCODE
+        if isint(identifier) and len(identifier) > 7 and identifier.startswith('350'):
+            log(f'recognized {identifier} as an item barcode')
+            return RecordIdKind.ITEM_BARCODE
         elif identifier.startswith('clc') and '.' in identifier:
+            log(f'recognized {identifier} as an accession number')
             return RecordIdKind.ACCESSION
-        elif '-' not in identifier:
-            log(f'recognized {identifier} as an hrid')
-            return RecordIdKind.HRID
         else:
-            # Id's look the same. Try different cases to see if they exist
-            # using the storage API, which is the fastest/lowest-level API.
+            # Given a uuid, there's no way to ask Folio what kind it is, b/c
+            # of Folio's microarchitecture & the lack of a central coordinating
+            # authority.  So we have to ask different modules in turn.
             response = self._folio('get', f'/item-storage/items/{identifier}?limit=0')
             if response:
                 if response.status_code == 200:
                     log(f'recognized {identifier} as an item id')
-                    return RecordIdKind.ITEMID
+                    return RecordIdKind.ITEM_ID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
@@ -198,7 +209,7 @@ class Folio():
             if response:
                 if response.status_code == 200:
                     log(f'recognized {identifier} as an instance id')
-                    return RecordIdKind.INSTANCEID
+                    return RecordIdKind.INSTANCE_ID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
@@ -206,7 +217,43 @@ class Folio():
             if response:
                 if response.status_code == 200:
                     log(f'recognized {identifier} as a holdings id')
-                    return RecordIdKind.HOLDINGSID
+                    return RecordIdKind.HOLDINGS_ID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            response = self._folio('get', f'/users/{identifier}?limit=0')
+            if response:
+                if response.status_code == 200:
+                    log(f'recognized {identifier} as a user id')
+                    return RecordIdKind.USER_ID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            response = self._folio('get', f'/users?query=barcode={identifier}&limit=0')
+            if response:
+                if response.status_code == 200:
+                    # This endpoint always return a value, even when there are
+                    # no hits, so we have to look inside.
+                    data_dict = json.loads(response.text)
+                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
+                        log(f'recognized {identifier} as a user barcode')
+                        return RecordIdKind.USER_BARCODE
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            response = self._folio('get', f'/loan-storage/loans/{identifier}?limit=0')
+            if response:
+                if response.status_code == 200:
+                    log(f'recognized {identifier} as a loan id')
+                    return RecordIdKind.LOAN_ID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+
+            response = self._folio('get', f'/instance-storage/instances?query=hrid={identifier}&limit=0')
+            if response:
+                if response.status_code == 200:
+                    log(f'recognized {identifier} as an hrid')
+                    return RecordIdKind.HRID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
@@ -214,39 +261,44 @@ class Folio():
             return RecordIdKind.UNKNOWN
 
 
-    def records(self, identifier, id_type, record_type = None):
+    def records(self, identifier, id_type, requested = None):
         def record_list(key, response):
             if not response or not response.text:
                 log(f'FOLIO returned no result for {identifier}')
                 return []
             data_dict = json.loads(response.text)
-            if not 'totalRecords' in data_dict:
-                if 'title' in data_dict:
-                    # It's a record directly and not a list of records.
-                    return [data_dict]
-                else:
-                    raise RuntimeError('Unexpected data returned by FOLIO')
-            log(f'got {data_dict["totalRecords"]} records for {identifier}')
-            return data_dict[key]
+            if key:
+                if not 'totalRecords' in data_dict:
+                    if 'title' in data_dict:
+                        # It's a record directly and not a list of records.
+                        return [data_dict]
+                    else:
+                        raise RuntimeError('Unexpected data returned by FOLIO')
+                log(f'got {data_dict["totalRecords"]} records for {identifier}')
+                return data_dict[key]
+            else:
+                return [data_dict]
 
         # If we not given an explicit record type to retrieve, return the same
         # kind implied by the id type.
-        if not record_type:
-            if id_type in [RecordIdKind.ITEMID, RecordIdKind.BARCODE]:
-                record_type = 'item'
-            elif id_type == RecordIdKind.HOLDINGSID:
-                record_type = 'holdings'
+        if not requested:
+            if id_type in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
+                requested = 'item'
+            elif id_type == RecordIdKind.HOLDINGS_ID:
+                requested = 'holdings'
+            elif id_type in [RecordIdKind.USER_ID, RecordIdKind.USER_BARCODE]:
+                requested = 'user'
             else:
-                record_type = 'instance'
+                requested = 'instance'
 
         # Figure out the appropriate API endpoint.
-        if record_type == 'item':
+        if requested == 'item':
             data_extractor = partial(record_list, 'items')
-            if id_type == RecordIdKind.ITEMID:
+            if id_type == RecordIdKind.ITEM_ID:
                 endpoint = f'/inventory/items/{identifier}'
-            elif id_type == RecordIdKind.BARCODE:
+            elif id_type == RecordIdKind.ITEM_BARCODE:
                 endpoint = f'/inventory/items?query=barcode=={identifier}'
-            elif id_type == RecordIdKind.INSTANCEID:
+            elif id_type == RecordIdKind.INSTANCE_ID:
                 endpoint = f'/inventory/items?query=instance.id=={identifier}&limit=10000'
             elif id_type == RecordIdKind.HRID:
                 endpoint = f'/inventory/items?query=instance.hrid=={identifier}&limit=10000'
@@ -254,14 +306,14 @@ class Folio():
                 inst_id = instance_id_from_accession(identifier)
                 endpoint = f'/inventory/items?query=instance.id=={inst_id}&limit=10000'
             else:
-                raise RuntimeError(f'Unrecognized id_type value {id_type}')
-        elif record_type == 'instance':
+                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
+        elif requested == 'instance':
             data_extractor = partial(record_list, 'instances')
-            if id_type == RecordIdKind.INSTANCEID:
+            if id_type == RecordIdKind.INSTANCE_ID:
                 endpoint = f'/inventory/instances/{identifier}'
-            elif id_type == RecordIdKind.BARCODE:
+            elif id_type == RecordIdKind.ITEM_BARCODE:
                 endpoint = f'/inventory/instances?query=item.barcode=={identifier}'
-            elif id_type == RecordIdKind.ITEMID:
+            elif id_type == RecordIdKind.ITEM_ID:
                 endpoint = f'/inventory/instances?query=item.id=={identifier}'
             elif id_type == RecordIdKind.HRID:
                 endpoint = f'/inventory/instances?query=hrid=={identifier}'
@@ -269,16 +321,16 @@ class Folio():
                 inst_id = instance_id_from_accession(identifier)
                 endpoint = f'/inventory/instances/{inst_id}'
             else:
-                raise RuntimeError(f'Unrecognized id_type value {id_type}')
-        elif record_type == 'holdings':
+                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
+        elif requested == 'holdings':
             data_extractor = partial(record_list, 'holdingsRecords')
-            if id_type == RecordIdKind.HOLDINGSID:
+            if id_type == RecordIdKind.HOLDINGS_ID:
                 endpoint = f'/holdings-storage/holdings/{identifier}'
-            elif id_type == RecordIdKind.INSTANCEID:
+            elif id_type == RecordIdKind.INSTANCE_ID:
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={identifier}&limit=10000'
-            elif id_type == RecordIdKind.BARCODE:
+            elif id_type == RecordIdKind.ITEM_BARCODE:
                 endpoint = f'/holdings-storage/holdings?query=item.barcode=={identifier}'
-            elif id_type == RecordIdKind.ITEMID:
+            elif id_type == RecordIdKind.ITEM_ID:
                 endpoint = f'/holdings-storage/holdings?query=item.id=={identifier}'
             elif id_type == RecordIdKind.HRID:
                 endpoint = f'/holdings-storage/holdings?query=hrid=={identifier}'
@@ -286,9 +338,33 @@ class Folio():
                 inst_id = instance_id_from_accession(identifier)
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={inst_id}&limit=10000'
             else:
-                raise RuntimeError(f'Unrecognized id_type value {id_type}')
+                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
+        elif requested == 'user':
+            if id_type == RecordIdKind.USER_ID:
+                endpoint = f'/users/{identifier}'
+                data_extractor = partial(record_list, None)
+            elif id_type == RecordIdKind.USER_BARCODE:
+                endpoint = f'/users?query=barcode={identifier}'
+                data_extractor = partial(record_list, 'users')
+
+            # FIXME this returns loan records, which is not user records
+            # elif id_type == RecordIdKind.ITEM_ID:
+            #     endpoint = f'/circulation/loans?query=itemId={identifier}'
+            #     data_extractor = partial(record_list, 'loans')
+
+            else:
+                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
+        elif requested == 'loan':
+            if id_type == RecordIdKind.LOAN_ID:
+                endpoint = f'/loan-storage/loans/{identifier}'
+                data_extractor = partial(record_list, None)
+            elif id_type == RecordIdKind.USER_ID:
+                endpoint = f'/circulation/loans?query=userId=={identifier}'
+                data_extractor = partial(record_list, 'loans')
+            else:
+                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
         else:
-            raise RuntimeError(f'Unrecognized record_type value {record_type}')
+            raise RuntimeError(f'Unrecognized record type value {requested}')
 
         return self._folio('get', endpoint, data_extractor)
 
