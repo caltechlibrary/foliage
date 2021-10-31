@@ -70,6 +70,9 @@ footer {
 .alert p {
     margin-bottom: 0
 }
+button {
+    margin-bottom: 0
+}
 .webio-tabs-content {
     padding-bottom: 0 !important;
 }
