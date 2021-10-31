@@ -109,7 +109,7 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
         pywebio.platform.utils._index_page_tpl = index_page_template
 
         log(f'using {backup_dir} for backing up records')
-        log(f'debug log output is going to {log_file if log_file else "stdout"}')
+        log(f'debug log output going to {log_file if log_file else "stdout"}')
         log(f'starting server')
 
         if demo_mode:
@@ -147,10 +147,16 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
 # .............................................................................
 
 def _debug_config(debug_arg):
+    '''Takes the value of the --debug flag & returns a tuple (bool, log_file).
+    The tuple values represent whether --debug was given a value other than
+    the default, and the destination log file for debug output.
+    '''
+
     log_file = None
     try:
         if debug_arg == 'OUT':
-            # Store debug log in user's log directory.
+            # The --debug flag was not given, so turn on only basic logging.
+            # Store the debug log in user's log directory.
             log_dir = _APP_DIRS.user_log_dir
             log_file = join(log_dir, 'log.txt')
             if not exists(log_dir):
@@ -159,17 +165,28 @@ def _debug_config(debug_arg):
                 # Empty out the file for each new run.
                 pass
         else:
+            # We were given --debug explicitly.  Turn on all debug features.
             if debug_arg != '-':
                 log_file = debug_arg
-                if not writable(dirname(log_file)):
-                    alert(f'Can\'t write debug ouput in {dirname(debug_arg)}', False)
+                log_dir = dirname(log_file)
+                if not writable(log_dir):
+                    alert(f'Can\'t write debug ouput in {log_dir}', False)
                     exit()
             faulthandler.enable()
-            if not sys.platform.startswith('win'): # This part doesn't work on win.
+            if not sys.platform.startswith('win'): # Can't use next part on Win
                 import signal
                 from boltons.debugutils import pdb_on_signal
                 pdb_on_signal(signal.SIGUSR1)
-            warn('Debug & auto-reload are on. "kill -USR1 pid" invokes pdb.', False)
+
+            warn('Debug & auto-reload are on. "kill -USR1 pid" for pdb.', False)
+
+            # Turn on debug logging in PyWebIO & Tornado. That ends up enabling
+            # logging in hpack, which is too much, so turn that off separately.
+            import logging
+            logging.root.setLevel(logging.DEBUG)
+            logging.getLogger('hpack').setLevel(logging.INFO)
+
+        # Turn on debug tracing to the destination we ended up deciding to use.
         set_debug(True, log_file or '-')
     except PermissionError:
         warn(f'Permission denied trying to create log file {log_file}', False)
