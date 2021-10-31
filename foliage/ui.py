@@ -33,7 +33,6 @@ if __debug__:
 
 JS_CODE = '''
   function confirm_action(msg) { return confirm(msg) }
-  function confirm_exit() { return confirm("This will exit Foliage. Proceed?") }
   function close_window() { window.close() }
   function reload_page() { location.reload() }
 '''
@@ -101,19 +100,21 @@ def warn(text, popup = True):
 
 
 def confirm(question):
+    log(f'running JS function to ask user question: {question}')
     return eval_js(f'confirm_action("{question}")')
 
 
-def quit_app():
-    if __debug__: log(f'user clicked the quit button')
-    if eval_js('confirm_exit()'):
-        if __debug__: log(f'user confirmed quitting')
+def quit_app(ask_confirm = True):
+    log(f'quitting (ask = {ask_confirm})')
+    if not ask_confirm or confirm('This will exit Foliage. Proceed?'):
+        log(f'running JS function close_window()')
         run_js('close_window()')
         wait(0.5)
         os._exit(0)
 
 
 def reload_page():
+    log(f'running JS function to reload the page')
     run_js('reload_page()')
 
 
@@ -121,6 +122,7 @@ def image_data(file_name):
     here = dirname(__file__)
     image_file = join(here, 'data', file_name)
     if exists(image_file):
+        log(f'reading image file {image_file}')
         with open(image_file, 'rb') as f:
             return f.read()
     log(f'could not find image in {image_file}')
