@@ -173,15 +173,9 @@ class Folio():
         return existing_instance
 
 
-    def __init__(self):
+    def __init__(self, creds):
         '''Create an interface to the FOLIO server.'''
-        self.okapi_base_url = config('FOLIO_OKAPI_URL')
-        self.okapi_token = config('FOLIO_OKAPI_TOKEN')
-        self.tenant_id = config('FOLIO_OKAPI_TENANT_ID')
-        log('Configuration: \n'
-            + f'FOLIO_OKAPI_URL = {self.okapi_base_url}\n'
-            + f'FOLIO_OKAPI_TOKEN = {self.okapi_token}\n'
-            + f'FOLIO_OKAPI_TENANT_ID = {self.tenant_id}')
+        self.use_credentials(creds)
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
@@ -211,6 +205,16 @@ class Folio():
                 wait(wait_time)
                 return self._folio(op, endpoint, convert, retry = retry)
         raise error
+
+
+    def use_credentials(self, creds):
+        self.okapi_base_url = creds['url']
+        self.okapi_token = creds['token']
+        self.tenant_id = creds['tenant_id']
+        log('Configuration: \n'
+            + f'FOLIO_OKAPI_URL = {self.okapi_base_url}\n'
+            + f'FOLIO_OKAPI_TOKEN = {self.okapi_token}\n'
+            + f'FOLIO_OKAPI_TENANT_ID = {self.tenant_id}')
 
 
     def record_id_type(self, id):
@@ -456,7 +460,6 @@ class Folio():
         # return self._folio(op, endpoint, result_parser)
         log(f'issuing operation {op} on {endpoint}')
         return self._folio(op, endpoint, result_parser)
-
 
 
 # Misc. utilities

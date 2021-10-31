@@ -39,6 +39,7 @@ from   tornado.template import Template
 if __debug__:
     from sidetrack import set_debug, log
 
+from .credentials import credentials_from_file
 from .foliage import foliage_main_page
 from .ui import JS_CODE, CSS_CODE, alert, warn
 
@@ -53,14 +54,15 @@ _APP_DIRS = AppDirs('Foliage', 'CaltechLibrary')
 # .............................................................................
 
 @plac.annotations(
-    backup_dir = ('save copies of records in directory "B"',          'option', 'b'),
-    demo_mode  = ('demo mode: don\'t perform destructive operations', 'flag',   'd'),
-    port       = ('open browser on port "P" (default: 8080)',         'option', 'p'),
-    version    = ('print version info and exit',                      'flag',   'V'),
-    debug      = ('log debug output to "OUT" ("-" is console)',       'option', '@'),
+    backup_dir = ('save copies of records in directory "B"',             'option', 'b'),
+    creds_file = ('read FOLIO credentials from file "C" (default: ask)', 'option', 'c'),
+    demo_mode  = ('demo mode: don\'t perform destructive operations',    'flag',   'd'),
+    port       = ('open browser on port "P" (default: 8080)',            'option', 'p'),
+    version    = ('print version info and exit',                         'flag',   'V'),
+    debug      = ('log debug output to "OUT" ("-" is console)',          'option', '@'),
 )
 
-def main(backup_dir = 'B', demo_mode = False, port = 'P',
+def main(backup_dir = 'B', creds_file = 'C', demo_mode = False, port = 'P',
          version = False, debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
@@ -77,13 +79,25 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
 
     if backup_dir != 'B':
         if not exists(backup_dir) or not isdir(backup_dir):
-            alert(f'Directory for -b does not exist: {backup_dir}')
+            alert(f'Directory for -b does not exist: {backup_dir}', False)
             exit(1)
         elif not writable(backup_dir):
-            alert(f'Cannot write in backup directory: {backup_dir}')
+            alert(f'Cannot write in backup directory: {backup_dir}', False)
             exit(1)
     else:
         backup_dir = _APP_DIRS.user_log_dir
+
+    creds = None
+    if creds_file != 'C':
+        if not exists(creds_file):
+            alert(f'Credentials file does not exist: {creds_file}', False)
+            exit(1)
+        elif not readable(creds_file):
+            alert(f'Credentials file not readable: {creds_file}', False)
+            exit(1)
+        creds = credentials_from_file(creds_file)
+        if not creds:
+            warn(f'Failed to read credentials from {creds_file}', False)
 
     port = 8080 if port == 'P' else port
     if not isint(port):
@@ -116,7 +130,7 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
         if demo_mode:
             warn('Demo mode is on: changes to FOLIO will not be made', False)
 
-        foliage = partial(foliage_main_page, log_file, backup_dir, demo_mode)
+        foliage = partial(foliage_main_page, creds, log_file, backup_dir, demo_mode)
         start_server(foliage, port = port, auto_open_webbrowser = True,
                      debug = debug_mode)
     except KeyboardInterrupt as ex:

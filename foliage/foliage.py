@@ -26,12 +26,12 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
 import re
+from   sidetrack import set_debug, log
 import threading
 import webbrowser
 
-if __debug__:
-    from sidetrack import set_debug, log
-
+from .credentials import credentials_from_user, credentials_from_keyring
+from .credentials import save_credentials
 from .folio import Folio, RecordKind, RecordIdKind, TypeKind
 from .ui import quit_app, reload_page, alert, warn, confirm, image_data
 
@@ -39,7 +39,7 @@ from .ui import quit_app, reload_page, alert, warn, confirm, image_data
 # Overall main page structure
 # .............................................................................
 
-def foliage_main_page(log_file, backup_dir, demo_mode):
+def foliage_main_page(explicit_creds, log_file, backup_dir, demo_mode):
     log(f'creating index page')
     if demo_mode:
         put_warning('Demo mode in effect').style(
@@ -67,17 +67,24 @@ def foliage_main_page(log_file, backup_dir, demo_mode):
                 ).style('position: absolute; bottom: -10px;'
                         + 'left: calc(50% - 3.5em); z-index: 2')
 
+    creds = explicit_creds or credentials_from_keyring() or credentials_from_user()
+    if not creds:
+        wait(0.5)
+        quit_app(ask_confirm = False)
+    save_credentials(creds)
+
     # Start the infinite loop for processing user input.
-    run_main_loop(log_file, backup_dir, demo_mode)
+    run_main_loop(creds, log_file, backup_dir, demo_mode)
 
 
-def run_main_loop(log_file, backup_dir, demo_mode):
+def run_main_loop(creds, log_file, backup_dir, demo_mode):
     log(f'running main loop')
-    folio = Folio()
+    folio = Folio(creds)
     while True:
         event = pin_wait_change('do_list_types', 'do_find', 'do_delete',
                                 'clear_list', 'clear_find', 'clear_delete',
-                                'quit', 'show_log', 'show_backups')
+                                'quit', 'show_log', 'show_backups',
+                                'edit_credentials')
         event_type = event['name']
 
         if event_type.startswith('clear'):  # catches all clear_* buttons.
@@ -104,6 +111,12 @@ def run_main_loop(log_file, backup_dir, demo_mode):
             log(f'showing backup directory')
             webbrowser.open_new("file://" + backup_dir)
 
+        elif event_type == 'edit_credentials':
+            log(f'updating credentials')
+            creds = credentials_from_user(warn_empty = False)
+            if creds:
+                save_credentials(creds)
+                folio.use_credentials(creds)
 
         elif event_type == 'do_list_types':
             log(f'listing id types')
@@ -167,7 +180,6 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
                                      index, show_index, pin.show_raw)
-
 
         elif event_type == 'do_delete':
             log(f'do_delete invoked')
@@ -306,26 +318,34 @@ def delete_records_tab():
 def other_tab():
     return [
         put_grid([[
-            put_markdown('When performing destructive operations, Foliage'
-                         + ' saves a copy of records before modifying them.'
-                         + ' Click this button to open the folder containing'
-                         + ' the files. A given record may have multiple backup'
-                         + ' files with different time stamps.'),
+            put_markdown('Foliage stores the FOLIO credentials you provide the'
+                         + ' first time it runs, so that you don\'t have to'
+                         + ' enter them again. Click this button to update the'
+                         + ' stored credentials.'),
+            put_actions('edit_credentials',
+                        buttons = [dict(label = 'Edit credentials',
+                                        value = 'edit_credentials', color = 'info')]
+                        ).style('margin-left: 20px; text-align: left'),
+        ], [
+            put_markdown('Before performing destructive operations, Foliage'
+                         + ' saves copies of the records as they exist before'
+                         + ' modification. Click this button to open the folder'
+                         + ' containing the files. (Note: a given record may'
+                         + ' have multiple backups with different time stamps.)'),
             put_actions('show_backups',
                         buttons = [dict(label = 'Show backups',
-                                        value = 'show_backups',
-                                        color = 'info')]
-                        ).style('margin-left: 10px; text-align: left'),
+                                        value = 'show_backups', color = 'info')]
+                        ).style('margin-left: 20px; text-align: left'),
         ], [
             put_markdown('The debug log file contains a detailed trace of'
                          + ' every action that Foliage takes. This can be'
                          + ' useful when trying to resolve bugs and other'
                          + ' problems.'),
             put_actions('show_log',
-                        buttons = [dict(label = 'Show log file', value = 'show_log',
-                                        color = 'info')]
-                        ).style('margin-left: 10px; text-align: left'),
-        ]], cell_widths = 'auto 150px'),
+                        buttons = [dict(label = 'Show log file',
+                                        value = 'show_log', color = 'info')]
+                        ).style('margin-left: 20px; text-align: left'),
+        ]], cell_widths = 'auto 170px'),
     ]
 
 
