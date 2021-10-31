@@ -67,26 +67,6 @@ def foliage_main_page(log_file, backup_dir, demo_mode):
                 ).style('position: absolute; bottom: -10px;'
                         + 'left: calc(50% - 3.5em); z-index: 2')
 
-    # def popup_input(pins, title = 'Record'):
-    #     pins  = [pins] if not isinstance(pins, list) else pins
-    #     event = threading.Event()
-
-    #     def onclick(val):
-    #         event.set()
-
-    #     pins.append(put_buttons([
-    #         {'label': 'Close', 'value': True},
-    #     ], onclick = onclick).style('float: right'))
-    #     popup(title = title, content = pins, closable = False)
-
-    #     event.wait()
-    #     close_popup()
-
-    # result = popup_input([
-    #     put_scrollable(put_markdown('foo'), height = 600),
-    # ])
-
-
     # Start the infinite loop for processing user input.
     run_main_loop(log_file, backup_dir, demo_mode)
 
@@ -95,7 +75,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
     log(f'running main loop')
     folio = Folio()
     while True:
-        event = pin_wait_change('do_list', 'do_find', 'do_delete',
+        event = pin_wait_change('do_list_types', 'do_find', 'do_delete',
                                 'clear_list', 'clear_find', 'clear_delete',
                                 'quit', 'show_log', 'show_backups')
         event_type = event['name']
@@ -125,7 +105,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
             webbrowser.open_new("file://" + backup_dir)
 
 
-        elif event_type == 'do_list':
+        elif event_type == 'do_list_types':
             log(f'listing id types')
             with use_scope('output', clear = True):
                 put_processbar('bar', init = 1/2)
@@ -139,7 +119,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                 finally:
                     set_processbar('bar', 2/2)
                 put_html('<br>')
-                cleaned_name = requested.split('/')[0].replace("-", " ")
+                cleaned_name = requested.split('/')[-1].replace("-", " ")
                 put_markdown(f'Found {len(types)} values for {cleaned_name}:')
                 contents = []
                 for item in types:
@@ -232,6 +212,7 @@ def list_types_tab():
         put_grid([[
             put_markdown('Select a FOLIO type to list:').style('margin-top: 6px'),
             put_select('list_type', options = [
+                {'label': 'Acquisition units', 'value': TypeKind.ACQUISITION_UNIT},
                 {'label': 'Address types', 'value': TypeKind.ADDRESS},
                 {'label': 'Alternative title types', 'value': TypeKind.ALT_TITLE},
                 {'label': 'Call number types', 'value': TypeKind.CALL_NUMBER},
@@ -239,6 +220,8 @@ def list_types_tab():
                 {'label': 'Contributor types', 'value': TypeKind.CONTRIBUTOR},
                 {'label': 'Contributor name types', 'value': TypeKind.CONTRIBUTOR_NAME},
                 {'label': 'Department types', 'value': TypeKind.DEPARTMENT},
+                {'label': 'Expense classes', 'value': TypeKind.EXPENSE_CLASS},
+                {'label': 'Fixed due date schedules', 'value': TypeKind.FIXED_DUE_DATE_SCHED},
                 {'label': 'Group types', 'value': TypeKind.GROUP},
                 {'label': 'Holdings types', 'value': TypeKind.HOLDINGS},
                 {'label': 'Holdings note types', 'value': TypeKind.HOLDINGS_NOTE},
@@ -253,15 +236,17 @@ def list_types_tab():
                 {'label': 'Item note types', 'value': TypeKind.ITEM_NOTE},
                 {'label': 'Item damaged status types', 'value': TypeKind.ITEM_DAMAGED_STATUS},
                 {'label': 'Loan types', 'value': TypeKind.LOAN},
+                {'label': 'Loan policy types', 'value': TypeKind.LOAN_POLICY},
                 {'label': 'Location types', 'value': TypeKind.LOCATION},
                 {'label': 'Material types', 'value': TypeKind.MATERIAL},
                 {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT},
+#                {'label': 'Order lines', 'value': TypeKind.ORDER_LINE},
                 {'label': 'Organizations', 'value': TypeKind.ORGANIZATION},
                 {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT},
                 {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION},
                 {'label': 'Statistical code types', 'value': TypeKind.STATISTICAL_CODE},
             ]).style('margin-left: 10px'),
-            put_actions('do_list',
+            put_actions('do_list_types',
                         buttons = ['Get list']).style('margin-left: 10px; text-align: left'),
             put_actions('clear_list',
                         buttons = [dict(label = 'Clear', value = 'clear',

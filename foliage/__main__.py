@@ -85,10 +85,10 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
     else:
         backup_dir = _APP_DIRS.user_log_dir
 
-    if port != 'P' and not isint(port):
+    port = 8080 if port == 'P' else port
+    if not isint(port):
         alert(f'Port number value for option -p must be an integer.', False)
         exit(1)
-    port = 8080 if port == 'P' else int(port)
 
     # Do the real work --------------------------------------------------------
 
@@ -96,6 +96,7 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
     exception = None
     try:
         if not exists(backup_dir):
+            log(f'creating backup directory {backup_dir}')
             makedirs(backup_dir)
 
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
@@ -128,14 +129,11 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
     # Try to deal with exceptions gracefully ----------------------------------
 
     if exception:
-        if isinstance(exception[0], KeyboardInterrupt):
-            log(f'received {exception.__class__.__name__}')
-        else:
-            from traceback import format_exception
-            summary = antiformat(exception[1])
-            details = antiformat(''.join(format_exception(*exception)))
-            log(f'Exception: {summary}\n{details}')
-            alert('Error: ' + summary, False)
+        from traceback import format_exception
+        summary = antiformat(exception[1])
+        details = antiformat(''.join(format_exception(*exception)))
+        log(f'Exception: {summary}\n{details}')
+        alert('Error: ' + summary, False)
 
     # And exit ----------------------------------------------------------------
 
