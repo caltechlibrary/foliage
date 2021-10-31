@@ -135,7 +135,7 @@ def main(backup_dir = 'B', demo_mode = False, port = 'P',
             summary = antiformat(exception[1])
             details = antiformat(''.join(format_exception(*exception)))
             log(f'Exception: {summary}\n{details}')
-            alert(summary, False)
+            alert('Error: ' + summary, False)
 
     # And exit ----------------------------------------------------------------
 
