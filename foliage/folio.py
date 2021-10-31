@@ -39,7 +39,11 @@ class MetaEnum(EnumMeta):
         return True
 
 
-class ExtendedEnum(Enum, metaclass = MetaEnum):
+# Inheriting from str solves the problem that PyWebIO otherwise complains about
+# the type values not being json serializable.  This brilliant approach is due
+# to a posting by "Justin Carter" @ https://stackoverflow.com/a/51976841/743730
+
+class ExtendedEnum(str, Enum, metaclass = MetaEnum):
     '''Extend Enum class with a function allowing a test for containment.'''
     pass
 
@@ -50,6 +54,7 @@ class RecordKind(ExtendedEnum):
     HOLDINGS = 'holdings'
     USER     = 'user'
     LOAN     = 'loan'
+    TYPE     = 'type'
 
 
 class RecordIdKind(ExtendedEnum):
@@ -63,6 +68,7 @@ class RecordIdKind(ExtendedEnum):
     USER_ID      = 'user id'
     USER_BARCODE = 'user barcode'
     LOAN_ID      = 'loan id'
+    TYPE_ID      = 'type id'
 
 
 class TypeKind(ExtendedEnum):
@@ -292,7 +298,10 @@ class Folio():
                 requested = 'instance'
 
         # Figure out the appropriate API endpoint.
-        if requested == 'item':
+        if id_type == RecordIdKind.TYPE_ID:
+            data_extractor = partial(record_list, None)
+            endpoint = f'/{requested}/{id}'
+        elif requested == 'item':
             data_extractor = partial(record_list, 'items')
             if id_type == RecordIdKind.ITEM_ID:
                 endpoint = f'/inventory/items/{id}'
