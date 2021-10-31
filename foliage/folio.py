@@ -159,12 +159,29 @@ NAME_KEYS = {
 class Folio():
     '''Interface to a FOLIO server using Okapi.'''
 
+    def __new__(cls, *args, **kwds):
+        '''Construct object instance as a singleton.'''
+
+        # This implements a Singleton pattern by storing the object we create
+        # and returning the same one if the class constructor is called again.
+        existing_instance = cls.__dict__.get("__folio_instance__")
+        if existing_instance is not None:
+            log(f'Using previously-created FOLIO object {str(cls)}')
+            return existing_instance
+
+        cls.__folio_instance__ = existing_instance = object.__new__(cls)
+        return existing_instance
+
+
     def __init__(self):
         '''Create an interface to the FOLIO server.'''
-
         self.okapi_base_url = config('FOLIO_OKAPI_URL')
         self.okapi_token = config('FOLIO_OKAPI_TOKEN')
         self.tenant_id = config('FOLIO_OKAPI_TENANT_ID')
+        log('Configuration: \n'
+            + f'FOLIO_OKAPI_URL = {self.okapi_base_url}\n'
+            + f'FOLIO_OKAPI_TOKEN = {self.okapi_token}\n'
+            + f'FOLIO_OKAPI_TENANT_ID = {self.tenant_id}')
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
