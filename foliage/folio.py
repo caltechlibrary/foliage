@@ -72,36 +72,41 @@ class RecordIdKind(ExtendedEnum):
 
 
 class TypeKind(ExtendedEnum):
-    ADDRESS             = 'addresstypes'
-    ALT_TITLE           = 'alternative-title-types'
-    CALL_NUMBER         = 'call-number-types'
-    CLASSIFICATION      = 'classification-types'
-    CONTRIBUTOR         = 'contributor-types'
-    CONTRIBUTOR_NAME    = 'contributor-name-types'
-    DEPARTMENT          = 'departments'
-    GROUP               = 'groups'
-    HOLDINGS            = 'holdings-types'
-    HOLDINGS_NOTE       = 'holdings-note-types'
-    HOLDINGS_SOURCE     = 'holdings-sources'
-    ID                  = 'identifier-types'
-    ILL_POLICY          = 'ill-policies'
-    INSTANCE            = 'instance-types'
-    INSTANCE_FORMAT     = 'instance-formats'
-    INSTANCE_NOTE       = 'instance-note-types'
-    INSTANCE_REL        = 'instance-relationship-types'
-    INSTANCE_STATUS     = 'instance-statuses'
-    ITEM_NOTE           = 'item-note-types'
-    ITEM_DAMAGED_STATUS = 'item-damaged-statuses'
-    LOAN                = 'loan-types'
-    LOCATION            = 'locations'
-    MATERIAL            = 'material-types'
-    MODE_OF_ISSUANCE    = 'mode-of-issuance'
-    NATURE_OF_CONTENT   = 'nature-of-content-terms'
-    ORGANIZATION        = 'organizations/organizations'
-    PROXYFOR            = 'proxiesfor'
-    SERVICE_POINT       = 'service-points'
-    SHELF_LOCATION      = 'shelf-locations'
-    STATISTICAL_CODE    = 'statistical-code-types'
+    ACQUISITION_UNIT     = 'acquisitions-units/units'
+    ADDRESS              = 'addresstypes'
+    ALT_TITLE            = 'alternative-title-types'
+    CALL_NUMBER          = 'call-number-types'
+    CLASSIFICATION       = 'classification-types'
+    CONTRIBUTOR          = 'contributor-types'
+    CONTRIBUTOR_NAME     = 'contributor-name-types'
+    DEPARTMENT           = 'departments'
+    EXPENSE_CLASS        = 'finance/expense-classes'
+    FIXED_DUE_DATE_SCHED = 'fixed-due-date-schedule-storage/fixed-due-date-schedules'
+    GROUP                = 'groups'
+    HOLDINGS             = 'holdings-types'
+    HOLDINGS_NOTE        = 'holdings-note-types'
+    HOLDINGS_SOURCE      = 'holdings-sources'
+    ID                   = 'identifier-types'
+    ILL_POLICY           = 'ill-policies'
+    INSTANCE             = 'instance-types'
+    INSTANCE_FORMAT      = 'instance-formats'
+    INSTANCE_NOTE        = 'instance-note-types'
+    INSTANCE_REL         = 'instance-relationship-types'
+    INSTANCE_STATUS      = 'instance-statuses'
+    ITEM_NOTE            = 'item-note-types'
+    ITEM_DAMAGED_STATUS  = 'item-damaged-statuses'
+    LOAN                 = 'loan-types'
+    LOAN_POLICY          = 'loan-policy-storage/loan-policies'
+    LOCATION             = 'locations'
+    MATERIAL             = 'material-types'
+    MODE_OF_ISSUANCE     = 'mode-of-issuance'
+    NATURE_OF_CONTENT    = 'nature-of-content-terms'
+    ORDER_LINE           = 'orders/order-lines'
+    ORGANIZATION         = 'organizations/organizations'
+    PROXYFOR             = 'proxiesfor'
+    SERVICE_POINT        = 'service-points'
+    SHELF_LOCATION       = 'shelf-locations'
+    STATISTICAL_CODE     = 'statistical-code-types'
 
 
 # Internal constants.
@@ -199,7 +204,7 @@ class Folio():
         elif id.startswith('clc') and '.' in id:
             log(f'recognized {id} as an accession number')
             return RecordIdKind.ACCESSION
-        else:
+        elif id.count('-') > 2:
             # Given a uuid, there's no way to ask Folio what kind it is, b/c
             # of Folio's microarchitecture & the lack of a central coordinating
             # authority.  So we have to ask different modules in turn.
@@ -235,23 +240,23 @@ class Folio():
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
-            response = self._folio('get', f'/users?query=barcode={id}&limit=0')
-            if response:
-                if response.status_code == 200:
-                    # This endpoint always return a value, even when there are
-                    # no hits, so we have to look inside.
-                    data_dict = json.loads(response.text)
-                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
-                        log(f'recognized {id} as a user barcode')
-                        return RecordIdKind.USER_BARCODE
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
-
             response = self._folio('get', f'/loan-storage/loans/{id}?limit=0')
             if response:
                 if response.status_code == 200:
                     log(f'recognized {id} as a loan id')
                     return RecordIdKind.LOAN_ID
+                elif response.status_code >= 500:
+                    raise RuntimeError('FOLIO server error')
+        else:
+            response = self._folio('get', f'/users?query=barcode={id}&limit=0')
+            if response:
+                if response.status_code == 200:
+                    # This endpoint always return a value, even when there
+                    # are no hits, so we have to look inside.
+                    data_dict = json.loads(response.text)
+                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
+                        log(f'recognized {id} as a user barcode')
+                        return RecordIdKind.USER_BARCODE
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
@@ -263,8 +268,8 @@ class Folio():
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
-            # We're out of ideas.
-            return RecordIdKind.UNKNOWN
+        # If we end up here, we're out of ideas.
+        return RecordIdKind.UNKNOWN
 
 
     def records(self, id, id_type, requested = None):
