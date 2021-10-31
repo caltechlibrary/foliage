@@ -17,15 +17,16 @@ import pywebio
 from   pywebio.input import input, select, checkbox, radio, file_upload
 from   pywebio.input import NUMBER, TEXT
 from   pywebio.output import put_text, put_markdown, put_row, put_html
-from   pywebio.output import toast, popup, close_popup, put_buttons, put_error
+from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
-from   pywebio.output import put_tabs, put_image, put_scrollable, put_code
+from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
 from   pywebio.output import put_processbar, set_processbar, put_loading, span
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
 import re
+import threading
 import webbrowser
 
 if __debug__:
@@ -53,10 +54,10 @@ def foliage_main_page(log_file, backup_dir, demo_mode):
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([
+        {'title': 'Show IDs', 'content': list_types_tab()},
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
 #        {'title': 'Change records', 'content': change_records_tab()},
-        {'title': 'Show IDs', 'content': list_types_tab()},
         {'title': 'Other', 'content': other_tab()},
         ])
 
@@ -65,6 +66,26 @@ def foliage_main_page(log_file, backup_dir, demo_mode):
                                 color = 'warning')]
                 ).style('position: absolute; bottom: -10px;'
                         + 'left: calc(50% - 3.5em); z-index: 2')
+
+    # def popup_input(pins, title = 'Record'):
+    #     pins  = [pins] if not isinstance(pins, list) else pins
+    #     event = threading.Event()
+
+    #     def onclick(val):
+    #         event.set()
+
+    #     pins.append(put_buttons([
+    #         {'label': 'Close', 'value': True},
+    #     ], onclick = onclick).style('float: right'))
+    #     popup(title = title, content = pins, closable = False)
+
+    #     event.wait()
+    #     close_popup()
+
+    # result = popup_input([
+    #     put_scrollable(put_markdown('foo'), height = 600),
+    # ])
+
 
     # Start the infinite loop for processing user input.
     run_main_loop(log_file, backup_dir, demo_mode)
@@ -108,19 +129,25 @@ def run_main_loop(log_file, backup_dir, demo_mode):
             log(f'listing id types')
             with use_scope('output', clear = True):
                 put_processbar('bar', init = 1/2)
-                type_name = pin.list_type.replace('-', ' ')
+                requested = pin.list_type
                 try:
-                    types = folio.types(pin.list_type)
+                    types = folio.types(requested)
                 except Exception as ex:
                     put_html('<br>')
-                    put_error(f'Error: {antiformat(str(ex))}')
+                    put_error('Error: ' + str(ex))
                     continue
                 finally:
                     set_processbar('bar', 2/2)
                 put_html('<br>')
-                put_markdown(f'There are {len(types)} possible values for {type_name}:')
-                put_table(sorted([[item[0], item[1]] for item in types]),
-                          header = ['Type', 'Id'])
+                cleaned_name = requested.split('/')[0].replace("-", " ")
+                put_markdown(f'Found {len(types)} values for {cleaned_name}:')
+                contents = []
+                for item in types:
+                    name, id = item[0], item[1]
+                    title = f'Data for {cleaned_name} value "{name.title()}"'
+                    action = lambda: show_record(title, folio.records(id, RecordIdKind.TYPE_ID, requested))
+                    contents.append([name, link(id, action)])
+                put_table(sorted(contents, key = lambda x: x[0]), header = ['Type', 'Id'])
 
         elif event_type == 'do_find':
             log(f'do_find invoked')
@@ -202,43 +229,44 @@ def run_main_loop(log_file, backup_dir, demo_mode):
 
 def list_types_tab():
     return [
-        put_grid([[put_markdown('Select a FOLIO type to list:').style('margin-top: 5px'),
-                   put_select('list_type',
-                              options=[
-                                  {'label': 'Address types', 'value': TypeKind.ADDRESS.value},
-                                  {'label': 'Alternative title types', 'value': TypeKind.ALT_TITLE.value},
-                                  {'label': 'Call number types', 'value': TypeKind.CALL_NUMBER.value},
-                                  {'label': 'Classification types', 'value': TypeKind.CLASSIFICATION.value},
-                                  {'label': 'Contributor types', 'value': TypeKind.CONTRIBUTOR.value},
-                                  {'label': 'Contributor name types', 'value': TypeKind.CONTRIBUTOR_NAME.value},
-                                  {'label': 'Department types', 'value': TypeKind.DEPARTMENT.value},
-                                  {'label': 'Group types', 'value': TypeKind.GROUP.value},
-                                  {'label': 'Holdings types', 'value': TypeKind.HOLDINGS.value},
-                                  {'label': 'Holdings note types', 'value': TypeKind.HOLDINGS_NOTE.value},
-                                  {'label': 'Holdings source types', 'value': TypeKind.HOLDINGS_SOURCE.value},
-                                  {'label': 'Identifier types', 'value': TypeKind.ID.value},
-                                  {'label': 'ILL policy types', 'value': TypeKind.ILL_POLICY.value},
-                                  {'label': 'Instance types', 'value': TypeKind.INSTANCE.value},
-                                  {'label': 'Instance format types', 'value': TypeKind.INSTANCE_FORMAT.value},
-                                  {'label': 'Instance note types', 'value': TypeKind.INSTANCE_NOTE.value},
-                                  {'label': 'Instance relationship types', 'value': TypeKind.INSTANCE_REL.value},
-                                  {'label': 'Instance status types', 'value': TypeKind.INSTANCE_STATUS.value},
-                                  {'label': 'Item note types', 'value': TypeKind.ITEM_NOTE.value},
-                                  {'label': 'Item damaged status types', 'value': TypeKind.ITEM_DAMAGED_STATUS.value},
-                                  {'label': 'Loan types', 'value': TypeKind.LOAN.value},
-                                  {'label': 'Location types', 'value': TypeKind.LOCATION.value},
-                                  {'label': 'Material types', 'value': TypeKind.MATERIAL.value},
-                                  {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT.value},
-                                  {'label': 'Organizations', 'value': TypeKind.ORGANIZATION.value},
-                                  {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT.value},
-                                  {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION.value},
-                                  {'label': 'Statistical code types', 'value': TypeKind.STATISTICAL_CODE.value},
-                              ]).style('margin-left: 10px'),
-                   put_actions('do_list', buttons = ['Get list']).style('margin-left: 10px; text-align: left'),
-                   put_actions('clear_list',
-                               buttons = [dict(label = 'Clear', value = 'clear',
-                                               color = 'secondary')]).style('margin-left: 10px; text-align: right')
-                  ]])
+        put_grid([[
+            put_markdown('Select a FOLIO type to list:').style('margin-top: 6px'),
+            put_select('list_type', options = [
+                {'label': 'Address types', 'value': TypeKind.ADDRESS},
+                {'label': 'Alternative title types', 'value': TypeKind.ALT_TITLE},
+                {'label': 'Call number types', 'value': TypeKind.CALL_NUMBER},
+                {'label': 'Classification types', 'value': TypeKind.CLASSIFICATION},
+                {'label': 'Contributor types', 'value': TypeKind.CONTRIBUTOR},
+                {'label': 'Contributor name types', 'value': TypeKind.CONTRIBUTOR_NAME},
+                {'label': 'Department types', 'value': TypeKind.DEPARTMENT},
+                {'label': 'Group types', 'value': TypeKind.GROUP},
+                {'label': 'Holdings types', 'value': TypeKind.HOLDINGS},
+                {'label': 'Holdings note types', 'value': TypeKind.HOLDINGS_NOTE},
+                {'label': 'Holdings source types', 'value': TypeKind.HOLDINGS_SOURCE},
+                {'label': 'Identifier types', 'value': TypeKind.ID},
+                {'label': 'ILL policy types', 'value': TypeKind.ILL_POLICY},
+                {'label': 'Instance types', 'value': TypeKind.INSTANCE},
+                {'label': 'Instance format types', 'value': TypeKind.INSTANCE_FORMAT},
+                {'label': 'Instance note types', 'value': TypeKind.INSTANCE_NOTE},
+                {'label': 'Instance relationship types', 'value': TypeKind.INSTANCE_REL},
+                {'label': 'Instance status types', 'value': TypeKind.INSTANCE_STATUS},
+                {'label': 'Item note types', 'value': TypeKind.ITEM_NOTE},
+                {'label': 'Item damaged status types', 'value': TypeKind.ITEM_DAMAGED_STATUS},
+                {'label': 'Loan types', 'value': TypeKind.LOAN},
+                {'label': 'Location types', 'value': TypeKind.LOCATION},
+                {'label': 'Material types', 'value': TypeKind.MATERIAL},
+                {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT},
+                {'label': 'Organizations', 'value': TypeKind.ORGANIZATION},
+                {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT},
+                {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION},
+                {'label': 'Statistical code types', 'value': TypeKind.STATISTICAL_CODE},
+            ]).style('margin-left: 10px'),
+            put_actions('do_list',
+                        buttons = ['Get list']).style('margin-left: 10px; text-align: left'),
+            put_actions('clear_list',
+                        buttons = [dict(label = 'Clear', value = 'clear',
+                                        color = 'secondary')]).style('margin-left: 10px; text-align: right')
+        ]])
     ]
 
 
@@ -285,10 +313,6 @@ def delete_records_tab():
                                         color = 'secondary')]).style('text-align: right')
         ])
     ]
-
-
-def change_records_tab():
-    return 'Forthcoming ...'
 
 
 def other_tab():
@@ -376,6 +400,34 @@ def unique_identifiers(text):
     identifiers = flatten(re.split(r'\s+|,+', line) for line in lines)
     identifiers = [id.replace('"', '') for id in identifiers]
     return unique(filter(None, identifiers))
+
+
+def link(name, action):
+    return put_button(name, onclick = action, link_style = True)
+
+
+def show_record(title, data):
+    event = threading.Event()
+
+    def clk(val):
+        event.set()
+
+    data = data[0] if isinstance(data, list) and len(data) > 0 else data
+    pins = [
+        put_scrollable(put_code(pformat(data, indent = 2)), height = 600),
+        put_buttons([{'label': 'Close', 'value': 1}], onclick = clk).style('float: right')
+    ]
+    popup(title = title, content = pins, closable = False, size = 'large')
+
+    event.wait()
+    close_popup()
+
+
+def test():
+    put_markdown('foo')
+    put_buttons([
+        {'label': 'Close', 'value': True},
+    ], onclick = onclick).style('float: right')
 
 
 def backup_record(record, backup_dir):
