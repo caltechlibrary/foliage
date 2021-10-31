@@ -113,6 +113,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                 try:
                     types = folio.types(requested)
                 except Exception as ex:
+                    log(f'exception requesting list of {requested}: ' + str(ex))
                     put_html('<br>')
                     put_error('Error: ' + str(ex))
                     continue
@@ -125,7 +126,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                 for item in types:
                     name, id = item[0], item[1]
                     title = f'Data for {cleaned_name} value "{name.title()}"'
-                    action = lambda: show_record(title, folio.records(id, RecordIdKind.TYPE_ID, requested))
+                    action = lambda: show_record(title, id, requested)
                     contents.append([name, link(id, action)])
                 put_table(sorted(contents, key = lambda x: x[0]), header = ['Type', 'Id'])
 
@@ -142,6 +143,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
+                        log(f'could not recognize type of {id}: ' + str(ex))
                         put_error(f'Could not recognize the identifier type of {id}.')
                         set_processbar('bar', index/steps)
                         continue
@@ -150,6 +152,7 @@ def run_main_loop(log_file, backup_dir, demo_mode):
                     try:
                         records = folio.records(id, id_type, record_kind)
                     except Exception as ex:
+                        log(f'exception trying to get records for {id}: ' + str(ex))
                         put_error(f'Error: {antiformat(str(ex))}')
                         break
                     finally:
@@ -391,14 +394,21 @@ def link(name, action):
     return put_button(name, onclick = action, link_style = True)
 
 
-def show_record(title, data):
+def show_record(title, id, record_type):
+    folio = Folio()
+    try:
+        data  = folio.records(id, RecordIdKind.TYPE_ID, record_type)
+    except Exception as ex:
+        alert(str(ex))
+        return
+
     event = threading.Event()
 
     def clk(val):
         event.set()
 
-    data = data[0] if isinstance(data, list) and len(data) > 0 else data
-    pins = [
+    data  = data[0] if isinstance(data, list) and len(data) > 0 else data
+    pins  = [
         put_scrollable(put_code(pformat(data, indent = 2)), height = 400),
         put_buttons([{'label': 'Close', 'value': 1}], onclick = clk).style('float: right'),
     ]
