@@ -176,9 +176,10 @@ class Folio():
 
     def __init__(self, creds = None):
         '''Create an interface to the FOLIO server.'''
-        self.creds = None
         if creds:
             self.use_credentials(creds)
+        if not hasattr(self, 'creds'):
+            self.creds = none
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
