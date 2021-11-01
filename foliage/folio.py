@@ -19,8 +19,9 @@ from   functools import partial
 from   fastnumbers import isint
 import json
 from   sidetrack import set_debug, log
+from   validators.url import url as valid_url
 
-from .credentials import Credentials
+from   .credentials import Credentials, credentials_complete
 
 
 # Public data types.
@@ -175,12 +176,14 @@ class Folio():
 
     def __init__(self, creds = None):
         '''Create an interface to the FOLIO server.'''
+        self.creds = None
         if creds:
             self.use_credentials(creds)
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
         '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
+
         headers = {
             "x-okapi-token": self.creds.token,
             "x-okapi-tenant": self.creds.tenant_id,
@@ -214,6 +217,26 @@ class Folio():
             + f'FOLIO_OKAPI_URL = {self.creds.url}\n'
             + f'FOLIO_OKAPI_TENANT_ID = {self.creds.tenant_id}\n'
             + f'FOLIO_OKAPI_TOKEN = {self.creds.token}')
+
+
+    @staticmethod
+    def valid_credentials(creds):
+        if not creds or not credentials_complete(creds):
+            return False
+        if not valid_url(creds.url):
+            return False
+        try:
+            headers = {
+                "x-okapi-token": creds.token,
+                "x-okapi-tenant": creds.tenant_id,
+                "content-type": "application/json",
+            }
+            request_url = creds.url + '/instance-statuses?limit=0'
+            (resp, _) = net('get', request_url, headers = headers)
+            return (resp and resp.status_code < 400)
+        except Exception as ex:
+            log(f'FOLIO test failed with ' + str(ex))
+            return False
 
 
     def record_id_type(self, id):
