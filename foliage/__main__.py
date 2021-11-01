@@ -39,7 +39,7 @@ from   tornado.template import Template
 if __debug__:
     from sidetrack import set_debug, log
 
-from .credentials import credentials_from_file
+from .credentials import credentials_from_file, credentials_complete
 from .foliage import foliage_main_page
 from .ui import JS_CODE, CSS_CODE, alert, warn
 
@@ -57,13 +57,14 @@ _APP_DIRS = AppDirs('Foliage', 'CaltechLibrary')
     backup_dir = ('save copies of records in directory "B"',             'option', 'b'),
     creds_file = ('read FOLIO credentials from file "C" (default: ask)', 'option', 'c'),
     demo_mode  = ('demo mode: don\'t perform destructive operations',    'flag',   'd'),
+    no_keyring = ('do not use the keyring service for credentials',      'flag',   'K'),
     port       = ('open browser on port "P" (default: 8080)',            'option', 'p'),
     version    = ('print version info and exit',                         'flag',   'V'),
     debug      = ('log debug output to "OUT" ("-" is console)',          'option', '@'),
 )
 
-def main(backup_dir = 'B', creds_file = 'C', demo_mode = False, port = 'P',
-         version = False, debug = 'OUT'):
+def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
+         no_keyring = False, port = 'P', version = False, debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
     # Set up debug logging as soon as possible --------------------------------
@@ -92,12 +93,15 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False, port = 'P',
         if not exists(creds_file):
             alert(f'Credentials file does not exist: {creds_file}', False)
             exit(1)
-        elif not readable(creds_file):
+        if not readable(creds_file):
             alert(f'Credentials file not readable: {creds_file}', False)
             exit(1)
         creds = credentials_from_file(creds_file)
         if not creds:
             warn(f'Failed to read credentials from {creds_file}', False)
+        if not credentials_complete(creds):
+            alert(f'Incomplete credentials in {creds_file}', False)
+            exit(1)
 
     port = 8080 if port == 'P' else port
     if not isint(port):
@@ -123,14 +127,18 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False, port = 'P',
             index_page_template = Template(index_tpl.read())
         pywebio.platform.utils._index_page_tpl = index_page_template
 
-        log(f'using {backup_dir} for backing up records')
-        log(f'debug log output going to {log_file if log_file else "stdout"}')
-        log(f'starting server')
+        log(f'backup_dir = {backup_dir}')
+        log(f'log_file = {log_file if log_file else "stdout"}')
+        log(f'creds_file = {creds_file}')
+        log(f'demo_mode = {demo_mode}')
+        log(f'no_keyring = {no_keyring}')
+        log(f'port = {port}')
 
         if demo_mode:
-            warn('Demo mode is on: changes to FOLIO will not be made', False)
+            warn('Demo mode is on: changes to FOLIO will NOT be made', False)
 
-        foliage = partial(foliage_main_page, creds, log_file, backup_dir, demo_mode)
+        foliage = partial(foliage_main_page, creds, log_file, backup_dir,
+                          demo_mode, not no_keyring)
         start_server(foliage, port = port, auto_open_webbrowser = True,
                      debug = debug_mode)
     except KeyboardInterrupt as ex:
