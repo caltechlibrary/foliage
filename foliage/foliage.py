@@ -9,6 +9,7 @@ from   datetime import datetime as dt
 from   dateutil import tz
 from   functools import partial
 from   getpass import getuser
+from   io import BytesIO, StringIO
 import json
 import os
 from   os.path import exists, dirname, join, basename, abspath
@@ -24,7 +25,7 @@ from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_
 from   pywebio.output import put_processbar, set_processbar, put_loading, span
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
-from   pywebio.session import run_js, eval_js
+from   pywebio.session import run_js, eval_js, download
 import re
 from   sidetrack import set_debug, log
 import threading
@@ -34,6 +35,17 @@ from .credentials import credentials_from_user, credentials_from_keyring
 from .credentials import save_credentials, credentials_complete
 from .folio import Folio, RecordKind, RecordIdKind, TypeKind
 from .ui import quit_app, reload_page, alert, warn, confirm, notify, image_data
+
+
+# Internal constants.
+# .............................................................................
+
+# Keys to look up the name field in id lists, when the name field is not 'name'
+ID_NAME_KEYS = {
+    TypeKind.ADDRESS.value : 'addressType',
+    TypeKind.GROUP.value   : 'group',
+}
+
 
 
 # Overall main page structure
@@ -159,8 +171,9 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                                 ).style('text-align: right; margin-right: 17px'),
                 ])
                 contents = []
-                for item in types:
-                    name, id = item[0], item[1]
+                key = ID_NAME_KEYS[requested] if requested in ID_NAME_KEYS else 'name'
+                type_list = [(item[key], item['id']) for item in types]
+                for name, id in type_list:
                     title = f'Data for {cleaned_name} value "{name.title()}"'
                     action = lambda: show_record(title, id, requested)
                     contents.append([name, link(id, action)])
@@ -462,7 +475,24 @@ def show_record(title, id, record_type):
 
 
 def export_types(requested):
-    pass
+    folio = Folio()
+    value_list = folio.types(requested)
+    if not value_list:
+        alert('Nothing to export')
+        return
+    name_key = ID_NAME_KEYS[requested] if requested in ID_NAME_KEYS else 'name'
+    columns = set(value_list[0].keys()) - {'metadata'}
+    columns = sorted(columns, key = lambda x: (x != name_key, x))
+    with StringIO() as tmp:
+        writer = csv.DictWriter(tmp, fieldnames = columns)
+        writer.writeheader()
+        for item_dict in sorted(value_list, key = lambda d: d[name_key]):
+            # Skip the 'metadata' field.
+            row = {k:v for k,v in item_dict.items() if k != 'metadata'}
+            writer.writerow(row)
+        tmp.seek(0)
+        bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
+        download(f'{requested}-list.csv', bytes)
 
 
 def backup_record(record, backup_dir):
