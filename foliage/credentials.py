@@ -11,7 +11,6 @@ from   pywebio.pin import pin, put_input, put_actions, put_textarea
 from   sidetrack import set_debug, log
 import sys
 import threading
-from   validators.url import url as valid_url
 
 if sys.platform.startswith('win'):
     import keyring.backends
@@ -45,15 +44,15 @@ def credentials_from_file(creds_file):
 
 def credentials_from_user(warn_empty = True, initial_creds = None):
     event = threading.Event()
-    confirmed_form = None
+    clicked_ok = False
 
     def clk(val):
-        nonlocal confirmed_form
-        confirmed_form = val
+        nonlocal clicked_ok
+        clicked_ok = val
         event.set()
 
     log(f'asking user for credentials')
-    current = initial_creds or credentials_from_keyring() or Credentials('', '', '')
+    current = initial_creds or Credentials('', '', '')
     pins = [
         put_input('url',       label = 'OKAPI URL', value = current.url),
         put_input('tenant_id', label = 'Tenant id', value = current.tenant_id),
@@ -67,22 +66,17 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
 
     event.wait()
     close_popup()
-    wait(0.5)
+    wait(0.5)                           # Give time for popup to go away.
 
-    if not all([pin.tenant_id, pin.url, pin.token]):
-        if not warn_empty:
-            return None
-        if confirm('Cannot proceed without all FOLIO credentials. Try again?'):
-            return credentials_from_user()
+    if not clicked_ok:
+        return initial_creds
 
     new_creds = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = pin.token)
-    if not valid_url(pin.url):
-        alert(f'Not a valid URL: {pin.url}')
-        return credentials_from_user(initial_creds = new_creds)
+    if not credentials_complete(new_creds) and warn_empty:
+        if confirm('Cannot proceed without all credentials. Try again?'):
+            return credentials_from_user(initial_creds = new_creds)
 
-    if all([pin.url, pin.tenant_id, pin.token]):
-        return new_creds
-    return None
+    return new_creds
 
 
 # Explanation about the weird way this is done: the Python keyring module
@@ -95,8 +89,9 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
 # a single string used as the actual value stored.  The individual values are
 # separated by a character that is unlikely to be part of any user-typed value.
 
-def credentials_from_keyring(ring = _KEYRING):
-    '''Looks up the user's credentials.'''
+def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
+    '''Look up the user's credentials.
+    If partial_ok is False, return None if the keyring value is incomplete.'''
     if sys.platform.startswith('win'):
         keyring.set_keyring(WinVaultKeyring())
     if sys.platform.startswith('darwin'):
@@ -105,13 +100,13 @@ def credentials_from_keyring(ring = _KEYRING):
     if __debug__: log(f'got "{value}" from keyring {_KEYRING}')
     if value:
         parts = _decoded(value)
-        return Credentials(url = parts[0], tenant_id = parts[1], token = parts[2])
-    else:
-        return None
+        if all(parts) or partial_ok:
+            return Credentials(url = parts[0], tenant_id = parts[1], token = parts[2])
+    return None
 
 
 def save_credentials(creds, ring = _KEYRING):
-    '''Saves the user's credentials.'''
+    '''Save the user's credentials.'''
     if sys.platform.startswith('win'):
         keyring.set_keyring(WinVaultKeyring())
     if sys.platform.startswith('darwin'):
@@ -119,6 +114,11 @@ def save_credentials(creds, ring = _KEYRING):
     value = _encoded(creds.url, creds.tenant_id, creds.token)
     if __debug__: log(f'storing "{value}" to keyring {_KEYRING}')
     keyring.set_password(ring, getpass.getuser(), value)
+
+
+def credentials_complete(creds):
+    '''Return True if the given credentials are complete.'''
+    return (creds and creds.url and creds.tenant_id and creds.token)
 
 
 # Utility functions
