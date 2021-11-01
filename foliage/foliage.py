@@ -84,7 +84,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
         event = pin_wait_change('do_list_types', 'do_find', 'do_delete',
                                 'clear_list', 'clear_find', 'clear_delete',
                                 'quit', 'show_log', 'show_backups',
-                                'edit_credentials')
+                                'edit_credentials', 'export_types_list')
         event_type = event['name']
 
         if event_type.startswith('clear'):  # catches all clear_* buttons.
@@ -118,6 +118,10 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                 save_credentials(creds)
                 folio.use_credentials(creds)
 
+        elif event_type == 'export_types_list':
+            log(f'exporting list of types')
+            export_types(pin.list_type)
+
         elif event_type == 'do_list_types':
             log(f'listing id types')
             with use_scope('output', clear = True):
@@ -134,7 +138,14 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     set_processbar('bar', 2/2)
                 put_html('<br>')
                 cleaned_name = requested.split('/')[-1].replace("-", " ")
-                put_markdown(f'Found {len(types)} values for {cleaned_name}:')
+                put_row([
+                    put_markdown(f'Found {len(types)} values for {cleaned_name}:'
+                                 ).style('margin-left: 17px; margin-top: 6px'),
+                    put_actions('export_types_list',
+                                buttons = [dict(label = 'Export', value = 'export',
+                                                color = 'info')]
+                                ).style('text-align: right; margin-right: 17px'),
+                ])
                 contents = []
                 for item in types:
                     name, id = item[0], item[1]
@@ -264,7 +275,7 @@ def list_types_tab():
             put_actions('do_list_types',
                         buttons = ['Get list']).style('margin-left: 10px; text-align: left'),
             put_actions('clear_list',
-                        buttons = [dict(label = 'Clear', value = 'clear',
+                        buttons = [dict(label = ' Clear ', value = 'clear',
                                         color = 'secondary')]).style('margin-left: 10px; text-align: right')
         ]])
     ]
@@ -438,11 +449,8 @@ def show_record(title, id, record_type):
     close_popup()
 
 
-def test():
-    put_markdown('foo')
-    put_buttons([
-        {'label': 'Close', 'value': True},
-    ], onclick = onclick).style('float: right')
+def export_types(requested):
+    pass
 
 
 def backup_record(record, backup_dir):
