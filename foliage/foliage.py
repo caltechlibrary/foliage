@@ -46,7 +46,6 @@ ID_NAME_KEYS = {
     TypeKind.GROUP.value   : 'group',
 }
 
-
 
 # Overall main page structure
 # .............................................................................
@@ -192,7 +191,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     put_html('<br>')
                     id_type = folio.record_id_type(id)
                     if id_type == RecordIdKind.UNKNOWN:
-                        log(f'could not recognize type of {id}: ' + str(ex))
+                        log(f'could not recognize type of {id}')
                         put_error(f'Could not recognize the identifier type of {id}.')
                         set_processbar('bar', index/steps)
                         continue
@@ -202,7 +201,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                         records = folio.records(id, id_type, record_kind)
                     except Exception as ex:
                         log(f'exception trying to get records for {id}: ' + str(ex))
-                        put_error(f'Error: {antiformat(str(ex))}')
+                        put_error(f'Error: ' + str(ex))
                         break
                     finally:
                         set_processbar('bar', index/steps)
@@ -240,7 +239,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                         records = folio.records(id, id_type)
                         record = records[0] if records else None
                     except Exception as ex:
-                        alert(f'Error: {antiformat(str(ex))}')
+                        alert(f'Error: ' + str(ex))
                         break
                     finally:
                         set_processbar('bar', index/steps)
@@ -308,18 +307,20 @@ def list_types_tab():
 
 def find_records_tab():
     return [
-        put_markdown('Input one or more item barcode, item id, instance id,'
-                     + ' hrid, accession number, user id or user barcode in the'
-                     + ' field below, then press the button to look up records.'
-                     + ' (Searching for items by instance records may return'
-                     + ' multiple results.)'),
+        put_markdown('Input one or more item barcode, item id, item hrid,'
+                     + ' instance id, instance hrid, instance accession number,'
+                     + ' user id, or user barcode in the field below, then'
+                     + ' press the button to look up records. Retrieving a type'
+                     + ' different from the identifier type may yield multiple'
+                     + ' records (e.g., using an instance id to retrieve'
+                     + ' items linked to that instance).'),
         put_textarea('textbox_find', rows = 4),
         put_radio('select_kind_find', inline = True,
                   label = 'Type of record to retrieve:',
                   options = [ ('Item', RecordKind.ITEM.value, True),
                               ('Instance', RecordKind.INSTANCE.value),
-                              ('User', RecordKind.USER.value),
-                              ('Loan', RecordKind.LOAN.value)]),
+                              ('Loan', RecordKind.LOAN.value),
+                              ('User', RecordKind.USER.value)]),
         put_text(''), # Adds a column, pushing next item to the right.
         put_checkbox('show_raw', options = ['Show raw data from FOLIO']),
         put_row([
@@ -333,7 +334,7 @@ def find_records_tab():
 
 def delete_records_tab():
     return [
-        put_markdown('Write one or more barcode, HRID, item id, or instance id'
+        put_markdown('Write one or more barcode, hrid, item id, or instance id'
                      + ' in the field below, then press he button to delete'
                      + ' the corresponding FOLIO records. Note that **deleting'
                      + ' instance records will cause multiple holdings and item'
@@ -395,8 +396,9 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
             ['Title'                     , record['title']],
+            ['Barcode'                   , record['barcode']],
             ['Call number'               , record['callNumber']],
-            [f'FOLIO {record_kind.title()} id' , record['id']],
+            [f'{record_kind.title()} id' , record['id']],
             ['Effective location'        , record['effectiveLocation']['name']],
             ['Permanent location'        , record['permanentLocation']['name']],
             ['Status'                    , record['status']['name']],
@@ -411,7 +413,7 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
         put_table([
             ['Title'                     , record['title']],
             ['Call number'               , record['classifications'][0]['classificationNumber']],
-            [f'FOLIO {record_kind.title()} id' , record['id']],
+            [f'{record_kind.title()} id' , record['id']],
             ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
             ['HRID'                      , record['hrid']],
             ['Created'                   , record['metadata']['createdDate']],
@@ -422,14 +424,14 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
         put_table([
             ['Username'                  , record['username']],
             ['Barcode'                   , record['barcode']],
-            [f'FOLIO {record_kind.title()} id' , record['id']],
+            [f'{record_kind.title()} id' , record['id']],
             ['Patron group'              , record['patronGroup']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
         ]).style('margin-left: 2em; font-size: 90%')
     elif record_kind == 'loan':
         put_table([
-            [f'FOLIO {record_kind.title()} id' , record['id']],
+            [f'{record_kind.title()} id' , record['id']],
             ['User id'                   , record['userId']],
             ['Item id'                   , record['itemId']],
             ['Loan date'                 , record['loanDate']],
@@ -443,6 +445,7 @@ def unique_identifiers(text):
     lines = text.splitlines()
     identifiers = flatten(re.split(r'\s+|,+', line) for line in lines)
     identifiers = [id.replace('"', '') for id in identifiers]
+    identifiers = [id.replace(':', '') for id in identifiers]
     return unique(filter(None, identifiers))
 
 
