@@ -18,9 +18,9 @@ from   enum import Enum, EnumMeta
 from   functools import partial
 from   fastnumbers import isint
 import json
+from   sidetrack import set_debug, log
 
-if __debug__:
-    from sidetrack import set_debug, log
+from .credentials import Credentials
 
 
 # Public data types.
@@ -173,20 +173,21 @@ class Folio():
         return existing_instance
 
 
-    def __init__(self, creds):
+    def __init__(self, creds = None):
         '''Create an interface to the FOLIO server.'''
-        self.use_credentials(creds)
+        if creds:
+            self.use_credentials(creds)
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
         '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
         headers = {
-            "x-okapi-token": self.okapi_token,
-            "x-okapi-tenant": self.tenant_id,
+            "x-okapi-token": self.creds.token,
+            "x-okapi-tenant": self.creds.tenant_id,
             "content-type": "application/json",
         }
 
-        request_url = self.okapi_base_url + endpoint
+        request_url = self.creds.url + endpoint
         (response, error) = net(op, request_url, headers = headers)
         if not error:
             log(f'got result from {request_url}')
@@ -208,13 +209,11 @@ class Folio():
 
 
     def use_credentials(self, creds):
-        self.okapi_base_url = creds['url']
-        self.okapi_token = creds['token']
-        self.tenant_id = creds['tenant_id']
+        self.creds = creds
         log('Configuration: \n'
-            + f'FOLIO_OKAPI_URL = {self.okapi_base_url}\n'
-            + f'FOLIO_OKAPI_TOKEN = {self.okapi_token}\n'
-            + f'FOLIO_OKAPI_TENANT_ID = {self.tenant_id}')
+            + f'FOLIO_OKAPI_URL = {self.creds.url}\n'
+            + f'FOLIO_OKAPI_TENANT_ID = {self.creds.tenant_id}\n'
+            + f'FOLIO_OKAPI_TOKEN = {self.creds.token}')
 
 
     def record_id_type(self, id):

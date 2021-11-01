@@ -2,6 +2,7 @@
 credentials.py: module for handling credentials for Foliage
 '''
 
+from   collections import namedtuple
 from   commonpy.interrupt import wait
 import getpass
 import keyring
@@ -22,21 +23,27 @@ if sys.platform.startswith('darwin'):
 from .ui import alert, warn, confirm
 
 
-# Global constants.
+# Private constants.
 # .............................................................................
 
 _KEYRING = f'org.caltechlibrary.{__package__}'
 '''The name of the keyring used to store server access credentials, if any.'''
 
 
-# Main functions.
+# Public data types.
+# .............................................................................
+
+Credentials = namedtuple('Credentials', 'url tenant_id token')
+
+
+# Public functions.
 # .............................................................................
 
 def credentials_from_file(creds_file):
     pass
 
 
-def credentials_from_user(warn_empty = True, use_creds = None):
+def credentials_from_user(warn_empty = True, initial_creds = None):
     event = threading.Event()
     confirmed_form = None
 
@@ -45,18 +52,12 @@ def credentials_from_user(warn_empty = True, use_creds = None):
         confirmed_form = val
         event.set()
 
-    tenant_id = url = token = ''
-    current_creds = use_creds or credentials_from_keyring()
-    if current_creds:
-        tenant_id = current_creds['tenant_id']
-        url = current_creds['url']
-        token = current_creds['token']
-
     log(f'asking user for credentials')
+    current = initial_creds or credentials_from_keyring() or Credentials('', '', '')
     pins = [
-        put_input('tenant_id', label = 'Tenant id', value = tenant_id),
-        put_input('url',       label = 'OKAPI URL', value = url),
-        put_textarea('token',  label = 'OKAPI API token', value = token, rows = 4),
+        put_input('url',       label = 'OKAPI URL', value = current.url),
+        put_input('tenant_id', label = 'Tenant id', value = current.tenant_id),
+        put_textarea('token',  label = 'API token', value = current.token, rows = 4),
         put_buttons([
             {'label': 'Submit', 'value': True},
             {'label': 'Cancel', 'value': False, 'color': 'danger'},
@@ -74,33 +75,15 @@ def credentials_from_user(warn_empty = True, use_creds = None):
         if confirm('Cannot proceed without all FOLIO credentials. Try again?'):
             return credentials_from_user()
 
-    value_dict = {'tenant_id': pin.tenant_id, 'url': pin.url, 'token': pin.token}
+    new_creds = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = pin.token)
     if not valid_url(pin.url):
         alert(f'Not a valid URL: {pin.url}')
-        return credentials_from_user(use_creds = value_dict)
+        return credentials_from_user(initial_creds = new_creds)
 
-    return value_dict if all(value_dict.values()) else None
+    if all([pin.url, pin.tenant_id, pin.token]):
+        return new_creds
+    return None
 
-
-def credentials_from_keyring():
-    creds = keyring_credentials()
-    if all(creds):
-        return {'url': creds[1], 'tenant_id': creds[0], 'token': creds[2]}
-    else:
-        return None
-
-
-def save_credentials(creds):
-    stored_creds = keyring_credentials()
-    if stored_creds == (creds['url'], creds['tenant_id'], creds['token']):
-        log(f'new credentials are the same as saved credentials')
-        return
-    log(f'saving credentials to keyring')
-    save_keyring_credentials(creds['url'], creds['tenant_id'], creds['token'])
-
-
-# Utility functions
-# .............................................................................
 
 # Explanation about the weird way this is done: the Python keyring module
 # only offers a single function for setting a value; ostensibly, this is
@@ -112,7 +95,7 @@ def save_credentials(creds):
 # a single string used as the actual value stored.  The individual values are
 # separated by a character that is unlikely to be part of any user-typed value.
 
-def keyring_credentials(ring = _KEYRING):
+def credentials_from_keyring(ring = _KEYRING):
     '''Looks up the user's credentials.'''
     if sys.platform.startswith('win'):
         keyring.set_keyring(WinVaultKeyring())
@@ -120,19 +103,26 @@ def keyring_credentials(ring = _KEYRING):
         keyring.set_keyring(Keyring())
     value = keyring.get_password(ring, getpass.getuser())
     if __debug__: log(f'got "{value}" from keyring {_KEYRING}')
-    return _decoded(value) if value else None
+    if value:
+        parts = _decoded(value)
+        return Credentials(url = parts[0], tenant_id = parts[1], token = parts[2])
+    else:
+        return None
 
 
-def save_keyring_credentials(url, tenant_id, token, ring = _KEYRING):
+def save_credentials(creds, ring = _KEYRING):
     '''Saves the user's credentials.'''
     if sys.platform.startswith('win'):
         keyring.set_keyring(WinVaultKeyring())
     if sys.platform.startswith('darwin'):
         keyring.set_keyring(Keyring())
-    value = _encoded(url, tenant_id, token)
+    value = _encoded(creds.url, creds.tenant_id, creds.token)
     if __debug__: log(f'storing "{value}" to keyring {_KEYRING}')
     keyring.set_password(ring, getpass.getuser(), value)
 
+
+# Utility functions
+# .............................................................................
 
 _SEP = ''
 '''Character used to separate multiple actual values stored as a single
