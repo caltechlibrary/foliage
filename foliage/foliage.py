@@ -31,15 +31,15 @@ import threading
 import webbrowser
 
 from .credentials import credentials_from_user, credentials_from_keyring
-from .credentials import save_credentials
+from .credentials import save_credentials, credentials_complete
 from .folio import Folio, RecordKind, RecordIdKind, TypeKind
-from .ui import quit_app, reload_page, alert, warn, confirm, image_data
+from .ui import quit_app, reload_page, alert, warn, confirm, notify, image_data
 
 
 # Overall main page structure
 # .............................................................................
 
-def foliage_main_page(explicit_creds, log_file, backup_dir, demo_mode):
+def foliage_main_page(cli_creds, log_file, backup_dir, demo_mode, use_keyring):
     log(f'creating index page')
     if demo_mode:
         put_warning('Demo mode in effect').style(
@@ -67,9 +67,21 @@ def foliage_main_page(explicit_creds, log_file, backup_dir, demo_mode):
                 ).style('position: absolute; bottom: -10px;'
                         + 'left: calc(50% - 3.5em); z-index: 2')
 
-    creds = explicit_creds or credentials_from_keyring() or credentials_from_user()
-    if not creds:
-        wait(0.5)
+    if cli_creds:
+        creds = cli_creds
+    elif use_keyring:
+        keyring_creds = credentials_from_keyring(partial_ok = True)
+        if credentials_complete(keyring_creds):
+            creds = keyring_creds
+        else:
+            creds = credentials_from_user(initial_creds = keyring_creds)
+    else:
+        creds = credentials_from_user()
+    if not credentials_complete(creds):
+        alert('Cannot proceed without complete credentials. Quitting.')
+        quit_app(ask_confirm = False)
+    if not Folio.valid_credentials(creds):
+        notify('Invalid FOLIO credentials. Quitting.')
         quit_app(ask_confirm = False)
     save_credentials(creds)
 
