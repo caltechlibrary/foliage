@@ -104,8 +104,13 @@ def confirm(question):
     return eval_js(f'confirm_action("{question}")')
 
 
+def notify(msg):
+    eval_js(f'alert("{msg}")')
+
+
 def quit_app(ask_confirm = True):
     log(f'quitting (ask = {ask_confirm})')
+    wait(0.25)
     if not ask_confirm or confirm('This will exit Foliage. Proceed?'):
         log(f'running JS function close_window()')
         run_js('close_window()')
