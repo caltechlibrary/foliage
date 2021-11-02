@@ -14,15 +14,17 @@ import json
 import os
 from   os.path import exists, dirname, join, basename, abspath
 from   pprint import pformat
+import pyperclip
 import pywebio
 from   pywebio.input import input, select, checkbox, radio, file_upload
-from   pywebio.input import NUMBER, TEXT
+from   pywebio.input import NUMBER, TEXT, input_update
 from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
-from   pywebio.output import put_processbar, set_processbar, put_loading, span
+from   pywebio.output import put_processbar, set_processbar, put_loading
+from   pywebio.output import put_column
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js, download
@@ -31,10 +33,11 @@ from   sidetrack import set_debug, log
 import threading
 import webbrowser
 
-from .credentials import credentials_from_user, credentials_from_keyring
-from .credentials import save_credentials, credentials_complete
-from .folio import Folio, RecordKind, RecordIdKind, TypeKind
-from .ui import quit_app, reload_page, alert, warn, confirm, notify, image_data
+from   .credentials import credentials_from_user, credentials_from_keyring
+from   .credentials import save_credentials, credentials_complete
+from   .enum_utils import MetaEnum, ExtendedEnum
+from   .folio import Folio, RecordKind, RecordIdKind, TypeKind
+from   .ui import quit_app, reload_page, alert, warn, confirm, notify, image_data
 
 
 # Internal constants.
@@ -65,10 +68,10 @@ def foliage_main_page(cli_creds, log_file, backup_dir, demo_mode, use_keyring):
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([
-        {'title': 'Show IDs', 'content': list_types_tab()},
+        {'title': 'List UUIDs', 'content': list_types_tab()},
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
-#        {'title': 'Change records', 'content': change_records_tab()},
+        {'title': 'Change records', 'content': change_records_tab()},
         {'title': 'Other', 'content': other_tab()},
         ])
 
@@ -106,7 +109,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
     while True:
         event = pin_wait_change('do_list_types', 'do_find', 'do_delete',
                                 'clear_list', 'clear_find', 'clear_delete',
-                                'quit', 'show_log', 'show_backups',
+                                'clear_chg', 'quit', 'show_log', 'show_backups',
                                 'edit_credentials', 'export_types_list')
         event_type = event['name']
 
@@ -175,8 +178,8 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                 for name, id in type_list:
                     title = f'Data for {cleaned_name} value "{name.title()}"'
                     action = lambda: show_record(title, id, requested)
-                    contents.append([name, link(id, action)])
-                put_table(sorted(contents, key = lambda x: x[0]), header = ['Type', 'Id'])
+                    contents.append([name, link(id, action), copy_button(id)])
+                put_table(sorted(contents, key = lambda x: x[0]), header = ['Type', 'Id', ''])
 
         elif event_type == 'do_find':
             log(f'do_find invoked')
@@ -206,7 +209,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     finally:
                         set_processbar('bar', index/steps)
                     if not records or len(records) == 0:
-                        put_error(f'No record(s) for {id_type.value} "{id}".')
+                        put_error(f'No {record_kind} record(s) for {id_type.value} "{id}".')
                         continue
                     this = pluralized(record_kind + " record", records, True)
                     how = f'by searching for {id_type.value} **{id}**'
@@ -332,6 +335,7 @@ def find_records_tab():
         ])
     ]
 
+
 def delete_records_tab():
     return [
         put_markdown('Write one or more barcode, hrid, item id, or instance id'
@@ -349,6 +353,62 @@ def delete_records_tab():
                         buttons = [dict(label = 'Clear', value = 'clear',
                                         color = 'secondary')]).style('text-align: right')
         ])
+    ]
+
+
+
+def change_records_tab():
+    item_fields = ['effectiveLocation',
+                   'materialType',
+                   'permanentLoanType',
+                   'permanentLocation',
+                   'temporaryLocation']
+
+    return [
+        put_markdown('### Item record changes'),
+        put_grid([[
+            put_grid([
+                [put_markdown('Identifiers of items to be changed:')],
+                [put_textarea('chg_item_records_ids', rows = 5)],
+                ]).style('margin-right: 10px'),
+            put_grid([
+                [put_text('Field to be changed:')],
+                [put_select('chg_item_field', options = item_fields)],
+                [put_text('New field value:')],
+                [put_input('chg_item_old_value')],
+                ]),
+            ]], cell_widths = '50% 50%'),
+        put_grid([[
+            None,
+            put_actions('chg_item_values',
+                        buttons = [dict(label = 'Change values', value = 'clear',
+                                        color = 'danger')]),
+            put_actions('clear_chg',
+                        buttons = [dict(label = ' Clear ', value = 'clear',
+                                        color = 'secondary')]).style('margin-left: 10px')
+        ]], cell_widths = '580px 150px 150px'),
+        # put_markdown('### Instance records'),
+        # put_grid([[
+        #     put_grid([
+        #         [put_markdown('Identifiers of instances to be changed:')],
+        #         [put_textarea('chg_instance_records_ids', rows = 5)],
+        #         ]).style('margin-right: 10px'),
+        #     put_grid([
+        #         [put_text('Field to be changed:')],
+        #         [put_select('chg_instance_field', options = item_fields)],
+        #         [put_text('New field value:')],
+        #         [put_input('chg_instance_old_value')],
+        #         ]),
+        #     ]], cell_widths = '50% 50%'),
+        # put_grid([[
+        #     None,
+        #     put_actions('chg_instance_values',
+        #                 buttons = [dict(label = 'Change values', value = 'clear',
+        #                                 color = 'danger')]),
+        #     put_actions('clear_chg_instance',
+        #                 buttons = [dict(label = ' Clear ', value = 'clear',
+        #                                 color = 'secondary')]).style('margin-left: 10px')
+        # ]], cell_widths = '580px 150px 150px'),
     ]
 
 
@@ -450,7 +510,12 @@ def unique_identifiers(text):
 
 
 def link(name, action):
-    return put_button(name, onclick = action, link_style = True)
+    return put_button(name, onclick = action, link_style = True).style('margin-left: 0')
+
+
+def copy_button(text):
+    return put_button('Copy', onclick = lambda: pyperclip.copy(text), outline = True,
+                      small = True, color = 'info').style('text-align: center')
 
 
 def show_record(title, id, record_type):
