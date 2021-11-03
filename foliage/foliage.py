@@ -74,11 +74,11 @@ def foliage_main_page(cli_creds, log_file, backup_dir, demo_mode, use_keyring):
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([
-        {'title': 'Look up records', 'content': find_records_tab()},
+        {'title': 'Other', 'content': other_tab(log_file, backup_dir)},
         {'title': 'List UUIDs', 'content': list_types_tab()},
+        {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
-        {'title': 'Other', 'content': other_tab(log_file, backup_dir)},
         ])
 
     put_actions('quit',
@@ -683,10 +683,14 @@ def delete_instance(folio, record, for_id = None):
 def edit_credentials():
     log(f'updating credentials')
     folio = Folio()
-    creds = credentials_from_user(warn_empty = False)
-    if creds:
+    current_creds = folio.current_credentials()
+    creds = credentials_from_user(warn_empty = False, initial_creds = current_creds)
+    if current_creds != creds:
+        log(f'user provided updated credentials')
         save_credentials(creds)
         folio.use_credentials(creds)
+    else:
+        log(f'credentials unchanged')
 
 
 def show_log_file(log_file):
