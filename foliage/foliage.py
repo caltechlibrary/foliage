@@ -190,7 +190,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     show_index = (len(records) > 1)
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
-                                     index, show_index, pin.show_raw)
+                                     index, show_index, pin.show_raw == 'json')
                 put_html('<br>')
                 put_button('Export',
                            onclick = lambda: export(records, record_kind),
@@ -287,28 +287,39 @@ def list_types_tab():
 
 
 def find_records_tab():
+    def load_file():
+        if (result := file_upload('Upload a file containing identifiers')):
+            pin.textbox_find = result['content'].decode()
+
     return [
-        put_markdown('Input one or more item barcode, item id, item hrid,'
-                     + ' instance id, instance hrid, instance accession number,'
-                     + ' user id, or user barcode in the field below, then'
-                     + ' press the button to look up records. Retrieving a type'
-                     + ' different from the identifier type may yield multiple'
-                     + ' records (e.g., using an instance id to retrieve'
-                     + ' items linked to that instance).'),
+        put_grid([[
+            put_markdown('Input one or more item barcode, item id, item hrid,'
+                         + ' instance id, instance hrid, instance accession'
+                         + ' number, user id, or user barcode in the field'
+                         + ' below, or by uploading a text file.'),
+            put_button('Upload', color = 'info',
+                       onclick = lambda: load_file()).style('text-align: right'),
+        ]], cell_widths = 'auto 100px'),
         put_textarea('textbox_find', rows = 4),
-        put_radio('select_kind_find', inline = True,
-                  label = 'Type of record to retrieve:',
-                  options = [ ('Item', RecordKind.ITEM.value, True),
-                              ('Instance', RecordKind.INSTANCE.value),
-                              ('Loan', RecordKind.LOAN.value),
-                              ('User', RecordKind.USER.value)]),
-        put_text(''), # Adds a column, pushing next item to the right.
-        put_checkbox('show_raw', options = ['Show raw data from FOLIO']),
+        put_grid([[
+            put_radio('select_kind_find', inline = True,
+                      label = 'Type of record to retrieve:',
+                      options = [ ('Item', RecordKind.ITEM.value, True),
+                                  ('Instance', RecordKind.INSTANCE.value),
+                                  ('Loan', RecordKind.LOAN.value),
+                                  ('User', RecordKind.USER.value)]),
+            put_markdown('_Loans found for item/instance/user id\'s only include'
+                         + ' open loans. Users found for item/instance/loan'
+                         + ' id\'s are based on open loans only._'),
+        ]], cell_widths = '45% 55%'),
+        put_radio('show_raw', inline = True,
+                  options = [ ('Summary format', 'summary', True),
+                              ('Raw JSON data format', 'json')]),
         put_row([
             put_actions('do_find', buttons = ['Look up records']),
             put_text(''),    # Adds a column, pushing next item to the right.
             put_actions('clear_find',
-                        buttons = [dict(label = 'Clear', value = 'clear',
+                        buttons = [dict(label = ' Clear ', value = 'clear',
                                         color = 'secondary')]).style('text-align: right')
         ])
     ]
@@ -328,11 +339,10 @@ def delete_records_tab():
                                         value = 'delete', color = 'danger')]),
             put_text(''),    # Adds a column, pushing next item to the right.
             put_actions('clear_delete',
-                        buttons = [dict(label = 'Clear', value = 'clear',
+                        buttons = [dict(label = ' Clear ', value = 'clear',
                                         color = 'secondary')]).style('text-align: right')
         ])
     ]
-
 
 
 def change_records_tab():
@@ -560,6 +570,10 @@ def export_json(records, kind):
 
 
 def export(records, kind):
+    if not records:
+        alert('Nothing to export')
+        return
+
     event = threading.Event()
     clicked_ok = False
 
