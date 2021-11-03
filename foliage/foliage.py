@@ -29,6 +29,7 @@ from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js, download
 import re
 from   sidetrack import set_debug, log
+from   slugify import slugify
 import threading
 import webbrowser
 
@@ -109,7 +110,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
         event = pin_wait_change('do_list_types', 'do_find', 'do_delete',
                                 'clear_list', 'clear_find', 'clear_delete',
                                 'clear_chg', 'quit', 'show_log', 'show_backups',
-                                'edit_credentials', 'export_types_list')
+                                'edit_credentials')
         event_type = event['name']
 
         if event_type.startswith('clear'):  # catches all clear_* buttons.
@@ -143,10 +144,6 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                 save_credentials(creds)
                 folio.use_credentials(creds)
 
-        elif event_type == 'export_types_list':
-            log(f'exporting list of types')
-            export_types(pin.list_type)
-
         elif event_type == 'do_list_types':
             log(f'listing id types')
             with use_scope('output', clear = True):
@@ -161,16 +158,14 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     continue
                 finally:
                     set_processbar('bar', 2/2)
-                put_html('<br>')
                 cleaned_name = requested.split('/')[-1].replace("-", " ")
                 put_row([
                     put_markdown(f'Found {len(types)} values for {cleaned_name}:'
                                  ).style('margin-left: 17px; margin-top: 6px'),
-                    put_actions('export_types_list',
-                                buttons = [dict(label = 'Export', value = 'export',
-                                                color = 'info')]
-                                ).style('text-align: right; margin-right: 17px'),
-                ])
+                    put_button('Export', color = 'info',
+                               onclick = lambda: export(types, requested),
+                               ).style('text-align: right; margin-right: 17px'),
+                ]).style('margin-top: 15px; margin-bottom: 14px')
                 contents = []
                 key = ID_NAME_KEYS[requested] if requested in ID_NAME_KEYS else 'name'
                 type_list = [(item[key], item['id']) for item in types]
@@ -217,6 +212,11 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     for index, record in enumerate(records, start = 1):
                         print_record(record, record_kind, id, id_type,
                                      index, show_index, pin.show_raw)
+                put_html('<br>')
+                put_button('Export',
+                           onclick = lambda: export(records, record_kind),
+                           ).style('margin-left: 0').style('margin-left: 10px; float: right')
+
 
         elif event_type == 'do_delete':
             log(f'do_delete invoked')
@@ -541,34 +541,83 @@ def show_record(title, id, record_type):
     close_popup()
 
 
-def export_types(requested):
-    folio = Folio()
+def export_csv(records, kind):
+    log(f'exporting {pluralized("record", records, True)} to CSV')
     # We have nested dictionaries, which can't be stored directly in CSV, so
-    # 1st we have to flatten the dictionaries.
-    type_list = [flattened(x) for x in folio.types(requested)]
+    # first we have to flatten the dictionaries inside the list.
+    records = [flattened(x) for x in records]
 
-    # Next, we need a list of columns to pass to the CSV function.  An
-    # Annoyance is that in some cases the records returned by Folio for a
-    # given type list have different fields depending on the record (?!?), so
-    # we can't just look at one record to figure out the columns we need; we
-    # have to look at all records and create a maximal set.
+    # Next, we need a list of column names to pass to the CSV function.  This
+    # is complicated by the fact that JSON dictionaries can have fields that
+    # themselves have JSON dictionaries for values, and any given record (1)
+    # may not have values for all those fields, and (2) may have values that
+    # are lists, but with different numbers of elements. So we can't just
+    # look at one record to figure out all the columns we need: we have to
+    # look at _all_ records and create a maximal set before we write the CSV.
     columns = set()
-    for item_dict in type_list:
+    for item_dict in records:
         columns.update(item_dict.keys())
 
-    # Move the name field be the first column.
-    name_key = ID_NAME_KEYS[requested] if requested in ID_NAME_KEYS else 'name'
-    columns = sorted(list(columns), key = lambda x: (x != name_key, x != 'id', x))
+    # Resort the column names to move the name & id fields to the front.
+    name_key = ID_NAME_KEYS[kind] if kind in ID_NAME_KEYS else 'name'
+    def name_id_key(column_name):
+        return (column_name != name_key, column_name != 'id', column_name)
+    columns = sorted(list(columns), key = lambda x: name_id_key(x))
 
     # Write into an in-memory, file-like object & tell PyWebIO to download it.
     with StringIO() as tmp:
         writer = csv.DictWriter(tmp, fieldnames = columns)
         writer.writeheader()
-        for item_dict in sorted(type_list, key = lambda d: d[name_key]):
+        for item_dict in sorted(records, key = lambda d: d[name_key]):
             writer.writerow(item_dict)
         tmp.seek(0)
         bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
-        download(f'{requested}-list.csv', bytes)
+        download(f'{slugify(kind)}-records.csv', bytes)
+
+
+def export_json(records, kind):
+    log(f'exporting {pluralized("record", records, True)} to JSON')
+    with StringIO() as tmp:
+        json.dump(records, tmp)
+        tmp.seek(0)
+        bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
+        download(f'{slugify(kind)}-records.json', bytes)
+
+
+def export(records, kind):
+    event = threading.Event()
+    clicked_ok = False
+
+    def clk(val):
+        nonlocal clicked_ok
+        clicked_ok = val
+        event.set()
+
+    log(f'asking user for output format')
+    pins = [
+        put_radio('file_fmt', options = [('CSV', 'csv', True), ('JSON', 'json')]),
+        put_buttons([
+            {'label': 'Cancel', 'value': False, 'color': 'secondary'},
+            {'label': 'OK', 'value': True},
+        ], onclick = clk).style('float: right; vertical-align: center')
+    ]
+    popup(title = 'Select the file format for the exported records:',
+          content = pins, closable = False)
+
+    event.wait()
+    close_popup()
+    wait(0.5)                           # Give time for popup animation.
+
+    if not clicked_ok:
+        log('user clicked cancel')
+        return
+
+    if pin.file_fmt == 'csv':
+        log('user selected CSV format')
+        export_csv(records, kind)
+    else:
+        log('user selected JSON format')
+        export_json(records, kind)
 
 
 def backup_record(record, backup_dir):
@@ -581,7 +630,6 @@ def backup_record(record, backup_dir):
 
 
 def delete_item(folio, record, for_id = None):
-    import pdb; pdb.set_trace()
     id = record['id']
     (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
     if success:
