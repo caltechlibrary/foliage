@@ -166,6 +166,15 @@ class Folio():
             + f'FOLIO_OKAPI_TOKEN = {self.creds.token}')
 
 
+    def current_credentials(self):
+        if self.creds:
+            return Credentials(url = self.creds.url,
+                               tenant_id = self.creds.tenant_id,
+                               token = self.creds.token)
+        else:
+            return Credentials('', '', '')
+
+
     @staticmethod
     def valid_credentials(creds):
         if not creds or not credentials_complete(creds):
