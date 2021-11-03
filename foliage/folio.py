@@ -253,16 +253,24 @@ class Folio():
             response = self._folio('get', f'/item-storage/items?query=hrid={id}&limit=0')
             if response:
                 if response.status_code == 200:
-                    log(f'recognized {id} as an item hrid')
-                    return RecordIdKind.ITEM_HRID
+                    # This endpoint always return a value, even when there
+                    # are no hits, so we have to look inside.
+                    data_dict = json.loads(response.text)
+                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
+                        log(f'recognized {id} as an item hrid')
+                        return RecordIdKind.ITEM_HRID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
             response = self._folio('get', f'/instance-storage/instances?query=hrid={id}&limit=0')
             if response:
                 if response.status_code == 200:
-                    log(f'recognized {id} as an instance hrid')
-                    return RecordIdKind.INSTANCE_HRID
+                    # This endpoint always return a value, even when there
+                    # are no hits, so we have to look inside.
+                    data_dict = json.loads(response.text)
+                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
+                        log(f'recognized {id} as an instance hrid')
+                        return RecordIdKind.INSTANCE_HRID
                 elif response.status_code >= 500:
                     raise RuntimeError('FOLIO server error')
 
@@ -506,8 +514,8 @@ class Folio():
                 item_id = records[0]['id']
                 return self.records(item_id, RecordIdKind.ITEM_ID, 'user')
             elif id_type == RecordIdKind.INSTANCE_ID:
-                records = self.records(id, RecordIdKind.INSTANCE_ID, 'loan')
-                if not records:
+                loans = self.records(id, RecordIdKind.INSTANCE_ID, 'loan')
+                if not loans:
                     return []
                 active = [loan for loan in loans if loan['status']['name'] == 'Open']
                 user_ids = [loan['userId'] for loan in active]
