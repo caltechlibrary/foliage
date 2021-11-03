@@ -72,7 +72,7 @@ def foliage_main_page(cli_creds, log_file, backup_dir, demo_mode, use_keyring):
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
-        {'title': 'Other', 'content': other_tab()},
+        {'title': 'Other', 'content': other_tab(log_file, backup_dir)},
         ])
 
     put_actions('quit',
@@ -109,8 +109,8 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
     while True:
         event = pin_wait_change('do_list_types', 'do_find', 'do_delete',
                                 'clear_list', 'clear_find', 'clear_delete',
-                                'clear_chg', 'quit', 'show_log', 'show_backups',
-                                'edit_credentials')
+                                'clear_chg', 'quit')
+
         event_type = event['name']
 
         if event_type.startswith('clear'):  # catches all clear_* buttons.
@@ -122,27 +122,6 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
         elif event_type == 'quit':
             log(f'quit button clicked')
             quit_app()
-
-        elif event_type == 'show_log':
-            log(f'opening log file')
-            if log_file and exists(log_file):
-                if readable(log_file):
-                    webbrowser.open_new("file://" + log_file)
-                else:
-                    alert(f'Log file is unreadable -- please report this error.')
-            elif not log_file:
-                warn('No log file -- log output is directed to the terminal.')
-
-        elif event_type == 'show_backups':
-            log(f'showing backup directory')
-            webbrowser.open_new("file://" + backup_dir)
-
-        elif event_type == 'edit_credentials':
-            log(f'updating credentials')
-            creds = credentials_from_user(warn_empty = False)
-            if creds:
-                save_credentials(creds)
-                folio.use_credentials(creds)
 
         elif event_type == 'do_list_types':
             log(f'listing id types')
@@ -411,36 +390,32 @@ def change_records_tab():
     ]
 
 
-def other_tab():
+def other_tab(log_file, backup_dir):
     return [
         put_grid([[
             put_markdown('Foliage stores the FOLIO credentials you provide the'
                          + ' first time it runs, so that you don\'t have to'
                          + ' enter them again. Click this button to update the'
                          + ' stored credentials.'),
-            put_actions('edit_credentials',
-                        buttons = [dict(label = 'Edit credentials',
-                                        value = 'edit_credentials', color = 'info')]
-                        ).style('margin-left: 20px; text-align: left'),
+            put_button('Edit credentials', onclick = lambda: edit_credentials(),
+                       color = 'info').style('margin-left: 20px; text-align: left'),
         ], [
             put_markdown('Before performing destructive operations, Foliage'
                          + ' saves copies of the records as they exist before'
                          + ' modification. Click this button to open the folder'
                          + ' containing the files. (Note: a given record may'
                          + ' have multiple backups with different time stamps.)'),
-            put_actions('show_backups',
-                        buttons = [dict(label = 'Show backups',
-                                        value = 'show_backups', color = 'info')]
-                        ).style('margin-left: 20px; text-align: left'),
+            put_button('Show backups',
+                       onclick = lambda: webbrowser.open_new("file://" + backup_dir),
+                       color = 'info').style('margin-left: 20px; text-align: left'),
         ], [
             put_markdown('The debug log file contains a detailed trace of'
                          + ' every action that Foliage takes. This can be'
                          + ' useful when trying to resolve bugs and other'
                          + ' problems.'),
-            put_actions('show_log',
-                        buttons = [dict(label = 'Show log file',
-                                        value = 'show_log', color = 'info')]
-                        ).style('margin-left: 20px; text-align: left'),
+            put_button('Show log file',
+                       onclick = lambda: show_log_file(log_file),
+                       color = 'info').style('margin-left: 20px; text-align: left'),
         ]], cell_widths = 'auto 170px'),
     ]
 
@@ -683,3 +658,22 @@ def delete_instance(folio, record, for_id = None):
 
     # FIXME
     # Need to deal with EDS update.
+
+
+def edit_credentials():
+    log(f'updating credentials')
+    folio = Folio()
+    creds = credentials_from_user(warn_empty = False)
+    if creds:
+        save_credentials(creds)
+        folio.use_credentials(creds)
+
+
+def show_log_file(log_file):
+    if log_file and exists(log_file):
+        if readable(log_file):
+            webbrowser.open_new("file://" + log_file)
+        else:
+            alert(f'Log file is unreadable -- please report this error.')
+    elif not log_file:
+        warn('No log file -- log output is being directed to the terminal.')
