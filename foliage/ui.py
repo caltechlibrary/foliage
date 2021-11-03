@@ -74,6 +74,10 @@ button {
 .btn-link {
     padding: 0
 }
+.btn-primary {
+    /* Weird 1px vertical misalignment. Don't know why I have to do this. */
+    margin-bottom: 1px
+}
 .webio-tabs-content {
     padding-bottom: 0 !important;
 }
