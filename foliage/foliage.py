@@ -1,10 +1,9 @@
 
-from   boltons.iterutils import flatten
-import csv
-from   commonpy.data_utils import unique, pluralized
+from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
+import csv
 from   datetime import datetime as dt
 from   dateutil import tz
 from   functools import partial
@@ -503,7 +502,7 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
 
 def unique_identifiers(text):
     lines = text.splitlines()
-    identifiers = flatten(re.split(r'\s+|,+', line) for line in lines)
+    identifiers = flattened(re.split(r'\s+|,+', line) for line in lines)
     identifiers = [id.replace('"', '') for id in identifiers]
     identifiers = [id.replace(':', '') for id in identifiers]
     return unique(filter(None, identifiers))
@@ -544,20 +543,29 @@ def show_record(title, id, record_type):
 
 def export_types(requested):
     folio = Folio()
-    value_list = folio.types(requested)
-    if not value_list:
-        alert('Nothing to export')
-        return
+    # We have nested dictionaries, which can't be stored directly in CSV, so
+    # 1st we have to flatten the dictionaries.
+    type_list = [flattened(x) for x in folio.types(requested)]
+
+    # Next, we need a list of columns to pass to the CSV function.  An
+    # Annoyance is that in some cases the records returned by Folio for a
+    # given type list have different fields depending on the record (?!?), so
+    # we can't just look at one record to figure out the columns we need; we
+    # have to look at all records and create a maximal set.
+    columns = set()
+    for item_dict in type_list:
+        columns.update(item_dict.keys())
+
+    # Move the name field be the first column.
     name_key = ID_NAME_KEYS[requested] if requested in ID_NAME_KEYS else 'name'
-    columns = set(value_list[0].keys()) - {'metadata'}
-    columns = sorted(columns, key = lambda x: (x != name_key, x))
+    columns = sorted(list(columns), key = lambda x: (x != name_key, x != 'id', x))
+
+    # Write into an in-memory, file-like object & tell PyWebIO to download it.
     with StringIO() as tmp:
         writer = csv.DictWriter(tmp, fieldnames = columns)
         writer.writeheader()
-        for item_dict in sorted(value_list, key = lambda d: d[name_key]):
-            # Skip the 'metadata' field.
-            row = {k:v for k,v in item_dict.items() if k != 'metadata'}
-            writer.writerow(row)
+        for item_dict in sorted(type_list, key = lambda d: d[name_key]):
+            writer.writerow(item_dict)
         tmp.seek(0)
         bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
         download(f'{requested}-list.csv', bytes)
