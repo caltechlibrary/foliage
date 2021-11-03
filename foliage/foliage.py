@@ -45,8 +45,14 @@ from   .ui import quit_app, reload_page, alert, warn, confirm, notify, image_dat
 
 # Keys to look up the name field in id lists, when the name field is not 'name'
 ID_NAME_KEYS = {
-    TypeKind.ADDRESS.value : 'addressType',
-    TypeKind.GROUP.value   : 'group',
+    TypeKind.ADDRESS.value    : 'addressType',
+    TypeKind.GROUP.value      : 'group',
+    RecordKind.ITEM.value     : 'title',
+    RecordKind.INSTANCE.value : 'title',
+    RecordKind.HOLDINGS.value : 'id',
+    RecordKind.USER.value     : 'username',
+    RecordKind.LOAN.value     : 'id',
+    RecordKind.TYPE.value     : 'name',
 }
 
 
@@ -68,8 +74,8 @@ def foliage_main_page(cli_creds, log_file, backup_dir, demo_mode, use_keyring):
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([
-        {'title': 'List UUIDs', 'content': list_types_tab()},
         {'title': 'Look up records', 'content': find_records_tab()},
+        {'title': 'List UUIDs', 'content': list_types_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
         {'title': 'Other', 'content': other_tab(log_file, backup_dir)},
@@ -307,10 +313,10 @@ def find_records_tab():
                       options = [ ('Item', RecordKind.ITEM.value, True),
                                   ('Instance', RecordKind.INSTANCE.value),
                                   ('Loan', RecordKind.LOAN.value),
-                                  ('User', RecordKind.USER.value)]),
+                                  ('User', RecordKind.USER.value)]).style('margin-bottom: 0'),
             put_markdown('_Loans found for item/instance/user id\'s only include'
                          + ' open loans. Users found for item/instance/loan'
-                         + ' id\'s are based on open loans only._'),
+                         + ' id\'s are based on open loans only._').style('margin-bottom: 0'),
         ]], cell_widths = '45% 55%'),
         put_radio('show_raw', inline = True,
                   options = [ ('Summary format', 'summary', True),
