@@ -32,9 +32,8 @@ if __debug__:
 # .............................................................................
 
 JS_CODE = '''
-  function confirm_action(msg) { return confirm(msg) }
-  function close_window() { window.close() }
-  function reload_page() { location.reload() }
+function close_window() { window.close() }
+function reload_page() { location.reload() }
 '''
 
 # Hiding the footer is only done because in my environment, the footer causes
@@ -72,6 +71,9 @@ footer {
 button {
     margin-bottom: 0
 }
+.btn-link {
+    padding: 0
+}
 .webio-tabs-content {
     padding-bottom: 0 !important;
 }
@@ -100,8 +102,8 @@ def warn(text, popup = True):
 
 
 def confirm(question):
-    log(f'running JS function to ask user question: {question}')
-    return eval_js(f'confirm_action("{question}")')
+    log(f'running JS function to confirm: {question}')
+    return eval_js(f'confirm("{question}")')
 
 
 def notify(msg):
