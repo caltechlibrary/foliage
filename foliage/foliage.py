@@ -45,14 +45,14 @@ from   .ui import quit_app, reload_page, alert, warn, confirm, notify, image_dat
 
 # Keys to look up the name field in id lists, when the name field is not 'name'
 ID_NAME_KEYS = {
-    TypeKind.ADDRESS.value    : 'addressType',
-    TypeKind.GROUP.value      : 'group',
-    RecordKind.ITEM.value     : 'title',
-    RecordKind.INSTANCE.value : 'title',
-    RecordKind.HOLDINGS.value : 'id',
-    RecordKind.USER.value     : 'username',
-    RecordKind.LOAN.value     : 'id',
-    RecordKind.TYPE.value     : 'name',
+    TypeKind.ADDRESS    : 'addressType',
+    TypeKind.GROUP      : 'group',
+    RecordKind.ITEM     : 'title',
+    RecordKind.INSTANCE : 'title',
+    RecordKind.HOLDINGS : 'id',
+    RecordKind.USER     : 'username',
+    RecordKind.LOAN     : 'id',
+    RecordKind.TYPE     : 'name',
 }
 
 
@@ -123,6 +123,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
             log(f'resetting page')
             pin.textbox_find = ''
             pin.textbox_delete = ''
+            pin.chg_item_records_ids = ''
             clear('output')
 
         elif event_type == 'quit':
@@ -188,10 +189,10 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     finally:
                         set_processbar('bar', index/steps)
                     if not records or len(records) == 0:
-                        put_error(f'No {record_kind} record(s) for {id_type.value} "{id}".')
+                        put_error(f'No {record_kind} record(s) for {id_type} "{id}".')
                         continue
                     this = pluralized(record_kind + " record", records, True)
-                    how = f'by searching for {id_type.value} **{id}**'
+                    how = f'by searching for {id_type} **{id}**'
                     put_success(put_markdown(f'Found {this} {how}')).style('text-align: center')
                     show_index = (len(records) > 1)
                     for index, record in enumerate(records, start = 1):
@@ -231,7 +232,7 @@ def run_main_loop(creds, log_file, backup_dir, demo_mode):
                     finally:
                         set_processbar('bar', index/steps)
                     if not record:
-                        put_error(f'Could not find a record for {id_type.value} {id}.')
+                        put_error(f'Could not find a record for {id_type} {id}.')
                         continue
                     backup_record(record, backup_dir)
                     if id_type in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
@@ -310,10 +311,10 @@ def find_records_tab():
         put_grid([[
             put_radio('select_kind_find', inline = True,
                       label = 'Type of record to retrieve:',
-                      options = [ ('Item', RecordKind.ITEM.value, True),
-                                  ('Instance', RecordKind.INSTANCE.value),
-                                  ('Loan', RecordKind.LOAN.value),
-                                  ('User', RecordKind.USER.value)]).style('margin-bottom: 0'),
+                      options = [ ('Item', RecordKind.ITEM, True),
+                                  ('Instance', RecordKind.INSTANCE),
+                                  ('Loan', RecordKind.LOAN),
+                                  ('User', RecordKind.USER)]).style('margin-bottom: 0'),
             put_markdown('_Retrieving loans based on item, instance, or user'
                          + ' identifiers only considers open loans. Similarly,'
                          + ' retrieving users based on item/instance/loan id\'s'
@@ -353,6 +354,10 @@ def delete_records_tab():
 
 
 def change_records_tab():
+    def load_file():
+        if (result := file_upload('Upload a file containing identifiers')):
+            pin.chg_item_records_ids = result['content'].decode()
+
     item_fields = ['effectiveLocation',
                    'materialType',
                    'permanentLoanType',
@@ -374,13 +379,13 @@ def change_records_tab():
                 ]),
             ]], cell_widths = '50% 50%'),
         put_grid([[
-            None,
-            put_actions('chg_item_values',
-                        buttons = [dict(label = 'Change values', value = 'clear',
-                                        color = 'danger')]),
+            put_button('Upload', color = 'info',
+                       onclick = lambda: load_file()).style('text-align: left'),
+            put_button('Change values', color = 'danger',
+                       onclick = lambda: load_file()).style('text-align: right'),
             put_actions('clear_chg',
                         buttons = [dict(label = ' Clear ', value = 'clear',
-                                        color = 'secondary')]).style('margin-left: 10px')
+                                        color = 'secondary')]).style('margin-left: 12px')
         ]], cell_widths = '580px 150px 150px'),
         # put_markdown('### Instance records'),
         # put_grid([[
@@ -652,14 +657,14 @@ def delete_instance(folio, record, for_id = None):
     inst_id = record['id']
 
     # Starting at the bottom, delete the item records.
-    items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM.value)
+    items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM)
     put_warning(f'Deleting {pluralized("item record", items, True)} due to'
                 + f' the deletion of instance record {inst_id}.')
     for item in items:
         delete_item(folio, item, for_id)
 
     # Now delete the holdings records.
-    holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS.value)
+    holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS)
     put_warning(f'Deleting {pluralized("holdings record", holdings, True)} due to'
                 + f' the deletion of instance record {inst_id}.')
     for hr in holdings:
