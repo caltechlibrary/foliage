@@ -74,11 +74,11 @@ def foliage_main_page(cli_creds, log_file, backup_dir, demo_mode, use_keyring):
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([
-        {'title': 'Other', 'content': other_tab(log_file, backup_dir)},
         {'title': 'List UUIDs', 'content': list_types_tab()},
         {'title': 'Look up records', 'content': find_records_tab()},
         {'title': 'Delete records', 'content': delete_records_tab()},
         {'title': 'Change records', 'content': change_records_tab()},
+        {'title': 'Other', 'content': other_tab(log_file, backup_dir)},
         ])
 
     put_actions('quit',
@@ -314,9 +314,10 @@ def find_records_tab():
                                   ('Instance', RecordKind.INSTANCE.value),
                                   ('Loan', RecordKind.LOAN.value),
                                   ('User', RecordKind.USER.value)]).style('margin-bottom: 0'),
-            put_markdown('_Loans found for item/instance/user id\'s only include'
-                         + ' open loans. Users found for item/instance/loan'
-                         + ' id\'s are based on open loans only._').style('margin-bottom: 0'),
+            put_markdown('_Retrieving loans based on item, instance, or user'
+                         + ' identifiers only considers open loans. Similarly,'
+                         + ' retrieving users based on item/instance/loan id\'s'
+                         + ' only considers open loans._').style('margin-bottom: 0'),
         ]], cell_widths = '45% 55%'),
         put_radio('show_raw', inline = True,
                   options = [ ('Summary format', 'summary', True),
