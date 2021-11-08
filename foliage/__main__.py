@@ -89,7 +89,8 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
         backup_dir = _APP_DIRS.user_log_dir
 
     creds = None
-    if creds_file != 'C':
+    creds_file = None if creds_file == 'C' else creds_file
+    if creds_file:
         if not exists(creds_file):
             alert(f'Credentials file does not exist: {creds_file}', False)
             exit(1)
