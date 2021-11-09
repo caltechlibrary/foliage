@@ -13,7 +13,7 @@ from   commonpy.interrupt import wait
 import os
 from   os.path import exists, dirname, join, basename, abspath
 import pywebio
-from   pywebio.input import input
+from   pywebio.input import input, file_upload
 from   pywebio.output import put_text, put_markdown, put_row, put_html, put_error
 from   pywebio.output import toast, popup, close_popup, put_buttons
 from   pywebio.output import use_scope, set_scope, clear, remove
@@ -31,10 +31,44 @@ if __debug__:
 # Exported constants.
 # .............................................................................
 
+UPLOAD_CANCEL_MARKER = "_fake_foliage_fake_.txt"
+
 JS_CODE = '''
 function close_window() { window.close() }
 function reload_page() { location.reload() }
-'''
+
+
+/* Make the escape key work in file upload dialogs.  The natural action (IMHO)
+   for ESC is to cancel the dialog, but there's no "cancel" functionality in
+   PyWebIO's file_upload() dialog.  In fact, if you click the "reset" button
+   then click "submit", you still get a file!  Very undesirable behavior.
+   There's no good way to fix it short of rewriting file.ts in the PyWebIO
+   code, so the following is an egregious hack: muck with the variable that
+   the code uses to store the file from the file input dialog, specifically to
+   set it to a known fake name when ESC is pressed.
+
+   The solution to setting the .files property (which is a read-only FileList
+   object) came from a 2019-06-04 posting by "superluminary" to Stack Overflow
+   at https://stackoverflow.com/a/56447852/743730
+*/
+$(document).keyup(function(e) {
+    if (e.keyCode == 27) {
+        // Create a fake FileList object and reset the .files property.
+        let tmp_list = new DataTransfer();
+        let fake = new File(["content"], "%s");
+        tmp_list.items.add(fake);
+        let myFileList = tmp_list.files;
+        $('#input-cards .custom-file')[0].firstElementChild.files = myFileList;
+        console.log($('#input-cards .custom-file')[0].firstElementChild.files);
+
+        // Pretend the user clicked reset.
+        $('.ws-form-submit-btns button[type="reset"]').click();
+
+        // Give it a short time for JavaScript actions to work, and submit.
+        setTimeout(() => { $('.custom-file input').submit() }, 200);
+    }
+});
+''' % UPLOAD_CANCEL_MARKER
 
 # Hiding the footer is only done because in my environment, the footer causes
 # the whole page to scroll down, thus hiding part of the top.  I don't mind
@@ -69,7 +103,12 @@ footer {
     margin-bottom: 0
 }
 button {
-    margin-bottom: 0
+    margin-bottom: 0 !important;
+    filter: drop-shadow(2px 2px 2px #aaa);
+}
+.btn {
+    filter: drop-shadow(2px 2px 3px #ddd);
+    margin-bottom: 1px !important;
 }
 .btn-link {
     padding: 0
@@ -80,6 +119,21 @@ button {
 }
 .webio-tabs-content {
     padding-bottom: 0 !important;
+}
+#input-container {
+    border-radius: .25rem;
+    box-shadow: 10px 10px 20px #aaa;
+    position: absolute;
+    padding-left: 0;
+    padding-right: 0;
+    top: 190px;
+    width: 500px;
+    left: calc(50% - 250px);
+}
+#input-cards.container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-radius: .25rem;
 }
 '''
 
@@ -138,3 +192,10 @@ def image_data(file_name):
             return f.read()
     log(f'could not find image in {image_file}')
     return b''
+
+
+def user_file(msg):
+    result = file_upload(msg)
+    if result['filename'] != UPLOAD_CANCEL_MARKER:
+        return result['content'].decode()
+    return None
