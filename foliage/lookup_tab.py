@@ -1,5 +1,12 @@
 '''
 lookup_tab.py: implementation of the "Look up records" tab
+
+Copyright
+---------
+
+Copyright (c) 2021 by the California Institute of Technology.  This code
+is open-source software released under a 3-clause BSD license.  Please see the
+file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened
@@ -36,7 +43,7 @@ def lookup_tab():
                          + ' instance id, instance hrid, instance accession'
                          + ' number, user id, or user barcode in the field'
                          + ' below, or by uploading a text file.'),
-            put_button('Upload', color = 'primary', outline = True,
+            put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
         put_textarea('textbox_find', rows = 4),
@@ -46,20 +53,20 @@ def lookup_tab():
                       options = [ ('Item', RecordKind.ITEM, True),
                                   ('Instance', RecordKind.INSTANCE),
                                   ('Loan', RecordKind.LOAN),
-                                  ('User', RecordKind.USER)]).style('margin-bottom: 0'),
+                                  ('User', RecordKind.USER)]),
             put_markdown('_Note: loans found using item, instance, or user'
                          + ' identifiers are **open** loans only. Likewise,'
                          + ' user records found using item/instance/loan id\'s'
-                         + ' are based on **open** loans only._').style('margin-bottom: 1em'),
+                         + ' are based on **open** loans only._'),
         ]], cell_widths = '47% 53%'),
         put_radio('show_raw', inline = True,
-                  options = [ ('Summary format', 'summary', True),
-                              ('Raw JSON data format', 'json')]),
+                  options = [('Summary format', 'summary', True),
+                             ('Raw data format', 'json')]),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_button(' Clear ', outline = True, onclick = lambda: clear_tab()
-                       ).style('text-align: right')
+            put_button(' Clear ', outline = True,
+                       onclick = lambda: clear_tab()).style('text-align: right')
         ])
     ]
 

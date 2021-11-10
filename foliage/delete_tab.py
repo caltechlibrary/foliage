@@ -1,5 +1,12 @@
 '''
 delete_tab.py: implementation of the "Delete records" tab
+
+Copyright
+---------
+
+Copyright (c) 2021 by the California Institute of Technology.  This code
+is open-source software released under a 3-clause BSD license.  Please see the
+file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened

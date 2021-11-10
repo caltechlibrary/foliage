@@ -1,5 +1,12 @@
 '''
 list_tab.py: implementation of the "List UUIDs" tab
+
+Copyright
+---------
+
+Copyright (c) 2021 by the California Institute of Technology.  This code
+is open-source software released under a 3-clause BSD license.  Please see the
+file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened
@@ -151,5 +158,4 @@ def link(name, action):
 
 def copy_button(text):
     return put_button('Copy id', onclick = lambda: pyperclip.copy(text), outline = True,
-                      small = True, color = 'primary').style('text-align: center')
-
+                      small = True).style('text-align: center')

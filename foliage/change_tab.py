@@ -1,5 +1,12 @@
 '''
 change_tab.py: implementation of the "Change records" tab
+
+Copyright
+---------
+
+Copyright (c) 2021 by the California Institute of Technology.  This code
+is open-source software released under a 3-clause BSD license.  Please see the
+file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened
@@ -38,29 +45,28 @@ def change_tab():
             put_grid([
                 [put_markdown('Identifiers of items to be changed:')],
                 [put_textarea('chg_ids', rows = 5)],
-                ]).style('margin-right: 10px'),
+                ]),
             put_grid([
                 [put_text('Field to be changed:')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_name()
-                               ).style('text-align: left; margin-right: 12px'),
+                               ).style('text-align: left'),
                     put_textarea('chg_field', rows = 1),
                 ], size = '85px auto').style('text-align: right')],
                 [put_text('New field value:')],
                 [put_row([
-                    put_button('Select', onclick = lambda: select_field_value()
-                               ).style('text-align: left; margin-right: 12px'),
+                    put_button('Select', onclick = lambda: select_field_value()),
                     put_textarea('chg_field_value', rows = 1),
-                ], size = '85px auto').style('text-align: right')],
+                ], size = '85px auto')],
                 ]).style('margin-left: 12px'),
             ]], cell_widths = '50% 50%'),
         put_grid([[
-            put_button('Upload', color = 'primary', outline = True,
+            put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: left'),
             put_button('Change values', color = 'danger',
                        onclick = lambda: do_change()).style('text-align: right'),
-            put_button(' Clear ', outline = True, onclick = lambda: clear_tab()
-                       ).style('margin-left: 12px; text-align: right'),
+            put_button(' Clear ', outline = True,
+                       onclick = lambda: clear_tab()).style('text-align: right'),
         ]], cell_widths = 'auto 150px 90px'),
     ]
 

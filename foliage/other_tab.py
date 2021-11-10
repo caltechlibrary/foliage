@@ -1,5 +1,12 @@
 '''
 other_tab.py: implementation of the "Other" tab
+
+Copyright
+---------
+
+Copyright (c) 2021 by the California Institute of Technology.  This code
+is open-source software released under a 3-clause BSD license.  Please see the
+file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened
@@ -39,7 +46,7 @@ def other_tab(log_file, backup_dir):
                          + ' enter them again. Click this button to update the'
                          + ' stored credentials.'),
             put_button('Edit credentials', onclick = lambda: edit_credentials(),
-                       color = 'primary').style('margin-left: 20px; text-align: left'),
+                       ).style('margin-left: 20px; text-align: left'),
         ], [
             put_markdown('Before performing destructive operations, Foliage'
                          + ' saves copies of the records as they exist before'
@@ -48,7 +55,7 @@ def other_tab(log_file, backup_dir):
                          + ' have multiple backups with different time stamps.)'),
             put_button('Show backups',
                        onclick = lambda: webbrowser.open_new("file://" + backup_dir),
-                       color = 'primary').style('margin-left: 20px; margin-top: 0.8em'),
+                       ).style('margin-left: 20px; margin-top: 0.8em'),
         ], [
             put_markdown('The debug log file contains a detailed trace of'
                          + ' every action that Foliage takes. This can be'
@@ -56,7 +63,7 @@ def other_tab(log_file, backup_dir):
                          + ' problems.'),
             put_button('Show log file',
                        onclick = lambda: show_log_file(log_file),
-                       color = 'primary').style('margin-left: 20px; text-align: left'),
+                       ).style('margin-left: 20px; text-align: left'),
         ]], cell_widths = 'auto 170px', cell_heights = '29% 42% 29%'),
     ]
 
