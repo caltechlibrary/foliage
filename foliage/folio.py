@@ -9,6 +9,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
+from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
@@ -18,6 +19,7 @@ from   enum import Enum, EnumMeta
 from   functools import partial
 from   fastnumbers import isint
 import json
+import re
 from   sidetrack import set_debug, log
 from   validators.url import url as valid_url
 
@@ -51,6 +53,8 @@ class RecordIdKind(ExtendedEnum):
     LOAN_ID       = 'loan id'
     TYPE_ID       = 'type id'
 
+
+# maybe call this ValueKind?
 
 class TypeKind(ExtendedEnum):
     ACQUISITION_UNIT     = 'acquisitions-units/units'
@@ -89,6 +93,18 @@ class TypeKind(ExtendedEnum):
     SHELF_LOCATION       = 'shelf-locations'
     STATISTICAL_CODE     = 'statistical-code-types'
 
+# The equivalent of the name field in record lists, when the field is not 'name'
+NAME_KEYS = {
+    TypeKind.ADDRESS    : 'addressType',
+    TypeKind.GROUP      : 'group',
+    RecordKind.ITEM     : 'title',
+    RecordKind.INSTANCE : 'title',
+    RecordKind.HOLDINGS : 'id',
+    RecordKind.USER     : 'username',
+    RecordKind.LOAN     : 'id',
+    RecordKind.TYPE     : 'name',
+}
+
 
 # Internal constants.
 # .............................................................................
@@ -125,7 +141,7 @@ class Folio():
         if creds:
             self.use_credentials(creds)
         if not hasattr(self, 'creds'):
-            self.creds = none
+            self.creds = None
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
@@ -652,3 +668,11 @@ def instance_id_from_accession(an):
     start = an.find('.')
     id_part = an[start + 1:]
     return id_part.replace('.', '-')
+
+
+def unique_identifiers(text):
+    lines = text.splitlines()
+    identifiers = flattened(re.split(r'\s+|,+', line) for line in lines)
+    identifiers = [id.replace('"', '') for id in identifiers]
+    identifiers = [id.replace(':', '') for id in identifiers]
+    return unique(filter(None, identifiers))

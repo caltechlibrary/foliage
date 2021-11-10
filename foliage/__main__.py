@@ -34,14 +34,33 @@ import pywebio
 # aiohttp server does not.  Unfortunately, only tornado auto-reloads.
 # from   pywebio.platform.aiohttp import start_server
 from   pywebio import start_server
+from   pywebio.input import input, select, checkbox, radio
+from   pywebio.input import NUMBER, TEXT, input_update, input_group
+from   pywebio.output import put_text, put_markdown, put_row, put_html
+from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
+from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
+from   pywebio.output import put_success, put_info, put_table, put_grid, span
+from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
+from   pywebio.output import put_processbar, set_processbar, put_loading
+from   pywebio.output import put_column
+from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
+from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
+from   pywebio.session import run_js, eval_js, download
+from   sidetrack import set_debug, log
 from   tornado.template import Template
 
-if __debug__:
-    from sidetrack import set_debug, log
-
-from .credentials import credentials_from_file, credentials_complete
-from .foliage import foliage_main_page
-from .ui import JS_CODE, CSS_CODE, alert, warn
+from   .change_tab import change_tab
+from   .credentials import credentials_from_user, credentials_from_keyring
+from   .credentials import save_credentials, credentials_complete
+from   .credentials import credentials_from_file
+from   .delete_tab import delete_tab
+from   .enum_utils import MetaEnum, ExtendedEnum
+from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   .list_tab import list_tab
+from   .lookup_tab import lookup_tab
+from   .other_tab import other_tab
+from   .ui import quit_app, reload_page, alert, warn, confirm, notify
+from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 
 
 # Internal constants.
@@ -69,7 +88,7 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
 
     # Set up debug logging as soon as possible --------------------------------
 
-    debug_mode, log_file = _debug_config(debug)
+    debug_mode, log_file = _config_debug(debug)
 
     # Preprocess arguments and handle early exits -----------------------------
 
@@ -88,6 +107,7 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
     else:
         backup_dir = _APP_DIRS.user_log_dir
 
+    use_keyring = not no_keyring
     creds = None
     creds_file = None if creds_file == 'C' else creds_file
     if creds_file:
@@ -136,12 +156,12 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
         log(f'port = {port}')
 
         if demo_mode:
-            warn('Demo mode is on: changes to FOLIO will NOT be made', False)
+            warn('Demo mode is on -- changes to FOLIO will NOT be made', False)
 
-        foliage = partial(foliage_main_page, creds, log_file, backup_dir,
-                          demo_mode, not no_keyring)
-        start_server(foliage, port = port, auto_open_webbrowser = True,
-                     debug = debug_mode)
+        app = partial(foliage, creds, use_keyring, log_file, backup_dir, demo_mode)
+        # cdn parameter makes it load PyWebIO JS code from our local copy.
+        start_server(app, port = port, auto_open_webbrowser = True,
+                     cdn = False, debug = debug_mode)
     except KeyboardInterrupt as ex:
         # Catch it, but don't treat it as an error; just stop execution.
         log(f'keyboard interrupt received')
@@ -164,10 +184,47 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
 
 
+# Main page creation function.
+# .............................................................................
+
+def foliage(cli_creds, use_keyring, log_file, backup_dir, demo_mode):
+    log(f'creating index page')
+    put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
+    put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
+    put_html('<h1 class="text-center">Foliage</h1>')
+    put_html('<div class="font-italic text-muted font-weight-light text-center mx-auto">'
+             ' Foliage ("FOLIo chAnGe Editor") is an app that runs'
+             ' on your computer and lets you perform FOLIO operations over'
+             ' the network. This web page is its user interface.'
+             '</div>').style('width: 85%')
+    put_tabs([
+        {'title': 'List UUIDs',      'content': list_tab()},
+        {'title': 'Look up records', 'content': lookup_tab()},
+        {'title': 'Change records',  'content': change_tab()},
+        {'title': 'Delete records',  'content': delete_tab()},
+        {'title': 'Other',           'content': other_tab(log_file, backup_dir)},
+        ]).style('padding-bottom: 16px')
+    put_button('Quit Foliage', color = 'warning', onclick = lambda: quit_app()
+               ).style('position: absolute; bottom: 20px;'
+                       + 'left: calc(50% - 3.5em); z-index: 2')
+
+    # We need to have started PyWebIO and have a window before we can do this:
+    _config_credentials(cli_creds, use_keyring)
+
+    # Put up demo mode banner.
+    if demo_mode:
+        put_warning('Demo mode in effect').style(
+            'position: absolute; left: calc(50% - 5.5em); width: 11em;'
+            + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
+
+    # If we get here, we're ready and waiting for user input.
+    log(f'finished creating application page')
+
+
 # Miscellaneous utilities local to this module.
 # .............................................................................
 
-def _debug_config(debug_arg):
+def _config_debug(debug_arg):
     '''Takes the value of the --debug flag & returns a tuple (bool, log_file).
     The tuple values represent whether --debug was given a value other than
     the default, and the destination log file for debug output.
@@ -221,6 +278,27 @@ def _debug_config(debug_arg):
         warn(f'Unable to create log file {log_file}', False)
 
     return (debug_arg != 'OUT', log_file)
+
+
+def _config_credentials(cli_creds, use_keyring):
+    if cli_creds:
+        creds = cli_creds
+    elif use_keyring:
+        keyring_creds = credentials_from_keyring(partial_ok = True)
+        if credentials_complete(keyring_creds):
+            creds = keyring_creds
+        else:
+            creds = credentials_from_user(initial_creds = keyring_creds)
+    else:
+        creds = credentials_from_user()
+    if not credentials_complete(creds):
+        alert('Cannot proceed without complete credentials. Quitting.')
+        quit_app(ask_confirm = False)
+    folio = Folio(creds)
+    if not folio.valid_credentials(creds):
+        notify('Invalid FOLIO credentials. Quitting.')
+        quit_app(ask_confirm = False)
+    save_credentials(creds)
 
 
 # Main entry point.
