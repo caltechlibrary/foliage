@@ -52,7 +52,15 @@ function reload_page() { location.reload() }
    at https://stackoverflow.com/a/56447852/743730
 */
 $(document).keyup(function(e) {
-    if (e.keyCode == 27) {
+    if (e.keyCode != 27) return;
+
+    /* Case of PyWebIO modal dialogs with a cancel button. */
+    if ($('.modal-content button.btn-danger').length) {
+        $('.modal-content button.btn-danger').click();
+    }
+
+    /* Case of PyWebIO file_upload() dialog, which lacks a cancel button. */
+    if ($('.ws-form-submit-btns button[type="reset"]').length) {
         // Create a fake FileList object and reset the .files property.
         let tmp_list = new DataTransfer();
         let fake = new File(["content"], "%s");
@@ -61,7 +69,7 @@ $(document).keyup(function(e) {
         $('#input-cards .custom-file')[0].firstElementChild.files = myFileList;
         console.log($('#input-cards .custom-file')[0].firstElementChild.files);
 
-        // Pretend the user clicked reset.
+        // Pretend the user clicked the "reset" button.
         $('.ws-form-submit-btns button[type="reset"]').click();
 
         // Give it a short time for JavaScript actions to work, and submit.
@@ -104,10 +112,9 @@ footer {
 }
 button {
     margin-bottom: 0 !important;
-    filter: drop-shadow(2px 2px 2px #aaa);
+    filter: drop-shadow(1px 1px 2px #ddd);
 }
 .btn {
-    filter: drop-shadow(2px 2px 3px #ddd);
     margin-bottom: 1px !important;
 }
 .btn-link {
@@ -116,6 +123,10 @@ button {
 .btn-primary {
     /* Weird 1px vertical misalignment. Don't know why I have to do this. */
     margin-bottom: 1px
+}
+/* Special case for the quit button, to solve clipping and color perception. */
+button.btn-warning {
+    margin: 5px !important;
 }
 .webio-tabs-content {
     padding-bottom: 0 !important;
@@ -196,6 +207,6 @@ def image_data(file_name):
 
 def user_file(msg):
     result = file_upload(msg)
-    if result['filename'] != UPLOAD_CANCEL_MARKER:
+    if result and result['filename'] != UPLOAD_CANCEL_MARKER:
         return result['content'].decode()
     return None
