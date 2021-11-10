@@ -1,5 +1,5 @@
 '''
-export_utils.py: utilities for exporting data
+export.py: let the user export records and save them to a file
 
 Copyright
 ---------

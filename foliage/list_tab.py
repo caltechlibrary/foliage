@@ -28,7 +28,7 @@ from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 import threading
 
-from   .export_utils import export
+from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .ui import alert, warn, confirm, notify
 

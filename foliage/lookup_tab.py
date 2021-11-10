@@ -27,7 +27,7 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 
-from   .export_utils import export
+from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .folio import unique_identifiers
 from   .ui import alert, warn, confirm, notify, user_file
@@ -78,9 +78,11 @@ def clear_tab():
     clear('output')
     pin.textbox_find = ''
 
+
 def load_file():
     if (file := user_file('Upload a file containing identifiers')):
         pin.textbox_find = file
+
 
 def do_find():
     log(f'do_find invoked')
