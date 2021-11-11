@@ -37,6 +37,7 @@ from   .ui import alert, warn, confirm, notify
 # .............................................................................
 
 def list_tab():
+    log(f'generating list tab contents')
     return [
         put_grid([[
             put_markdown('Select a FOLIO type to list:').style('margin-top: 6px'),
@@ -87,15 +88,16 @@ def list_tab():
 # .............................................................................
 
 def clear_tab():
+    log(f'clearing tab')
     clear('output')
 
 
 def do_list():
-    log(f'listing id types')
     folio = Folio()
     with use_scope('output', clear = True):
         put_processbar('bar', init = 1/2)
         requested = pin.list_type
+        log(f'getting list of {requested} types')
         try:
             types = folio.types(requested)
         except Exception as ex:
@@ -131,6 +133,7 @@ def do_list():
 def show_record(title, id, record_type):
     folio = Folio()
     try:
+        log(f'getting {record_type} record {id} from FOLIO')
         data  = folio.records(id, RecordIdKind.TYPE_ID, record_type)
     except Exception as ex:
         alert(str(ex))
@@ -157,5 +160,9 @@ def link(name, action):
 
 
 def copy_button(text):
-    return put_button('Copy id', onclick = lambda: pyperclip.copy(text), outline = True,
-                      small = True).style('text-align: center')
+    def copy_to_clipboard():
+        log(f'copying {text} to clipboard')
+        pyperclip.copy(text)
+
+    return put_button('Copy id', onclick = lambda: copy_to_clipboard(),
+                      outline = True, small = True).style('text-align: center')

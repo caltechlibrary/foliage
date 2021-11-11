@@ -139,6 +139,7 @@ class Folio():
     def __init__(self, creds = None):
         '''Create an interface to the FOLIO server.'''
         if creds:
+            log(f'creating Folio object and using credentials {creds}')
             self.use_credentials(creds)
         if not hasattr(self, 'creds'):
             self.creds = None
@@ -198,6 +199,7 @@ class Folio():
         if not valid_url(creds.url):
             return False
         try:
+            log(f'testing if FOLIO credentials appear valid')
             headers = {
                 "x-okapi-token": creds.token,
                 "x-okapi-tenant": creds.tenant_id,
@@ -207,7 +209,7 @@ class Folio():
             (resp, _) = net('get', request_url, headers = headers)
             return (resp and resp.status_code < 400)
         except Exception as ex:
-            log(f'FOLIO test failed with ' + str(ex))
+            log(f'FOLIO credentials test failed with ' + str(ex))
             return False
 
 
@@ -676,3 +678,12 @@ def unique_identifiers(text):
     identifiers = [id.replace('"', '') for id in identifiers]
     identifiers = [id.replace(':', '') for id in identifiers]
     return unique(filter(None, identifiers))
+
+
+def backup_record(record, backup_dir):
+    timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
+    id = record['id']
+    file = join(backup_dir, id + '.' + timestamp + '.json')
+    with open(file, 'w') as f:
+        log(f'backing up record {id} to {file}')
+        json.dump(record, f, indent = 2)

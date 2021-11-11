@@ -37,6 +37,7 @@ from   .ui import alert, warn, confirm, notify, user_file
 # .............................................................................
 
 def lookup_tab():
+    log(f'generating lookup tab contents')
     return [
         put_grid([[
             put_markdown('Input one or more item barcode, item id, item hrid,'
@@ -75,11 +76,13 @@ def lookup_tab():
 # .............................................................................
 
 def clear_tab():
+    log(f'clearing tab')
     clear('output')
     pin.textbox_find = ''
 
 
 def load_file():
+    log(f'user requesting file upload')
     if (file := user_file('Upload a file containing identifiers')):
         pin.textbox_find = file
 
@@ -129,6 +132,7 @@ def do_find():
 
 
 def print_record(record, record_kind, identifier, id_type, index, show_index, show_raw):
+    log(f'printing {record_kind} record {identifier}')
     if show_index:
         put_markdown(f'{record_kind.title()} record #{index}:')
 

@@ -38,6 +38,7 @@ from   .ui import quit_app, reload_page, alert, warn, confirm, notify
 # .............................................................................
 
 def export(records, kind):
+    log(f'exporting {pluralized(kind + " record", records, True)}')
     if not records:
         alert('Nothing to export')
         return

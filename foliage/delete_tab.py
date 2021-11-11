@@ -29,7 +29,7 @@ from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .folio import unique_identifiers
+from   .folio import unique_identifiers, backup_record
 from   .ui import alert, warn, confirm, notify, user_file
 
 
@@ -37,6 +37,7 @@ from   .ui import alert, warn, confirm, notify, user_file
 # .............................................................................
 
 def delete_tab():
+    log(f'generating delete tab contents')
     return [
         put_grid([[
             put_markdown('Input one or more barcodes, item id\'s, hrid\'s,'
@@ -63,10 +64,12 @@ def delete_tab():
 # .............................................................................
 
 def clear_tab():
+    log(f'clearing tab')
     clear('output')
     pin.textbox_delete = ''
 
 def load_file():
+    log(f'user requesting file upload')
     if (file := user_file('Upload a file containing identifiers')):
         pin.textbox_delete = file
 
@@ -166,12 +169,3 @@ def delete_instance(folio, record, for_id = None):
 
     # FIXME
     # Need to deal with EDS update.
-
-
-def backup_record(record, backup_dir):
-    timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
-    id = record['id']
-    file = join(backup_dir, id + '.' + timestamp + '.json')
-    with open(file, 'w') as f:
-        log(f'backing up record {id} to {file}')
-        json.dump(record, f, indent = 2)

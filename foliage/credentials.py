@@ -11,8 +11,11 @@ file "LICENSE" for more information.
 
 from   collections import namedtuple
 from   commonpy.interrupt import wait
+from   decouple import config
 import getpass
+import json
 import keyring
+import os
 from   pywebio.output import popup, close_popup, put_buttons
 from   pywebio.pin import pin, put_input, put_actions, put_textarea
 from   sidetrack import set_debug, log
@@ -46,7 +49,29 @@ Credentials = namedtuple('Credentials', 'url tenant_id token')
 # .............................................................................
 
 def credentials_from_file(creds_file):
-    pass
+    try:
+        with open(creds_file, 'r') as f:
+            return json.loads(creds_file)
+    except Exception as ex:
+        log(f'unable to read creds file: ' + str(ex))
+    return None
+
+
+def credentials_from_env(partial_ok = False):
+    url       = config('FOLIO_OKAPI_URL', default = None)
+    tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
+    token     = config('FOLIO_OKAPI_TOKEN', default = None)
+    creds     = Credentials(url = url, tenant_id = tenant_id, token = token)
+    if credentials_complete(creds):
+        log(f'credentials via config are complete')
+        return creds
+    elif not any([creds.url, creds.tenant_id, creds.token]):
+        log(f'no credentials found by config')
+        return None
+    elif partial_ok:
+        log(f'credentials via config are not complete but partial_ok = True')
+        return creds
+    return None
 
 
 def credentials_from_user(warn_empty = True, initial_creds = None):
@@ -76,13 +101,16 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     wait(0.5)                           # Give time for popup to go away.
 
     if not clicked_ok:
+        log(f'user cancelled out of credentials dialog')
         return initial_creds
 
     new_creds = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = pin.token)
     if not credentials_complete(new_creds) and warn_empty:
+        log(f'user provided incomplete credentials')
         if confirm('Cannot proceed without all credentials. Try again?'):
             return credentials_from_user(initial_creds = new_creds)
 
+    log(f'got credentials from user')
     return new_creds
 
 
@@ -126,6 +154,13 @@ def save_credentials(creds, ring = _KEYRING):
 def credentials_complete(creds):
     '''Return True if the given credentials are complete.'''
     return (creds and creds.url and creds.tenant_id and creds.token)
+
+
+def use_credentials(creds):
+    '''Set global environment variables for the credentials as given.'''
+    os.environ['FOLIO_OKAPI_URL']       = creds.url
+    os.environ['FOLIO_OKAPI_TENANT_ID'] = creds.tenant_id
+    os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
 
 
 # Utility functions

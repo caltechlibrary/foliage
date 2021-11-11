@@ -35,6 +35,7 @@ from   .ui import alert, warn, confirm, notify, user_file
 # .............................................................................
 
 def change_tab():
+    log(f'generating change tab contents')
     return [
         put_markdown('Input one or more item barcodes, item id\'s, or item'
                      + ' hrid\'s, then select the field to be changed, and'
@@ -85,6 +86,7 @@ known_fields = {
 value_list = []
 
 def load_file():
+    log(f'user requesting file upload')
     if (contents := user_file('Upload a file containing identifiers')):
         pin.chg_ids = contents
 
@@ -124,6 +126,7 @@ def select_field_value():
 
 
 def clear_tab():
+    log(f'clearing tab')
     clear('output')
     pin.chg_ids = ''
     pin.chg_field_value = ''
@@ -164,6 +167,7 @@ def change_record_fields(identifiers, chg_field, new_value):
                 put_error(f'No item record(s) found for {id_type} "{id}".')
                 continue
 
+            backup_record(record, backup_dir)
             put_success(put_markdown(f'Changed item record **{id}**'
                                      + f' to have value **{new_value}** for'
                                      + f' field _{chg_field.lower()}_.'))

@@ -10,6 +10,7 @@ file "LICENSE" for more information.
 '''
 
 from   commonpy.interrupt import wait
+from   commonpy.string_utils import antiformat
 import os
 from   os.path import exists, dirname, join, basename, abspath
 import pywebio
@@ -153,7 +154,7 @@ button.btn-warning {
 # .............................................................................
 
 def alert(text, popup = True):
-    log(f'alert: {text}')
+    log(f'alert: {antiformat(text)}')
     if popup:
         toast(text, color = 'error')
     else:
@@ -162,7 +163,7 @@ def alert(text, popup = True):
 
 
 def warn(text, popup = True):
-    log(f'warning: {text}')
+    log(f'warning: {antiformat(text)}')
     if popup:
         toast(text, color = 'warn')
     else:
@@ -171,7 +172,7 @@ def warn(text, popup = True):
 
 
 def confirm(question):
-    log(f'running JS function to confirm: {question}')
+    log(f'running JS function to confirm: {antiformat(question)}')
     return eval_js(f'confirm("{question}")')
 
 
@@ -180,7 +181,7 @@ def notify(msg):
 
 
 def quit_app(ask_confirm = True):
-    log(f'quitting (ask = {ask_confirm})')
+    log(f'quitting (ask = {antiformat(ask_confirm)})')
     wait(0.25)
     if not ask_confirm or confirm('This will exit Foliage. Proceed?'):
         log(f'running JS function close_window()')
@@ -198,10 +199,10 @@ def image_data(file_name):
     here = dirname(__file__)
     image_file = join(here, 'data', file_name)
     if exists(image_file):
-        log(f'reading image file {image_file}')
+        log(f'reading image file {antiformat(image_file)}')
         with open(image_file, 'rb') as f:
             return f.read()
-    log(f'could not find image in {image_file}')
+    log(f'could not find image in {antiformat(image_file)}')
     return b''
 
 

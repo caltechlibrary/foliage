@@ -12,6 +12,7 @@ file "LICENSE" for more information.
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
 from   commonpy.interrupt import wait
+from   decouple import config
 from   pywebio.input import input, select, checkbox, radio
 from   pywebio.input import NUMBER, TEXT, input_update, input_group
 from   pywebio.output import put_text, put_markdown, put_row, put_html
@@ -29,7 +30,6 @@ import webbrowser
 
 from   .credentials import credentials_from_user, credentials_from_keyring
 from   .credentials import save_credentials, credentials_complete
-from   .credentials import credentials_from_file
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .ui import quit_app, reload_page, alert, warn, confirm, notify
 from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
@@ -38,7 +38,8 @@ from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 # Tab creation function.
 # .............................................................................
 
-def other_tab(log_file, backup_dir):
+def other_tab():
+    log(f'generating other tab contents')
     return [
         put_grid([[
             put_markdown('Foliage stores the FOLIO credentials you provide the'
@@ -53,16 +54,14 @@ def other_tab(log_file, backup_dir):
                          + ' modification. Click this button to open the folder'
                          + ' containing the files. (Note: a given record may'
                          + ' have multiple backups with different time stamps.)'),
-            put_button('Show backups',
-                       onclick = lambda: webbrowser.open_new("file://" + backup_dir),
+            put_button('Show backups', onclick = lambda: show_backup_dir(),
                        ).style('margin-left: 20px; margin-top: 0.8em'),
         ], [
             put_markdown('The debug log file contains a detailed trace of'
                          + ' every action that Foliage takes. This can be'
                          + ' useful when trying to resolve bugs and other'
                          + ' problems.'),
-            put_button('Show log file',
-                       onclick = lambda: show_log_file(log_file),
+            put_button('Show log file', onclick = lambda: show_log_file(),
                        ).style('margin-left: 20px; text-align: left'),
         ]], cell_widths = 'auto 170px', cell_heights = '29% 42% 29%'),
     ]
@@ -72,7 +71,7 @@ def other_tab(log_file, backup_dir):
 # .............................................................................
 
 def edit_credentials():
-    log(f'updating credentials')
+    log(f'user invoked Edit credentials')
     folio = Folio()
     current_creds = folio.current_credentials()
     creds = credentials_from_user(warn_empty = False, initial_creds = current_creds)
@@ -84,11 +83,19 @@ def edit_credentials():
         log(f'credentials unchanged')
 
 
-def show_log_file(log_file):
+def show_backup_dir():
+    log(f'user invoked Show backup dir')
+    webbrowser.open_new("file://" + config('BACKUP_DIR'))
+
+
+def show_log_file():
+    log(f'user invoked Show log file')
+    log_file = config('LOG_FILE')
+    if log_file == '-':
+        warn('No log file -- log output is being directed to the terminal.')
+        return
     if log_file and exists(log_file):
         if readable(log_file):
             webbrowser.open_new("file://" + log_file)
         else:
             alert(f'Log file is unreadable -- please report this error.')
-    elif not log_file:
-        warn('No log file -- log output is being directed to the terminal.')

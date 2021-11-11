@@ -21,11 +21,14 @@ from   appdirs import AppDirs
 from   commonpy.data_utils import timestamp
 from   commonpy.file_utils import writable
 from   commonpy.interrupt import config_interrupt
+from   commonpy.network_utils import network_available
 from   commonpy.string_utils import antiformat
+from   decouple import config
 from   getpass import getuser
 from   fastnumbers import isint
 import faulthandler
 from   functools import partial
+import os
 from   os import makedirs
 from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 import plac
@@ -51,8 +54,8 @@ from   tornado.template import Template
 
 from   .change_tab import change_tab
 from   .credentials import credentials_from_user, credentials_from_keyring
-from   .credentials import save_credentials, credentials_complete
-from   .credentials import credentials_from_file
+from   .credentials import use_credentials, save_credentials, credentials_complete
+from   .credentials import credentials_from_file, credentials_from_env
 from   .delete_tab import delete_tab
 from   .enum_utils import MetaEnum, ExtendedEnum
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
@@ -73,71 +76,38 @@ _APP_DIRS = AppDirs('Foliage', 'CaltechLibrary')
 # .............................................................................
 
 @plac.annotations(
-    backup_dir = ('save copies of records in directory "B"',             'option', 'b'),
-    creds_file = ('read FOLIO credentials from file "C" (default: ask)', 'option', 'c'),
-    demo_mode  = ('demo mode: don\'t perform destructive operations',    'flag',   'd'),
-    no_keyring = ('do not use the keyring service for credentials',      'flag',   'K'),
-    port       = ('open browser on port "P" (default: 8080)',            'option', 'p'),
-    version    = ('print version info and exit',                         'flag',   'V'),
-    debug      = ('log debug output to "OUT" ("-" is console)',          'option', '@'),
+    backup_dir = ('back up records to folder B before changes', 'option', 'b'),
+    creds_file = ('read FOLIO credentials from JSON file C',    'option', 'c'),
+    demo_mode  = ('demo mode: don\'t perform destructive ops',  'flag',   'd'),
+    no_keyring = ('don\'t use keyring for credentials',         'flag',   'K'),
+    port       = ('open browser on port P (default: 8080)',     'option', 'p'),
+    version    = ('print program version info and exit',        'flag',   'V'),
+    debug      = ('log debug output to "OUT" ("-" is console)', 'option', '@'),
 )
 
 def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
          no_keyring = False, port = 'P', version = False, debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
 
-    # Set up debug logging as soon as possible --------------------------------
-
-    debug_mode, log_file = _config_debug(debug)
-
-    # Preprocess arguments and handle early exits -----------------------------
+    # Process arguments and handle early exits --------------------------------
 
     if version:
         from foliage import print_version
         print_version()
         exit()
 
-    if backup_dir != 'B':
-        if not exists(backup_dir) or not isdir(backup_dir):
-            alert(f'Directory for -b does not exist: {backup_dir}', False)
-            exit(1)
-        elif not writable(backup_dir):
-            alert(f'Cannot write in backup directory: {backup_dir}', False)
-            exit(1)
-    else:
-        backup_dir = _APP_DIRS.user_log_dir
-
-    use_keyring = not no_keyring
-    creds = None
-    creds_file = None if creds_file == 'C' else creds_file
-    if creds_file:
-        if not exists(creds_file):
-            alert(f'Credentials file does not exist: {creds_file}', False)
-            exit(1)
-        if not readable(creds_file):
-            alert(f'Credentials file not readable: {creds_file}', False)
-            exit(1)
-        creds = credentials_from_file(creds_file)
-        if not creds:
-            warn(f'Failed to read credentials from {creds_file}', False)
-        if not credentials_complete(creds):
-            alert(f'Incomplete credentials in {creds_file}', False)
-            exit(1)
-
-    port = 8080 if port == 'P' else port
-    if not isint(port):
-        alert(f'Port number value for option -p must be an integer.', False)
-        exit(1)
+    config_debug(debug)                # Set up debugging before anything else.
+    config_backup_dir(None if backup_dir == 'B' else backup_dir)
+    config_credentials(None if creds_file == 'C' else creds_file, not no_keyring)
+    config_port(8080 if port == 'P' else port)
+    config_demo_mode(demo_mode)
 
     # Do the real work --------------------------------------------------------
 
     log('='*8 + f' started {timestamp()} ' + '='*8)
+    log_config()
     exception = None
     try:
-        if not exists(backup_dir):
-            log(f'creating backup directory {backup_dir}')
-            makedirs(backup_dir)
-
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
 
         # This uses a custom index page template created by copying the PyWebIO
@@ -148,20 +118,9 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
             index_page_template = Template(index_tpl.read())
         pywebio.platform.utils._index_page_tpl = index_page_template
 
-        log(f'backup_dir = {backup_dir}')
-        log(f'log_file = {log_file if log_file else "stdout"}')
-        log(f'creds_file = {creds_file}')
-        log(f'demo_mode = {demo_mode}')
-        log(f'no_keyring = {no_keyring}')
-        log(f'port = {port}')
-
-        if demo_mode:
-            warn('Demo mode is on -- changes to FOLIO will NOT be made', False)
-
-        app = partial(foliage, creds, use_keyring, log_file, backup_dir, demo_mode)
         # cdn parameter makes it load PyWebIO JS code from our local copy.
-        start_server(app, port = port, auto_open_webbrowser = True,
-                     cdn = False, debug = debug_mode)
+        start_server(foliage, auto_open_webbrowser = True, cdn = False,
+                     port = os.environ['PORT'], debug = os.environ['DEBUG'])
     except KeyboardInterrupt as ex:
         # Catch it, but don't treat it as an error; just stop execution.
         log(f'keyboard interrupt received')
@@ -177,6 +136,9 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
         details = antiformat(''.join(format_exception(*exception)))
         log(f'Exception: {summary}\n{details}')
         alert('Error: ' + summary, False)
+        # This is a sledgehammer, but it kills everything, including ongoing
+        # network get/post. I have not found a more reliable way to interrupt.
+        os._exit(1)
 
     # And exit ----------------------------------------------------------------
 
@@ -187,8 +149,8 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
 # Main page creation function.
 # .............................................................................
 
-def foliage(cli_creds, use_keyring, log_file, backup_dir, demo_mode):
-    log(f'creating index page')
+def foliage():
+    log(f'generating main Foliage page')
     put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
     put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
@@ -198,33 +160,46 @@ def foliage(cli_creds, use_keyring, log_file, backup_dir, demo_mode):
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([
+        {'title': 'Change records',  'content': change_tab()},
         {'title': 'List UUIDs',      'content': list_tab()},
         {'title': 'Look up records', 'content': lookup_tab()},
-        {'title': 'Change records',  'content': change_tab()},
         {'title': 'Delete records',  'content': delete_tab()},
-        {'title': 'Other',           'content': other_tab(log_file, backup_dir)},
+        {'title': 'Other',           'content': other_tab()},
         ]).style('padding-bottom: 16px')
     put_button('Quit Foliage', color = 'warning', onclick = lambda: quit_app()
                ).style('position: absolute; bottom: 20px;'
                        + 'left: calc(50% - 3.5em); z-index: 2')
-
-    # We need to have started PyWebIO and have a window before we can do this:
-    _config_credentials(cli_creds, use_keyring)
-
-    # Put up demo mode banner.
-    if demo_mode:
+    if config('DEMO_MODE', cast = bool):
         put_warning('Demo mode in effect').style(
             'position: absolute; left: calc(50% - 5.5em); width: 11em;'
             + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
 
+    # Make sure we have a network before trying to test Folio creds.
+    if not network_available:
+        notify('No network -- cannot proceed.')
+        quit_app(ask_confirm = False)
+
+    # Must wait until have app window before can ask user for creds if needed.
+    creds = credentials_from_env(partial_ok = True)
+    if not credentials_complete(creds):
+        creds = credentials_from_user(initial_creds = creds)
+        if not credentials_complete(creds):
+            alert('Cannot proceed without complete credentials. Quitting.')
+            quit_app(ask_confirm = False)
+
+    folio = Folio(creds)
+    if not folio.valid_credentials(creds):
+        notify('Invalid FOLIO credentials. Quitting.')
+        quit_app(ask_confirm = False)
+
     # If we get here, we're ready and waiting for user input.
-    log(f'finished creating application page')
+    log(f'finished generating main Foliage page')
 
 
 # Miscellaneous utilities local to this module.
 # .............................................................................
 
-def _config_debug(debug_arg):
+def config_debug(debug_arg):
     '''Takes the value of the --debug flag & returns a tuple (bool, log_file).
     The tuple values represent whether --debug was given a value other than
     the default, and the destination log file for debug output.
@@ -267,38 +242,93 @@ def _config_debug(debug_arg):
         # Turn on debug tracing to the destination we ended up deciding to use.
         set_debug(True, log_file or '-')
     except PermissionError:
-        warn(f'Permission denied trying to create log file {log_file}', False)
+        warn(f'Permission denied creating log file {antiformat(log_file)}', False)
     except FileNotFoundError:
-        warn(f'Cannot write debug output file {log_file}', False)
+        warn(f'Cannot write log file {antiformat(log_file)}', False)
     except KeyboardInterrupt:
         # Need to catch this separately or else it will end up ignored by
-        # virtue of the next clause catching any Exception.
+        # virtue of the next clause catching all Exceptions.
         exit()
     except Exception as ex:
-        warn(f'Unable to create log file {log_file}', False)
+        warn(f'Unable to create log file {antiformat(log_file)}', False)
 
-    return (debug_arg != 'OUT', log_file)
+    # Make settings accessible in other parts of the program.
+    os.environ['DEBUG'] = str(debug_arg != 'OUT')
+    os.environ['LOG_FILE'] = (log_file or '-')
 
 
-def _config_credentials(cli_creds, use_keyring):
-    if cli_creds:
-        creds = cli_creds
-    elif use_keyring:
+def config_backup_dir(backup_dir):
+    if not backup_dir:
+        backup_dir = config('BACKUP_DIR', default = _APP_DIRS.user_log_dir)
+    if exists(backup_dir) and not isdir(backup_dir):
+        alert(f'Not a directory: {antiformat(backup_dir)}', False)
+        exit(1)
+    elif not writable(backup_dir):
+        alert(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
+        exit(1)
+    if not exists(backup_dir):
+        log(f'creating backup directory {antiformat(backup_dir)}')
+        try:
+            makedirs(backup_dir)
+        except OSError as ex:
+            log(f'failed to create {antiformat(backup_dir)}: ' + str(ex))
+            alert(f'Unable to create backup directory {backup_dir}', False)
+            exit(1)
+    os.environ['BACKUP_DIR'] = backup_dir
+
+
+def config_credentials(creds_file, use_keyring):
+    creds = None
+    if creds_file:
+        if not exists(creds_file):
+            alert(f'Credentials file does not exist: {creds_file}', False)
+            exit(1)
+        if not readable(creds_file):
+            alert(f'Credentials file not readable: {creds_file}', False)
+            exit(1)
+        creds = credentials_from_file(creds_file)
+        if not creds:
+            alert(f'Failed to read credentials from {creds_file}', False)
+            exit(1)
+        if not credentials_complete(creds):
+            alert(f'Incomplete credentials in {creds_file}', False)
+            exit(1)
+    if not creds:
+        creds = credentials_from_env()
+    keyring_creds = None
+    if not creds and use_keyring:
         keyring_creds = credentials_from_keyring(partial_ok = True)
         if credentials_complete(keyring_creds):
             creds = keyring_creds
-        else:
-            creds = credentials_from_user(initial_creds = keyring_creds)
-    else:
-        creds = credentials_from_user()
-    if not credentials_complete(creds):
-        alert('Cannot proceed without complete credentials. Quitting.')
-        quit_app(ask_confirm = False)
-    folio = Folio(creds)
-    if not folio.valid_credentials(creds):
-        notify('Invalid FOLIO credentials. Quitting.')
-        quit_app(ask_confirm = False)
-    save_credentials(creds)
+    if creds:
+        use_credentials(creds)
+        # We got credentials but not from the keyring. Save them.
+        if not keyring_creds and use_keyring:
+            save_credentials(creds)
+    os.environ['USE_KEYRING'] = str(use_keyring)
+    os.environ['CREDS_FILE'] = creds_file or 'None'
+
+
+def config_demo_mode(demo_mode):
+    os.environ['DEMO_MODE'] = str(demo_mode)
+    if demo_mode:
+        warn('Demo mode is on -- changes to FOLIO will NOT be made', False)
+
+
+def config_port(port):
+    if not isint(port):
+        alert(f'Port number value is not an integer: antiformat(port)', False)
+        exit(1)
+    os.environ['PORT'] = str(port)
+
+
+def log_config():
+    log(f'backup_dir  = {config("BACKUP_DIR")}')
+    log(f'log_file    = {config("LOG_FILE")}')
+    log(f'creds_file  = {config("CREDS_FILE")}')
+    log(f'use_keyring = {config("USE_KEYRING")}')
+    log(f'port        = {config("PORT")}')
+    log(f'demo_mode   = {config("DEMO_MODE")}')
 
 
 # Main entry point.
