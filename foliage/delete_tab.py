@@ -104,7 +104,7 @@ def do_delete():
             if not record:
                 put_error(f'Could not find a record for {id_type} {id}.')
                 continue
-            backup_record(record, backup_dir)
+            backup_record(record)
             if id_type in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
                 if demo_mode:
                     put_success(put_markdown(f'Deleted item record **{id}**'))

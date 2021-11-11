@@ -167,7 +167,7 @@ def change_record_fields(identifiers, chg_field, new_value):
                 put_error(f'No item record(s) found for {id_type} "{id}".')
                 continue
 
-            backup_record(record, backup_dir)
+            backup_record(record)
             put_success(put_markdown(f'Changed item record **{id}**'
                                      + f' to have value **{new_value}** for'
                                      + f' field _{chg_field.lower()}_.'))

@@ -94,7 +94,7 @@ def show_log_file():
     if log_file == '-':
         warn('No log file -- log output is being directed to the terminal.')
         return
-    if log_file and exists(log_file):
+    elif log_file and exists(log_file):
         if readable(log_file):
             webbrowser.open_new("file://" + log_file)
         else:

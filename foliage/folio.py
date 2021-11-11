@@ -680,7 +680,8 @@ def unique_identifiers(text):
     return unique(filter(None, identifiers))
 
 
-def backup_record(record, backup_dir):
+def backup_record(record):
+    backup_dir = config('BACKUP_DIR')
     timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
     id = record['id']
     file = join(backup_dir, id + '.' + timestamp + '.json')
