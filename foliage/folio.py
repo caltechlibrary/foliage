@@ -680,7 +680,7 @@ def unique_identifiers(text):
     return unique(filter(None, identifiers))
 
 
-def backup_record(record):
+def back_up_record(record):
     backup_dir = config('BACKUP_DIR')
     timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
     id = record['id']
