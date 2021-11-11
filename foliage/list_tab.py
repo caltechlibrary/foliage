@@ -28,15 +28,27 @@ from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 import threading
 
+from   .base_tab import FoliageTab
 from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .ui import alert, warn, confirm, notify
 
 
-# Tab creation function.
+# Tab definition class.
 # .............................................................................
 
-def list_tab():
+class ListTab(FoliageTab):
+    def contents(self):
+        return {'title': 'List UUIDs', 'content': tab_contents()}
+
+    def pin_watchers(self):
+        return {}
+
+
+# Miscellaneous helper functions.
+# .............................................................................
+
+def tab_contents():
     log(f'generating list tab contents')
     return [
         put_grid([[
@@ -83,9 +95,6 @@ def list_tab():
         ]])
     ]
 
-
-# Miscellaneous helper functions.
-# .............................................................................
 
 def clear_tab():
     log(f'clearing tab')

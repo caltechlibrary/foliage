@@ -27,16 +27,28 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 
+from   .base_tab import FoliageTab
 from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .folio import unique_identifiers
 from   .ui import alert, warn, confirm, notify, user_file
 
 
+# Tab definition class.
+# .............................................................................
+
+class LookupTab(FoliageTab):
+    def contents(self):
+        return {'title': 'Look up records', 'content': tab_contents()}
+
+    def pin_watchers(self):
+        return {}
+
+
 # Tab creation function.
 # .............................................................................
 
-def lookup_tab():
+def tab_contents():
     log(f'generating lookup tab contents')
     return [
         put_grid([[

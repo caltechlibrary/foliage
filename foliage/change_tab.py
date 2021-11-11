@@ -23,18 +23,31 @@ from   pywebio.output import put_processbar, set_processbar, put_loading
 from   pywebio.output import put_column
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
+from   pywebio.session import run_js, eval_js
 from   sidetrack import set_debug, log
 import threading
 
+from   .base_tab import FoliageTab
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .folio import unique_identifiers
+from   .folio import unique_identifiers, back_up_record
 from   .ui import alert, warn, confirm, notify, user_file
+
+
+# Tab definition class.
+# .............................................................................
+
+class ChangeTab(FoliageTab):
+    def contents(self):
+        return {'title': 'Change records', 'content': tab_contents()}
+
+    def pin_watchers(self):
+        return {'chg_action': lambda value: update_tab(value)}
 
 
 # Tab creation function.
 # .............................................................................
 
-def change_tab():
+def tab_contents():
     log(f'generating change tab contents')
     return [
         put_markdown('Input one or more item barcodes, item id\'s, or item'
@@ -45,26 +58,30 @@ def change_tab():
         put_grid([[
             put_grid([
                 [put_markdown('Identifiers of items to be changed:')],
-                [put_textarea('chg_ids', rows = 5)],
+                [put_textarea('chg_ids', rows = 7)],
                 ]),
             put_grid([
                 [put_text('Field to be changed:')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_name()
                                ).style('text-align: left'),
-                    put_textarea('chg_field', rows = 1),
+                    put_textarea('chg_field', rows = 1, readonly = True),
                 ], size = '85px auto').style('text-align: right')],
+                [put_radio('chg_action', inline = True,
+                          options = [ ('Change field value', 'change', True),
+                                      ('Delete field value', 'delete')]
+                           ).style('margin-bottom: 0.3em')],
                 [put_text('New field value:')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_value()),
-                    put_textarea('chg_field_value', rows = 1),
-                ], size = '85px auto')],
+                    put_textarea('chg_field_value', rows = 1, readonly = True),
+                ], size = '85px auto').style('z-index: 9')],
                 ]).style('margin-left: 12px'),
             ]], cell_widths = '50% 50%'),
         put_grid([[
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: left'),
-            put_button('Change values', color = 'danger',
+            put_button('Change records', color = 'danger',
                        onclick = lambda: do_change()).style('text-align: right'),
             put_button(' Clear ', outline = True,
                        onclick = lambda: clear_tab()).style('text-align: right'),
@@ -83,7 +100,15 @@ known_fields = {
     'Temporary location'  : TypeKind.LOCATION,
 }
 
-value_list = []
+
+def update_tab(value):
+    if value == 'delete':
+        eval_js('''$("p:contains('New field value')").css("opacity", "0.4");''')
+        eval_js('''$("div").filter((i, n) => $(n).css("z-index") == 9).css("opacity", "0.4");''')
+    else:
+        eval_js('''$("p:contains('New field value')").css("opacity", "1");''')
+        eval_js('''$("div").filter((i, n) => $(n).css("z-index") == 9).css("opacity", "1");''')
+
 
 def load_file():
     log(f'user requesting file upload')
@@ -92,34 +117,29 @@ def load_file():
 
 
 def select_field_name():
-    global value_list
-    # Clear any previous values.
-    value_list = []
+    # Clear any previous value.
     pin.chg_field_value = ''
-    folio = Folio()
-    # Ask the user to select something.
     if (answer := popup_selection('Select field to change', known_fields)):
+        # Show the selection in the text field.
         pin.chg_field = answer
-        try:
-            types = folio.types(known_fields[answer])
-        except Exception as ex:
-            log(f'exception requesting list of {requested}: ' + str(ex))
-            alert(f'Unable to get type list -- please report this error.')
-            return
-        value_list = sorted(item['name'] for item in types)
 
 
 def select_field_value():
-    global value_list
+    if pin.chg_action == 'delete':
+        # Ignore clicks when the action is to delete.
+        return
     if not pin.chg_field:
         notify('Please first select the field to be changed.')
         return
-    if not value_list:
-        # If previous pop-up done quickly, update might not have happened.
-        wait(0.5)
-        if not value_list:
-            # FIXME this is stupid
-            wait(0.5)
+
+    folio = Folio()
+    try:
+        types = folio.types(known_fields[pin.chg_field])
+    except Exception as ex:
+        log(f'exception requesting list of {requested}: ' + str(ex))
+        alert(f'Unable to get type list -- please report this error.')
+        return
+    value_list = sorted(item['name'] for item in types)
     name = pin.chg_field.lower()
     if (val := popup_selection(f'Select a new value for the {name}', value_list)):
         pin.chg_field_value = val
@@ -131,6 +151,8 @@ def clear_tab():
     pin.chg_ids = ''
     pin.chg_field_value = ''
     pin.chg_field = ''
+    pin.chg_action = 'change'
+    update_tab('change')
 
 
 def do_change():
@@ -167,7 +189,8 @@ def change_record_fields(identifiers, chg_field, new_value):
                 put_error(f'No item record(s) found for {id_type} "{id}".')
                 continue
 
-            backup_record(record)
+            record = records[0]
+            #back_up_record(record)
             put_success(put_markdown(f'Changed item record **{id}**'
                                      + f' to have value **{new_value}** for'
                                      + f' field _{chg_field.lower()}_.'))

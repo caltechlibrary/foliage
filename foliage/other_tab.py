@@ -28,6 +28,7 @@ from   sidetrack import set_debug, log
 import threading
 import webbrowser
 
+from   .base_tab import FoliageTab
 from   .credentials import credentials_from_user, credentials_from_keyring
 from   .credentials import save_credentials, credentials_complete
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
@@ -35,10 +36,21 @@ from   .ui import quit_app, reload_page, alert, warn, confirm, notify
 from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 
 
+# Tab definition class.
+# .............................................................................
+
+class OtherTab(FoliageTab):
+    def contents(self):
+        return {'title': 'Other', 'content': tab_contents()}
+
+    def pin_watchers(self):
+        return {}
+
+
 # Tab creation function.
 # .............................................................................
 
-def other_tab():
+def tab_contents():
     log(f'generating other tab contents')
     return [
         put_grid([[

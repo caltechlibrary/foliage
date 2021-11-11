@@ -18,7 +18,8 @@ if sys.version_info <= (3, 8):
     exit(1)
 
 from   appdirs import AppDirs
-from   commonpy.data_utils import timestamp
+from   collections import ChainMap
+from   commonpy.data_utils import timestamp, pluralized
 from   commonpy.file_utils import writable
 from   commonpy.interrupt import config_interrupt
 from   commonpy.network_utils import network_available
@@ -28,6 +29,7 @@ from   getpass import getuser
 from   fastnumbers import isint
 import faulthandler
 from   functools import partial
+from   itertools import chain
 import os
 from   os import makedirs
 from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
@@ -52,16 +54,16 @@ from   pywebio.session import run_js, eval_js, download
 from   sidetrack import set_debug, log
 from   tornado.template import Template
 
-from   .change_tab import change_tab
+from   .change_tab import ChangeTab
 from   .credentials import credentials_from_user, credentials_from_keyring
 from   .credentials import use_credentials, save_credentials, credentials_complete
 from   .credentials import credentials_from_file, credentials_from_env
-from   .delete_tab import delete_tab
+from   .delete_tab import DeleteTab
 from   .enum_utils import MetaEnum, ExtendedEnum
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .list_tab import list_tab
-from   .lookup_tab import lookup_tab
-from   .other_tab import other_tab
+from   .list_tab import ListTab
+from   .lookup_tab import LookupTab
+from   .other_tab import OtherTab
 from   .ui import quit_app, reload_page, alert, warn, confirm, notify
 from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 
@@ -69,7 +71,11 @@ from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 # Internal constants.
 # .............................................................................
 
-_APP_DIRS = AppDirs('Foliage', 'CaltechLibrary')
+_DIRS = AppDirs('Foliage', 'CaltechLibrary')
+'''Platform-specific directories for Foliage data.'''
+
+_TABS = [ChangeTab(), ListTab(), LookupTab(), DeleteTab(), OtherTab()]
+'''List of tabs making up the Foliage application.'''
 
 
 # Main program.
@@ -159,13 +165,7 @@ def foliage():
              ' on your computer and lets you perform FOLIO operations over'
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
-    put_tabs([
-        {'title': 'Change records',  'content': change_tab()},
-        {'title': 'List UUIDs',      'content': list_tab()},
-        {'title': 'Look up records', 'content': lookup_tab()},
-        {'title': 'Delete records',  'content': delete_tab()},
-        {'title': 'Other',           'content': other_tab()},
-        ]).style('padding-bottom: 16px')
+    put_tabs([tab.contents() for tab in _TABS]).style('padding-bottom: 16px')
     put_button('Quit Foliage', color = 'warning', onclick = lambda: quit_app()
                ).style('position: absolute; bottom: 20px;'
                        + 'left: calc(50% - 3.5em); z-index: 2')
@@ -192,8 +192,16 @@ def foliage():
         notify('Invalid FOLIO credentials. Quitting.')
         quit_app(ask_confirm = False)
 
-    # If we get here, we're ready and waiting for user input.
-    log(f'finished generating main Foliage page')
+    watchers  = dict(ChainMap(*[tab.pin_watchers() for tab in _TABS]))
+    pin_names = list(watchers.keys())
+    log(f'entering pin handler loop for pins {pin_names}')
+    while True:
+        # Block, waiting for a change event on any of the pins being watched.
+        changed = pin_wait_change(pin_names)
+        # Find handler associated w/ pin name & call it with value from event.
+        name = changed["name"]
+        log(f'invoking pin callback for {name}')
+        watchers[name](changed['value'])
 
 
 # Miscellaneous utilities local to this module.
@@ -210,7 +218,7 @@ def config_debug(debug_arg):
         if debug_arg == 'OUT':
             # The --debug flag was not given, so turn on only basic logging.
             # Store the debug log in user's log directory.
-            log_dir = _APP_DIRS.user_log_dir
+            log_dir = _DIRS.user_log_dir
             log_file = join(log_dir, 'log.txt')
             if not exists(log_dir):
                 makedirs(log_dir)
@@ -259,7 +267,7 @@ def config_debug(debug_arg):
 
 def config_backup_dir(backup_dir):
     if not backup_dir:
-        backup_dir = config('BACKUP_DIR', default = _APP_DIRS.user_log_dir)
+        backup_dir = config('BACKUP_DIR', default = _DIRS.user_log_dir)
     if exists(backup_dir) and not isdir(backup_dir):
         alert(f'Not a directory: {antiformat(backup_dir)}', False)
         exit(1)
