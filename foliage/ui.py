@@ -147,6 +147,9 @@ button.btn-warning {
     padding-right: 0 !important;
     border-radius: .25rem;
 }
+textarea.form-control[readonly] {
+    background: repeating-linear-gradient(-45deg, #fff, #f6f6f6 8px);
+}
 '''
 
 
