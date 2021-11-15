@@ -9,6 +9,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
+from   collections import namedtuple
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
 from   commonpy.interrupt import wait
@@ -92,12 +93,14 @@ def tab_contents():
 # Miscellaneous helper functions.
 # .............................................................................
 
+Field = namedtuple('Field', 'type key')
+
 known_fields = {
-    'Effective location'  : TypeKind.LOCATION,
-    'Material type'       : TypeKind.MATERIAL,
-    'Permanent loan type' : TypeKind.LOAN,
-    'Permanent location'  : TypeKind.LOCATION,
-    'Temporary location'  : TypeKind.LOCATION,
+    'Effective location'  : Field(type = TypeKind.LOCATION, key = 'effectiveLocation'),
+    'Material type'       : Field(type = TypeKind.MATERIAL, key = 'materialType'),
+    'Permanent loan type' : Field(type = TypeKind.LOAN,     key = 'permanentLoanType'),
+    'Permanent location'  : Field(type = TypeKind.LOCATION, key = 'permanentLocation'),
+    'Temporary location'  : Field(type = TypeKind.LOCATION, key = 'temporaryLocation'),
 }
 
 
@@ -108,6 +111,16 @@ def update_tab(value):
     else:
         eval_js('''$("p:contains('New field value')").css("opacity", "1");''')
         eval_js('''$("div").filter((i, n) => $(n).css("z-index") == 9).css("opacity", "1");''')
+
+
+def clear_tab():
+    log(f'clearing tab')
+    clear('output')
+    pin.chg_ids = ''
+    pin.chg_field_value = ''
+    pin.chg_field = ''
+    pin.chg_action = 'change'
+    update_tab('change')
 
 
 def load_file():
@@ -132,9 +145,10 @@ def select_field_value():
         notify('Please first select the field to be changed.')
         return
 
+    log(f'getting list of values for {pin.chg_field}')
     folio = Folio()
     try:
-        types = folio.types(known_fields[pin.chg_field])
+        types = folio.types(known_fields[pin.chg_field].type)
     except Exception as ex:
         log(f'exception requesting list of {requested}: ' + str(ex))
         alert(f'Unable to get type list -- please report this error.')
@@ -143,16 +157,6 @@ def select_field_value():
     name = pin.chg_field.lower()
     if (val := popup_selection(f'Select a new value for the {name}', value_list)):
         pin.chg_field_value = val
-
-
-def clear_tab():
-    log(f'clearing tab')
-    clear('output')
-    pin.chg_ids = ''
-    pin.chg_field_value = ''
-    pin.chg_field = ''
-    pin.chg_action = 'change'
-    update_tab('change')
 
 
 def do_change():
@@ -170,30 +174,60 @@ def change_record_fields(identifiers, chg_field, new_value):
     folio = Folio()
     with use_scope('output', clear = True):
         steps = len(identifiers) + 1
-        put_processbar('bar', init = 1/steps);
+        put_processbar('bar', init = 1/steps)
         for index, id in enumerate(identifiers, start = 2):
             put_html('<br>')
-            id_type = folio.record_id_type(id)
-            if id_type == RecordIdKind.UNKNOWN:
-                log(f'could not recognize type of {id}')
-                put_error(f'Could not recognize the identifier type of {id}.')
-                set_processbar('bar', index/steps)
-                continue
+            set_processbar('bar', index/steps)
             try:
+                id_type = folio.record_id_type(id)
+                if id_type == RecordIdKind.UNKNOWN:
+                    log(f'could not recognize type of {id}')
+                    put_error(f'Could not recognize the identifier type of {id}.')
+                    continue
                 records = folio.records(id, id_type, RecordKind.ITEM)
             except Exception as ex:
-                log(f'exception trying to get records for {id}: ' + str(ex))
+                log(f'exception getting records for {id}: ' + str(ex))
                 put_error(f'Error: ' + str(ex))
-                break
+                continue
             if not records or len(records) == 0:
                 put_error(f'No item record(s) found for {id_type} "{id}".')
                 continue
-
+            # FIXME this is only okay for item records.
             record = records[0]
-            #back_up_record(record)
-            put_success(put_markdown(f'Changed item record **{id}**'
-                                     + f' to have value **{new_value}** for'
-                                     + f' field _{chg_field.lower()}_.'))
+            field_key = known_fields[chg_field].key
+            if record.get(field_key, None):
+                put_warn(put_markdown(f'Item record **{id}** has no value'
+                                      + f' for field _{field_key}_ – skipping'))
+                continue
+
+            holdings_id = record['holdingsRecordId']
+            try:
+                holdings = folio.records(holdings_id, RecordIdKind.HOLDINGS_ID)
+            except Exception as ex:
+                log(f'exception getting holdings record {holdings_id}: ' + str(ex))
+                put_error(f'Failed to get holdings record for {id} -- skipping')
+                continue
+
+            holdings_record = holdings[0]
+            if pin.chg_action == 'delete':
+                # back_up_record(record)
+                log(f'deleting field {field_key} from item {id}')
+                del record[field_key]
+                folio.update(record)
+
+                put_success(put_markdown(f'Deleted _{chg_field.lower()}_ field'
+                                         + f' from record **{id}**.'))
+
+                # if holdings_record.get(field_key, None):
+                #     log(f'deleting field {field_key} from holdings {holdings_id}')
+            else:
+                # Have to update both the item record and the holdings record
+                import pdb; pdb.set_trace()
+
+
+                put_success(put_markdown(f'Changed item record **{id}**'
+                                         + f' to have value **{new_value}** for'
+                                         + f' field _{chg_field.lower()}_.'))
 
 
 def popup_selection(title, values):
