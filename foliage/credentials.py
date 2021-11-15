@@ -16,7 +16,7 @@ import getpass
 import json
 import keyring
 import os
-from   pywebio.output import popup, close_popup, put_buttons
+from   pywebio.output import popup, close_popup, put_buttons, put_markdown
 from   pywebio.pin import pin, put_input, put_actions, put_textarea
 from   sidetrack import set_debug, log
 import sys
@@ -29,6 +29,7 @@ if sys.platform.startswith('darwin'):
     import keyring.backends
     from keyring.backends.OS_X import Keyring
 
+from .folio import Folio
 from .ui import alert, warn, confirm
 
 
@@ -79,6 +80,8 @@ def credentials_from_env():
 
 
 def credentials_from_user(warn_empty = True, initial_creds = None):
+    '''Ask user for info needed to create a token & return a Credentials obj.'''
+
     event = threading.Event()
     clicked_ok = False
 
@@ -90,15 +93,21 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     log(f'asking user for credentials')
     current = initial_creds or Credentials('', '', '')
     pins = [
+        put_markdown('_The following information is needed to create an API'
+                     + ' token in FOLIO for your account. Your FOLIO login'
+                     + ' and password will_ **not** _be stored anywhere after'
+                     + ' this form disappears_.'),
+        put_input('user',      label = 'FOLIO user name'),
+        put_input('password',  label = 'FOLIO password', type = 'password'),
         put_input('url',       label = 'OKAPI URL', value = current.url),
         put_input('tenant_id', label = 'Tenant id', value = current.tenant_id),
-        put_textarea('token',  label = 'API token', value = current.token, rows = 4),
         put_buttons([
             {'label': 'Submit', 'value': True},
             {'label': 'Cancel', 'value': False, 'color': 'danger'},
         ], onclick = clk).style('float: right')
     ]
-    popup(title = 'FOLIO credentials', content = pins, size = 'large', closable = False)
+    popup(title = 'FOLIO credentials', content = pins,
+          size = 'large', closable = False)
 
     event.wait()
     close_popup()
@@ -108,14 +117,20 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
         log(f'user cancelled out of credentials dialog')
         return initial_creds
 
-    new_creds = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = pin.token)
-    if not credentials_complete(new_creds) and warn_empty:
+    if not all([pin.url, pin.tenant_id, pin.user, pin.password]) and warn_empty:
         log(f'user provided incomplete credentials')
         if confirm('Cannot proceed without all credentials. Try again?'):
-            return credentials_from_user(initial_creds = new_creds)
+            tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
+            return credentials_from_user(initial_creds = tmp)
+
+    token = Folio.new_token(url = pin.url, tenant_id = pin.tenant_id,
+                            user = pin.user, password = pin.password)
+    if not token:
+        notify('Failed to get a token from FOLIO.')
+        return None
 
     log(f'got credentials from user')
-    return new_creds
+    return Credentials(url = pin.url, tenant_id = pin.tenant_id, token = token)
 
 
 # Explanation about the weird way this is done: the Python keyring module
@@ -155,16 +170,24 @@ def save_credentials(creds, ring = _KEYRING):
     keyring.set_password(ring, getpass.getuser(), value)
 
 
-def credentials_complete(creds):
-    '''Return True if the given credentials are complete.'''
-    return (creds and creds.url and creds.tenant_id and creds.token)
-
-
 def use_credentials(creds):
     '''Set global environment variables for the credentials as given.'''
+    log(f'setting environment variables for credentials using {creds}')
     os.environ['FOLIO_OKAPI_URL']       = creds.url
     os.environ['FOLIO_OKAPI_TENANT_ID'] = creds.tenant_id
     os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
+
+
+def current_credentials():
+    url       = config('FOLIO_OKAPI_URL', default = None)
+    tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
+    token     = config('FOLIO_OKAPI_TOKEN', default = None)
+    return Credentials(url = url, tenant_id = tenant_id, token = token)
+
+
+def credentials_complete(creds):
+    '''Return True if the given credentials are complete.'''
+    return (creds and creds.url and creds.tenant_id and creds.token)
 
 
 # Private helper functions.

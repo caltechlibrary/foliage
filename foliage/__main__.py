@@ -60,11 +60,11 @@ from   .credentials import use_credentials, save_credentials, credentials_comple
 from   .credentials import credentials_from_file, credentials_from_env
 from   .delete_tab import DeleteTab
 from   .enum_utils import MetaEnum, ExtendedEnum
-from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   .folio import Folio
 from   .list_tab import ListTab
 from   .lookup_tab import LookupTab
 from   .other_tab import OtherTab
-from   .ui import quit_app, reload_page, alert, warn, confirm, notify
+from   .ui import quit_app, reload_page, tell, alert, warn, confirm, notify
 from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 
 
@@ -74,7 +74,7 @@ from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 _DIRS = AppDirs('Foliage', 'CaltechLibrary')
 '''Platform-specific directories for Foliage data.'''
 
-_TABS = [ChangeTab(), ListTab(), LookupTab(), DeleteTab(), OtherTab()]
+_TABS = [ListTab(), LookupTab(), ChangeTab(), DeleteTab(), OtherTab()]
 '''List of tabs making up the Foliage application.'''
 
 
@@ -83,7 +83,7 @@ _TABS = [ChangeTab(), ListTab(), LookupTab(), DeleteTab(), OtherTab()]
 
 @plac.annotations(
     backup_dir = ('back up records to folder B before changes', 'option', 'b'),
-    creds_file = ('read FOLIO credentials from JSON file C',    'option', 'c'),
+    creds_file = ('read FOLIO credentials from .ini file C',    'option', 'c'),
     demo_mode  = ('demo mode: don\'t perform destructive ops',  'flag',   'd'),
     no_keyring = ('don\'t use keyring for credentials',         'flag',   'K'),
     port       = ('open browser on port P (default: 8080)',     'option', 'p'),
@@ -93,7 +93,38 @@ _TABS = [ChangeTab(), ListTab(), LookupTab(), DeleteTab(), OtherTab()]
 
 def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
          no_keyring = False, port = 'P', version = False, debug = 'OUT'):
-    '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.'''
+    '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.
+
+Credentials for FOLIO OKAPI access can be provided in a number of ways. The
+sequence of methods it uses are as follows:
+
+  1. If the --creds-file argument is used, and the given file contains
+     complete credentials (OKAPI URL, tenant id, and OKAPI API token), then
+     those credentials are used and nothing more is tried. (In other words,
+     credentials given via --creds-file override everything else.) If the
+     given file cannot be read or does not contain complete credentials, then
+     it is an error and Foliage will quit.
+
+  2. Else, if all three of the environment variables FOLIO_OKAPI_URL,
+     FOLIO_OKAPI_TENANT_ID and FOLIO_OKAPI_TOKEN are set, it uses those
+     credentials and nothing more is tried.
+
+  3. Else, the credentials are looked up in the user's system keyring/keychain.
+     If all 3 pieces of info are found (i.e., OKAPI URL, tenant id, and OKAPI
+     API token), then those credentials are used.
+
+  4. Else, it asks the user for the FOLIO_OKAPI_URL, FOLIO_OKAPI_TENANT_ID, a
+     FOLIO login, and a password, and uses that combination to request an API
+     token from FOLIO. Unless the --no-keyring argument is given, Foliage also
+     stores the URL, tenant id, and token in the user's keyring/keychain so
+     that it doesn't have to ask again in future runs. (The user's login and
+     password are not stored.)
+
+In normal situations, the first time a user runs Foliage, they will end up in
+case #4 above (i.e., being asked for credentials so that Foliage can create
+and store an API token), and then on subsequent runs, Foliage will not ask for
+the credentials again.
+'''
 
     # Process arguments and handle early exits --------------------------------
 
@@ -117,8 +148,7 @@ def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
 
         # This uses a custom index page template created by copying the PyWebIO
-        # default and modifying it. Among other things, the following were
-        # removed because Foliage doesn't need them: Plotly, Codemirror.
+        # default and modifying it.
         here = realpath(dirname(__file__))
         with open(join(here, 'data', 'index.tpl')) as index_tpl:
             index_page_template = Template(index_tpl.read())
@@ -179,16 +209,16 @@ def foliage():
         notify('No network -- cannot proceed.')
         quit_app(ask_confirm = False)
 
-    # Must wait until have app window before can ask user for creds if needed.
-    creds = credentials_from_env(partial_ok = True)
+    creds = credentials_from_env()
     if not credentials_complete(creds):
         creds = credentials_from_user(initial_creds = creds)
         if not credentials_complete(creds):
-            alert('Cannot proceed without complete credentials. Quitting.')
+            notify('Unable to proceed without complete credentials. Quitting.')
             quit_app(ask_confirm = False)
-
-    folio = Folio(creds)
-    if not folio.valid_credentials(creds):
+        if config('USE_KEYRING', cast = bool):
+            tell('FOLIO credentials obtained and stored.')
+    use_credentials(creds)
+    if not Folio.validated_credentials():
         notify('Invalid FOLIO credentials. Quitting.')
         quit_app(ask_confirm = False)
 
@@ -299,12 +329,13 @@ def config_credentials(creds_file, use_keyring):
             alert(f'Failed to read credentials from {creds_file}', False)
             exit(1)
         if not credentials_complete(creds):
+            # Consider it an error to be told to use a file and it's incomplete
             alert(f'Incomplete credentials in {creds_file}', False)
             exit(1)
     if not creds:
         creds = credentials_from_env()
     keyring_creds = None
-    if not creds and use_keyring:
+    if (not creds or not credentials_complete(creds)) and use_keyring:
         keyring_creds = credentials_from_keyring(partial_ok = True)
         if credentials_complete(keyring_creds):
             creds = keyring_creds
