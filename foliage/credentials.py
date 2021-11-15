@@ -11,7 +11,7 @@ file "LICENSE" for more information.
 
 from   collections import namedtuple
 from   commonpy.interrupt import wait
-from   decouple import config
+from   decouple import Config, config
 import getpass
 import json
 import keyring
@@ -50,10 +50,13 @@ Credentials = namedtuple('Credentials', 'url tenant_id token')
 
 def credentials_from_file(creds_file):
     try:
-        with open(creds_file, 'r') as f:
-            return json.loads(creds_file)
+        config_file = Config(creds_file)
+        url         = config_file.get('FOLIO_OKAPI_URL', default = None)
+        tenant_id   = config_file.get('FOLIO_OKAPI_TENANT_ID', default = None)
+        token       = config_file.get('FOLIO_OKAPI_TOKEN', default = None)
+        return Credentials(url = url, tenant_id = tenant_id, token = token)
     except Exception as ex:
-        log(f'unable to read creds file: ' + str(ex))
+        log(f'unable to read given creds file: ' + str(ex))
     return None
 
 
