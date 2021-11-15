@@ -46,6 +46,7 @@
 </footer>
 
 <script src="{{ base_url }}js/mustache.min.js"></script>  <!--template system-->
+<script src="{{ base_url }}js/prism.min.js"></script>  <!-- markdown code highlight -->
 <script src="{{ base_url }}js/FileSaver.min.js"></script>  <!-- saving files on the client-side -->
 <script src="{{ base_url }}js/jquery.min.js"></script>
 <script src="{{ base_url }}js/popper.min.js"></script>  <!-- tooltip engine -->
@@ -58,12 +59,12 @@
         $('#output-container').html('<div class="alert alert-danger" role="alert"> Sorry, this website does not support IE browser. ☹ </div>');
 </script>
 <script src="{{ base_url }}js/pywebio.min.js"></script>
+
+<script src="{{ base_url }}js/require.min.js"></script> <!-- JS module loader -->
 {% for js in js_file %}
     {% if js %}<script src="{{ js }}"></script>{% end %}
 {% end %}
 {% if script %}
-<script src="{{ base_url }}js/require.min.js"></script> <!-- JS module loader -->
-
 <script>
     $(function () {
         // https://www.npmjs.com/package/bs-custom-file-input
