@@ -12,8 +12,6 @@ file "LICENSE" for more information.
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
 from   commonpy.interrupt import wait
-from   datetime import datetime as dt
-from   dateutil import tz
 import json
 from   pywebio.input import input, select, checkbox, radio
 from   pywebio.input import NUMBER, TEXT, input_update, input_group
