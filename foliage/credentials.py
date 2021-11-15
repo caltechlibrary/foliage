@@ -11,7 +11,7 @@ file "LICENSE" for more information.
 
 from   collections import namedtuple
 from   commonpy.interrupt import wait
-from   decouple import Config, config
+from   decouple import AutoConfig, Config, RepositoryEmpty, config
 import getpass
 import json
 import keyring
@@ -49,32 +49,33 @@ Credentials = namedtuple('Credentials', 'url tenant_id token')
 # .............................................................................
 
 def credentials_from_file(creds_file):
+    '''Return a Credentials object created from values in creds_file.
+
+    The credentials file must be in ".ini" format, like this:
+
+    [settings]
+    FOLIO_OKAPI_URL = .....
+    FOLIO_OKAPI_TENANT_ID = .....
+    FOLIO_OKAPI_TOKEN = .....
+    '''
     try:
         config_file = Config(creds_file)
-        url         = config_file.get('FOLIO_OKAPI_URL', default = None)
-        tenant_id   = config_file.get('FOLIO_OKAPI_TENANT_ID', default = None)
-        token       = config_file.get('FOLIO_OKAPI_TOKEN', default = None)
-        return Credentials(url = url, tenant_id = tenant_id, token = token)
     except Exception as ex:
         log(f'unable to read given creds file: ' + str(ex))
-    return None
-
-
-def credentials_from_env(partial_ok = False):
-    url       = config('FOLIO_OKAPI_URL', default = None)
-    tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
-    token     = config('FOLIO_OKAPI_TOKEN', default = None)
-    creds     = Credentials(url = url, tenant_id = tenant_id, token = token)
-    if credentials_complete(creds):
-        log(f'credentials via config are complete')
-        return creds
-    elif not any([creds.url, creds.tenant_id, creds.token]):
-        log(f'no credentials found by config')
         return None
-    elif partial_ok:
-        log(f'credentials via config are not complete but partial_ok = True')
-        return creds
-    return None
+    return _creds_from_source(config_file, str(creds_file))
+
+
+def credentials_from_env():
+    '''Return a Credentials object created from environment variables.
+
+    This checks for the following environment variables:
+
+      FOLIO_OKAPI_URL
+      FOLIO_OKAPI_TENANT_ID
+      FOLIO_OKAPI_TOKEN
+    '''
+    return _creds_from_source(Config(RepositoryEmpty()), 'environment')
 
 
 def credentials_from_user(warn_empty = True, initial_creds = None):
@@ -166,7 +167,7 @@ def use_credentials(creds):
     os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
 
 
-# Utility functions
+# Private helper functions.
 # .............................................................................
 
 _SEP = ''
@@ -182,3 +183,18 @@ def _encoded(url, tenant_id, token):
 
 def _decoded(value_string):
     return tuple(value_string.split(_SEP))
+
+
+def _creds_from_source(source = None, where = ''):
+    if not source:
+        return None
+    url       = source.get('FOLIO_OKAPI_URL', default = None)
+    tenant_id = source.get('FOLIO_OKAPI_TENANT_ID', default = None)
+    token     = source.get('FOLIO_OKAPI_TOKEN', default = None)
+    if not any([url, tenant_id, token]):
+        log(f'no credentials found in {where}')
+        return None
+    creds = Credentials(url = url, tenant_id = tenant_id, token = token)
+    complete = 'complete' if credentials_complete(creds) else 'not complete'
+    log(f'credentials in {where} are {complete}')
+    return creds
