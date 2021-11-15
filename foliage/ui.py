@@ -156,6 +156,12 @@ textarea.form-control[readonly] {
 # Exported functions
 # .............................................................................
 
+def tell(text, popup = True):
+    log(f'info: {antiformat(text)}')
+    if popup:
+        toast(text, color = 'green')
+
+
 def alert(text, popup = True):
     log(f'alert: {antiformat(text)}')
     if popup:
