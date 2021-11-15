@@ -14,16 +14,18 @@ from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
 from   commonpy.network_utils import net
+from   datetime import datetime as dt
+from   dateutil import tz
 from   decouple import config
 from   enum import Enum, EnumMeta
 from   functools import partial
 from   fastnumbers import isint
 import json
+from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 import re
 from   sidetrack import set_debug, log
 from   validators.url import url as valid_url
 
-from   .credentials import Credentials, credentials_complete
 from   .enum_utils import MetaEnum, ExtendedEnum
 
 
@@ -136,25 +138,16 @@ class Folio():
         return existing_instance
 
 
-    def __init__(self, creds = None):
-        '''Create an interface to the FOLIO server.'''
-        if creds:
-            log(f'creating Folio object and using credentials {creds}')
-            self.use_credentials(creds)
-        if not hasattr(self, 'creds'):
-            self.creds = None
-
-
     def _folio(self, op, endpoint, convert = None, retry = 0):
         '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
 
         headers = {
-            "x-okapi-token": self.creds.token,
-            "x-okapi-tenant": self.creds.tenant_id,
-            "content-type": "application/json",
+            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
+            "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
+            "content-type":   "application/json",
         }
 
-        request_url = self.creds.url + endpoint
+        request_url = config('FOLIO_OKAPI_URL') + endpoint
         (response, error) = net(op, request_url, headers = headers)
         if not error:
             log(f'got result from {request_url}')
@@ -175,37 +168,55 @@ class Folio():
         raise error
 
 
-    def use_credentials(self, creds):
-        self.creds = creds
-        log('Configuration: \n'
-            + f'FOLIO_OKAPI_URL = {self.creds.url}\n'
-            + f'FOLIO_OKAPI_TENANT_ID = {self.creds.tenant_id}\n'
-            + f'FOLIO_OKAPI_TOKEN = {self.creds.token}')
-
-
-    def current_credentials(self):
-        if self.creds:
-            return Credentials(url = self.creds.url,
-                               tenant_id = self.creds.tenant_id,
-                               token = self.creds.token)
-        else:
-            return Credentials('', '', '')
+    @staticmethod
+    def new_token(url, tenant_id, user, password):
+        '''Ask FOLIO to create a token for the given url, tenant & user.'''
+        if not all([url, tenant_id, user, password]):
+            log(f'given incomplete set of parameters -- can\'t proceed.')
+            return None
+        try:
+            log(f'asking FOLIO for new API token')
+            headers = {
+                'x-okapi-tenant': tenant_id,
+                'content-type': 'application/json',
+            }
+            data = json.dumps({
+                'tenant': tenant_id,
+                'username': user,
+                'password': password
+            })
+            request_url = url + '/authn/login'
+            (resp, error) = net('post', request_url, headers = headers, data = data)
+            if resp.status_code == 201:
+                token = resp.headers['x-okapi-token']
+                log(f'got new token from FOLIO: {token}')
+                return token
+            elif error:
+                log(f'FOLIO returned error: ' + str(error))
+            else:
+                log(f'FOLIO returned unrecognized code {str(resp.status_code)}')
+        except Exception as ex:
+            log(f'FOLIO rejected request for creating API token: ' + str(ex))
+        return None
 
 
     @staticmethod
-    def valid_credentials(creds):
-        if not creds or not credentials_complete(creds):
+    def validated_credentials():
+        url       = config('FOLIO_OKAPI_URL', default = None)
+        tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
+        token     = config('FOLIO_OKAPI_TOKEN', default = None)
+        if not all([url, tenant_id, token]):
             return False
-        if not valid_url(creds.url):
+        if not valid_url(url):
             return False
         try:
             log(f'testing if FOLIO credentials appear valid')
             headers = {
-                "x-okapi-token": creds.token,
-                "x-okapi-tenant": creds.tenant_id,
+                "x-okapi-token": token,
+                "x-okapi-tenant": tenant_id,
                 "content-type": "application/json",
             }
-            request_url = creds.url + '/instance-statuses?limit=0'
+            request_url = url + '/instance-statuses?limit=0'
             (resp, _) = net('get', request_url, headers = headers)
             return (resp and resp.status_code < 400)
         except Exception as ex:
@@ -627,6 +638,11 @@ class Folio():
 
         endpoint = '/' + type_kind + '?limit=1000'
         return self._folio('get', endpoint, result_parser)
+
+
+    def update(self, record):
+        '''Update the given record by doing a PUT in Folio.'''
+        pass
 
 
     # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
