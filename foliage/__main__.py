@@ -216,6 +216,7 @@ def foliage():
             notify('Unable to proceed without complete credentials. Quitting.')
             quit_app(ask_confirm = False)
         if config('USE_KEYRING', cast = bool):
+            save_credentials(creds)
             tell('FOLIO credentials obtained and stored.')
     use_credentials(creds)
     if not Folio.validated_credentials():
