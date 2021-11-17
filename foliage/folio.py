@@ -140,6 +140,66 @@ class Folio():
         return existing_instance
 
 
+    @staticmethod
+    def new_token(url, tenant_id, user, password):
+        '''Ask FOLIO to create a token for the given url, tenant & user.'''
+        if not all([url, tenant_id, user, password]):
+            log(f'given incomplete set of parameters -- can\'t proceed.')
+            return None
+        try:
+            log(f'asking FOLIO for new API token')
+            headers = {
+                'x-okapi-tenant': tenant_id,
+                'content-type': 'application/json',
+            }
+            data = json.dumps({
+                'tenant': tenant_id,
+                'username': user,
+                'password': password
+            })
+            request_url = url + '/authn/login'
+            (resp, error) = net('post', request_url, headers = headers, data = data)
+            if resp.status_code == 201:
+                token = resp.headers['x-okapi-token']
+                log(f'got new token from FOLIO: {token}')
+                return token
+            elif error:
+                log(f'FOLIO returned error: ' + str(error))
+            else:
+                log(f'FOLIO returned unrecognized code {str(resp.status_code)}')
+        except Interrupted as ex:
+            log(f'interrupted')
+        except Exception as ex:
+            log(f'FOLIO rejected request for creating API token: ' + str(ex))
+        return None
+
+
+    @staticmethod
+    def validated_credentials():
+        url       = config('FOLIO_OKAPI_URL', default = None)
+        tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
+        token     = config('FOLIO_OKAPI_TOKEN', default = None)
+        if not all([url, tenant_id, token]):
+            log(f'credentials are incomplete; cannot validate credentials')
+            return False
+        if not valid_url(url):
+            log(f'FOLIO_OKAPI_URL value is not a valid URL')
+            return False
+        try:
+            log(f'testing if FOLIO credentials appear valid')
+            headers = {
+                "x-okapi-token": token,
+                "x-okapi-tenant": tenant_id,
+                "content-type": "application/json",
+            }
+            request_url = url + '/instance-statuses?limit=0'
+            (resp, _) = net('get', request_url, headers = headers)
+            return (resp and resp.status_code < 400)
+        except Exception as ex:
+            log(f'FOLIO credentials test failed with ' + str(ex))
+            return False
+
+
     def _folio(self, op, endpoint, convert = None, retry = 0):
         '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
 
@@ -170,62 +230,6 @@ class Folio():
         raise error
 
 
-    @staticmethod
-    def new_token(url, tenant_id, user, password):
-        '''Ask FOLIO to create a token for the given url, tenant & user.'''
-        if not all([url, tenant_id, user, password]):
-            log(f'given incomplete set of parameters -- can\'t proceed.')
-            return None
-        try:
-            log(f'asking FOLIO for new API token')
-            headers = {
-                'x-okapi-tenant': tenant_id,
-                'content-type': 'application/json',
-            }
-            data = json.dumps({
-                'tenant': tenant_id,
-                'username': user,
-                'password': password
-            })
-            request_url = url + '/authn/login'
-            (resp, error) = net('post', request_url, headers = headers, data = data)
-            if resp.status_code == 201:
-                token = resp.headers['x-okapi-token']
-                log(f'got new token from FOLIO: {token}')
-                return token
-            elif error:
-                log(f'FOLIO returned error: ' + str(error))
-            else:
-                log(f'FOLIO returned unrecognized code {str(resp.status_code)}')
-        except Exception as ex:
-            log(f'FOLIO rejected request for creating API token: ' + str(ex))
-        return None
-
-
-    @staticmethod
-    def validated_credentials():
-        url       = config('FOLIO_OKAPI_URL', default = None)
-        tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
-        token     = config('FOLIO_OKAPI_TOKEN', default = None)
-        if not all([url, tenant_id, token]):
-            return False
-        if not valid_url(url):
-            return False
-        try:
-            log(f'testing if FOLIO credentials appear valid')
-            headers = {
-                "x-okapi-token": token,
-                "x-okapi-tenant": tenant_id,
-                "content-type": "application/json",
-            }
-            request_url = url + '/instance-statuses?limit=0'
-            (resp, _) = net('get', request_url, headers = headers)
-            return (resp and resp.status_code < 400)
-        except Exception as ex:
-            log(f'FOLIO credentials test failed with ' + str(ex))
-            return False
-
-
     def record_id_type(self, id):
         '''Infer the type of id given.'''
         if isint(id) and len(id) > 7 and id.startswith('350'):
@@ -238,58 +242,39 @@ class Folio():
             # Given a uuid, there's no way to ask Folio what kind it is, b/c
             # of Folio's microarchitecture & the lack of a central coordinating
             # authority.  So we have to ask different modules in turn.
-
-            def record_exists(endpoint):
-                if (response := self._folio('get', f'{endpoint}?limit=0')):
+            record_endpoints = [
+                ('/item-storage/items',         RecordIdKind.ITEM_ID),
+                ('/instance-storage/instances', RecordIdKind.INSTANCE_ID),
+                ('/holdings-storage/holdings',  RecordIdKind.HOLDINGS_ID),
+                ('/loan-storage/loans',         RecordIdKind.LOAN_ID),
+                ('/users',                      RecordIdKind.USER_ID),
+            ]
+            for base, kind in record_endpoints:
+                if (response := self._folio('get', f'{base}/{id}?limit=0')):
                     if response.status_code == 200:
-                        return True
+                        log(f'recognized {id} as {kind}')
+                        return kind
                     elif response.status_code >= 500:
                         raise RuntimeError('FOLIO server error')
-                return False
-
-            if record_exists(f'/item-storage/items/{id}'):
-                log(f'recognized {id} as an item id')
-                return RecordIdKind.ITEM_ID
-            if record_exists(f'/instance-storage/instances/{id}'):
-                log(f'recognized {id} as an instance id')
-                return RecordIdKind.INSTANCE_ID
-            if record_exists(f'/holdings-storage/holdings/{id}'):
-                log(f'recognized {id} as a holdings id')
-                return RecordIdKind.HOLDINGS_ID
-            if record_exists(f'/users/{id}'):
-                log(f'recognized {id} as a user id')
-                return RecordIdKind.USER_ID
-            if record_exists(f'/loan-storage/loans/{id}'):
-                log(f'recognized {id} as a loan id')
-                return RecordIdKind.LOAN_ID
         else:
             # We have a value that's more ambiguous. Try some searches.
-
-            def id_found(search):
-                if (response := self._folio('get', f'{search}&limit=0')):
+            folio_searches = [
+                (f'/users?query=barcode=',                   RecordIdKind.USER_BARCODE),
+                (f'/item-storage/items?query=hrid=',         RecordIdKind.ITEM_HRID),
+                (f'/instance-storage/instances?query=hrid=', RecordIdKind.INSTANCE_HRID),
+                (f'/holdings-storage/holdings?query=hrid=',  RecordIdKind.HOLDINGS_HRID),
+            ]
+            for query, kind in folio_searches:
+                if (response := self._folio('get', f'{query}{id}&limit=0')):
                     if response.status_code == 200:
                         # The endpoint always return a value, even when there
                         # are no hits, so we have to look inside.
                         data = json.loads(response.text)
                         if data and int(data.get('totalRecords', 0)) > 0:
-                            return True
+                            log(f'recognized {id} as {kind}')
+                            return kind
                     elif response.status_code >= 500:
                         raise RuntimeError('FOLIO server error')
-                return False
-
-            if id_found(f'/users?query=barcode={id}'):
-                log(f'recognized {id} as a user barcode')
-                return RecordIdKind.USER_BARCODE
-            if id_found(f'/item-storage/items?query=hrid={id}'):
-                log(f'recognized {id} as an item hrid')
-                return RecordIdKind.ITEM_HRID
-            if id_found(f'/instance-storage/instances?query=hrid={id}'):
-                log(f'recognized {id} as an instance hrid')
-                return RecordIdKind.INSTANCE_HRID
-            if id_found(f'/holdings-storage/holdings?query=hrid={id}'):
-                log(f'recognized {id} as a holdings hrid')
-                return RecordIdKind.HOLDINGS_HRID
-
         # If we end up here, we're out of ideas.
         return RecordIdKind.UNKNOWN
 
