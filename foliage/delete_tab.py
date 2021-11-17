@@ -29,7 +29,9 @@ from   sidetrack import set_debug, log
 from   .base_tab import FoliageTab
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .folio import unique_identifiers, back_up_record
-from   .ui import alert, warn, confirm, notify, user_file
+from   .ui import confirm, notify, user_file
+from   .ui import tell_success, tell_warning, tell_failure
+from   .ui import note_info, note_warn, note_error
 
 
 # Tab definition class.
@@ -64,7 +66,7 @@ def tab_contents():
             put_button('Delete FOLIO records', color = 'danger',
                        onclick = lambda: do_delete()),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_button(' Clear ', outline = True,
+            put_button('Clear', outline = True,
                        onclick = lambda: clear_tab()).style('text-align: right')
         ])
     ]
@@ -87,7 +89,7 @@ def do_delete():
     log(f'do_delete invoked')
     folio = Folio()
     if not pin.textbox_delete:
-        alert('Please input at least one barcode or other type of id.')
+        note_error('Please input at least one barcode or other type of id.')
         return
     if not confirm('WARNING: you are about to delete records in FOLIO'
                    + ' permanently. This cannot be undone.\\n\\nProceed?'):
@@ -100,28 +102,28 @@ def do_delete():
             put_html('<br>')
             id_type = folio.record_id_type(id)
             if id_type == RecordIdKind.UNKNOWN:
-                put_error(f'Could not recognize the identifier type of {id}.')
+                tell_failure(f'Could not recognize the identifier type of {id}.')
                 set_processbar('bar', index/steps)
                 continue
             try:
                 records = folio.records(id, id_type)
                 record = records[0] if records else None
             except Exception as ex:
-                alert(f'Error: ' + str(ex))
+                note_error(f'Error: ' + str(ex))
                 break
             finally:
                 set_processbar('bar', index/steps)
             if not record:
-                put_error(f'Could not find a record for {id_type} {id}.')
+                tell_failure(f'Could not find a record for {id_type} {id}.')
                 continue
             back_up_record(record)
             if id_type in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
                 if demo_mode:
-                    put_success(put_markdown(f'Deleted item record **{id}**'))
+                    tell_success(f'Deleted item record **{id}**')
                 else:
                     delete_item(folio, record, id)
             else:
-                put_warning('Instance record deletion is currently turned off.')
+                tell_warning('Instance record deletion is currently turned off.')
                 # delete_instance(folio, record, id)
 
 
@@ -130,9 +132,9 @@ def delete_item(folio, record, for_id = None):
     (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
     if success:
         why = " (for request to delete " + (for_id if for_id else '') + ")"
-        put_success(f'Deleted item record {id}{why}')
+        tell_success(f'Deleted item record {id}{why}')
     else:
-        put_error(f'Error: {msg}')
+        tell_failure(f'Error: {msg}')
 
 
 def delete_holdings(folio, record, for_id = None):
@@ -140,9 +142,9 @@ def delete_holdings(folio, record, for_id = None):
     (success, msg) = folio.operation('delete', f'/holdings-storage/holdings/{id}')
     if success:
         why = " (for request to delete " + (for_id if for_id else '') + ")"
-        put_success(f'Deleted holdings record {id}{why}.')
+        tell_success(f'Deleted holdings record {id}{why}.')
     else:
-        put_error(f'Error: {msg}')
+        tell_failure(f'Error: {msg}')
 
 
 # The following is based on
@@ -153,15 +155,15 @@ def delete_instance(folio, record, for_id = None):
 
     # Starting at the bottom, delete the item records.
     items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM)
-    put_warning(f'Deleting {pluralized("item record", items, True)} due to'
-                + f' the deletion of instance record {inst_id}.')
+    tell_warning(f'Deleting {pluralized("item record", items, True)} due to'
+                 + f' the deletion of instance record {inst_id}.')
     for item in items:
         delete_item(folio, item, for_id)
 
     # Now delete the holdings records.
     holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS)
-    put_warning(f'Deleting {pluralized("holdings record", holdings, True)} due to'
-                + f' the deletion of instance record {inst_id}.')
+    tell_warning(f'Deleting {pluralized("holdings record", holdings, True)} due to'
+                 + f' the deletion of instance record {inst_id}.')
     for hr in holdings:
         delete_holdings(folio, hr, for_id)
 
@@ -173,9 +175,9 @@ def delete_instance(folio, record, for_id = None):
             why = " (for request to delete " + (for_id if for_id else '') + ")"
             put_info(f'Deleted instance record {inst_id}{why}.')
         else:
-            put_error(f'Error: {msg}')
+            tell_failure(f'Error: {msg}')
     else:
-        put_error(f'Error: {msg}')
+        tell_failure(f'Error: {msg}')
 
     # FIXME
     # Need to deal with EDS update.

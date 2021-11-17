@@ -11,14 +11,16 @@ file "LICENSE" for more information.
 
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
+from   contextlib import contextmanager
 import os
 from   os.path import exists, dirname, join, basename, abspath
 import pywebio
 from   pywebio.input import input, file_upload
-from   pywebio.output import put_text, put_markdown, put_row, put_html, put_error
+from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import toast, popup, close_popup, put_buttons
+from   pywebio.output import put_success, put_warning, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove
-from   pywebio.output import PopupSize
+from   pywebio.output import PopupSize, put_loading
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.session import run_js, eval_js
 from   rich import print
@@ -117,6 +119,7 @@ button {
 }
 .btn {
     margin-bottom: 1px !important;
+    min-width: 85px;
 }
 .btn-link {
     padding: 0
@@ -150,34 +153,66 @@ button.btn-warning {
 textarea.form-control[readonly] {
     background: repeating-linear-gradient(-45deg, #fff, #f6f6f6 8px);
 }
+.spinner-border {
+    position: absolute;
+    left: calc(50% - 1em);
+    top: 7em;
+}
 '''
 
 
 # Exported functions
 # .............................................................................
 
-def tell(text, popup = True):
-    log(f'info: {antiformat(text)}')
+# Summary of the scheme below:
+#   - "tell" functions print a message in the output area
+#   - "note" functions print a "toast" message shown temporarily across the top.
+# Warning & error note functions print to the console if popup == False.
+# The info note function just doesn't print anything if popup == False.
+
+def tell_success(text):
+    '''Wrapper around put_success(...) that also formats markdown.'''
+    log(antiformat(text))
+    put_success(put_markdown(text))
+
+
+def tell_warning(text):
+    '''Wrapper around put_warning(...) that also formats markdown.'''
+    log(antiformat(text))
+    put_warning(put_markdown(text))
+
+
+def tell_failure(text):
+    '''Wrapper around put_failure(...) that also formats markdown.'''
+    log(antiformat(text))
+    put_error(put_markdown(text))
+
+
+def note_info(text, popup = True):
+    '''Show an informational toast message.'''
+    log(antiformat(text))
     if popup:
         toast(text, color = 'green')
 
 
-def alert(text, popup = True):
-    log(f'alert: {antiformat(text)}')
-    if popup:
-        toast(text, color = 'error')
-    else:
-        width = 79 if len(text) > 75 else (len(text) + 4)
-        print(Panel(text, style = Style.parse('red'), width = width))
-
-
-def warn(text, popup = True):
-    log(f'warning: {antiformat(text)}')
+def note_warn(text, popup = True):
+    '''Show a warning toast message.'''
+    log(antiformat(text))
     if popup:
         toast(text, color = 'warn')
     else:
         width = 79 if len(text) > 75 else (len(text) + 4)
         print(Panel(text, style = Style.parse('yellow'), width = width))
+
+
+def note_error(text, popup = True):
+    '''Show an error toast message.'''
+    log(antiformat(text))
+    if popup:
+        toast(text, color = 'error')
+    else:
+        width = 79 if len(text) > 75 else (len(text) + 4)
+        print(Panel(text, style = Style.parse('red'), width = width))
 
 
 def confirm(question):

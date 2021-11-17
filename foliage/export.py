@@ -31,7 +31,7 @@ from   slugify import slugify
 import threading
 
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .ui import quit_app, reload_page, alert, warn, confirm, notify
+from   .ui import quit_app, reload_page, confirm, notify
 
 
 # Main functions.
@@ -40,7 +40,7 @@ from   .ui import quit_app, reload_page, alert, warn, confirm, notify
 def export(records, kind):
     log(f'exporting {pluralized(kind + " record", records, True)}')
     if not records:
-        alert('Nothing to export')
+        note_error('Nothing to export')
         return
 
     event = threading.Event()

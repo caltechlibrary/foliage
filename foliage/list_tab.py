@@ -31,7 +31,8 @@ import threading
 from   .base_tab import FoliageTab
 from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .ui import alert, warn, confirm, notify
+from   .ui import confirm, notify
+from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
 # Tab definition class.
@@ -39,7 +40,7 @@ from   .ui import alert, warn, confirm, notify
 
 class ListTab(FoliageTab):
     def contents(self):
-        return {'title': 'List UUIDs', 'content': tab_contents()}
+        return {'title': 'List IDs', 'content': tab_contents()}
 
     def pin_watchers(self):
         return {}
@@ -90,7 +91,7 @@ def tab_contents():
             ]).style('margin-left: 10px; margin-bottom: 0'),
             put_button('Get list', onclick = lambda: do_list(),
                        ).style('margin-left: 10px; text-align: left'),
-            put_button(' Clear ', outline = True, onclick = lambda: clear_tab()
+            put_button('Clear', outline = True, onclick = lambda: clear_tab()
                        ).style('margin-left: 10px; text-align: right'),
         ]])
     ]
@@ -112,7 +113,7 @@ def do_list():
         except Exception as ex:
             log(f'exception requesting list of {requested}: ' + str(ex))
             put_html('<br>')
-            put_error('Error: ' + str(ex))
+            tell_failure('Error: ' + str(ex))
             return
         finally:
             set_processbar('bar', 2/2)
@@ -145,7 +146,7 @@ def show_record(title, id, record_type):
         log(f'getting {record_type} record {id} from FOLIO')
         data  = folio.records(id, RecordIdKind.TYPE_ID, record_type)
     except Exception as ex:
-        alert(str(ex))
+        note_error(str(ex))
         return
 
     event = threading.Event()
