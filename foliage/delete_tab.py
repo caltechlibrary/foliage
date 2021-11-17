@@ -100,13 +100,13 @@ def do_delete():
         put_processbar('bar', init = 1/steps);
         for index, id in enumerate(identifiers, start = 2):
             put_html('<br>')
-            id_type = folio.record_id_type(id)
-            if id_type == RecordIdKind.UNKNOWN:
+            id_kind = folio.record_id_kind(id)
+            if id_kind == RecordIdKind.UNKNOWN:
                 tell_failure(f'Could not recognize the identifier type of {id}.')
                 set_processbar('bar', index/steps)
                 continue
             try:
-                records = folio.records(id, id_type)
+                records = folio.records(id, id_kind)
                 record = records[0] if records else None
             except Exception as ex:
                 note_error(f'Error: ' + str(ex))
@@ -114,10 +114,10 @@ def do_delete():
             finally:
                 set_processbar('bar', index/steps)
             if not record:
-                tell_failure(f'Could not find a record for {id_type} {id}.')
+                tell_failure(f'Could not find a record for {id_kind} {id}.')
                 continue
             back_up_record(record)
-            if id_type in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
+            if id_kind in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
                 if demo_mode:
                     tell_success(f'Deleted item record **{id}**')
                 else:

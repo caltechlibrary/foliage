@@ -134,24 +134,24 @@ def do_find():
         for index, id in enumerate(identifiers, start = 2):
             put_html('<br>')
             try:
-                id_type = folio.record_id_type(id)
-                if id_type == RecordIdKind.UNKNOWN:
-                    tell_failure(f'Could not recognize the identifier type of {id}.')
+                id_kind = folio.record_id_kind(id)
+                if id_kind == RecordIdKind.UNKNOWN:
+                    tell_failure(f'Unrecognized identifier kind: {id}.')
                     set_processbar('bar', index/steps)
                     continue
-                records = folio.records(id, id_type, record_kind)
+                records = folio.records(id, id_kind, record_kind)
                 if interrupted():
                     return
                 set_processbar('bar', index/steps)
                 if not records or len(records) == 0:
-                    tell_failure(f'No {record_kind} record(s) found for {id_type} "{id}".')
+                    tell_failure(f'No {record_kind} record(s) found for {id_kind} "{id}".')
                     continue
                 this = pluralized(record_kind + " record", records, True)
-                how = f'by searching for {id_type} **{id}**.'
+                how = f'by searching for {id_kind} **{id}**.'
                 tell_success(f'Found {this} {how}')
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
-                    print_record(record, record_kind, id, id_type,
+                    print_record(record, record_kind, id, id_kind,
                                  index, show_index, pin.show_raw == 'json')
             except Interrupted as ex:
                 tell_warning('Stopped.')
@@ -167,7 +167,7 @@ def do_find():
                    ).style('margin-left: 0').style('margin-left: 10px; float: right')
 
 
-def print_record(record, record_kind, identifier, id_type, index, show_index, show_raw):
+def print_record(record, record_kind, identifier, id_kind, index, show_index, show_raw):
     log(f'printing {record_kind} record {record["id"]}')
     if show_index:
         put_markdown(f'{record_kind.title()} record #{index}:')
