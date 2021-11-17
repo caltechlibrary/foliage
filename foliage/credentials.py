@@ -17,6 +17,7 @@ import json
 import keyring
 import os
 from   pywebio.output import popup, close_popup, put_buttons, put_markdown
+from   pywebio.output import put_loading
 from   pywebio.pin import pin, put_input, put_actions, put_textarea
 from   sidetrack import set_debug, log
 import sys
@@ -30,7 +31,7 @@ if sys.platform.startswith('darwin'):
     from keyring.backends.OS_X import Keyring
 
 from .folio import Folio
-from .ui import alert, warn, confirm
+from .ui import confirm
 
 
 # Private constants.
@@ -123,8 +124,9 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
             return credentials_from_user(initial_creds = tmp)
 
-    token = Folio.new_token(url = pin.url, tenant_id = pin.tenant_id,
-                            user = pin.user, password = pin.password)
+    with put_loading():
+        token = Folio.new_token(url = pin.url, tenant_id = pin.tenant_id,
+                                user = pin.user, password = pin.password)
     if not token:
         notify('Failed to get a token from FOLIO.')
         return None
