@@ -30,7 +30,7 @@ import webbrowser
 
 from   .base_tab import FoliageTab
 from   .credentials import credentials_from_user, current_credentials
-from   .credentials import save_credentials, use_credentials, credentials_complete
+from   .credentials import use_credentials
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .ui import quit_app, reload_page, confirm, notify
 from   .ui import image_data, user_file, JS_CODE, CSS_CODE
@@ -85,15 +85,10 @@ def tab_contents():
 
 def edit_credentials():
     log(f'user invoked Edit credentials')
-    current_creds = current_credentials()
-    creds = credentials_from_user(warn_empty = False, initial_creds = current_creds)
-    if current_creds != creds:
+    current = current_credentials()
+    creds = credentials_from_user(warn_empty = False, initial_creds = current)
+    if creds != current:
         log(f'user has provided updated credentials')
-        if config('USE_KEYRING', cast = bool):
-            save_credentials(creds)
-            note_info('FOLIO credentials obtained and stored.')
-        else:
-            note_info('FOLIO credentials obtained.')
         use_credentials(creds)
     else:
         log(f'credentials unchanged')

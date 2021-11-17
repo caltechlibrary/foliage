@@ -177,7 +177,7 @@ class Folio():
 
 
     @staticmethod
-    def validated_credentials():
+    def credentials_valid():
         url       = config('FOLIO_OKAPI_URL', default = None)
         tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
         token     = config('FOLIO_OKAPI_TOKEN', default = None)

@@ -20,6 +20,7 @@ if sys.version_info <= (3, 8):
 from   appdirs import AppDirs
 from   collections import ChainMap
 from   commonpy.data_utils import timestamp, pluralized
+from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import writable
 from   commonpy.interrupt import config_interrupt
 from   commonpy.network_utils import network_available
@@ -56,7 +57,7 @@ from   tornado.template import Template
 
 from   .change_tab import ChangeTab
 from   .credentials import credentials_from_user, credentials_from_keyring
-from   .credentials import use_credentials, save_credentials, credentials_complete
+from   .credentials import use_credentials, credentials_complete
 from   .credentials import credentials_from_file, credentials_from_env
 from   .delete_tab import DeleteTab
 from   .enum_utils import MetaEnum, ExtendedEnum
@@ -64,8 +65,9 @@ from   .folio import Folio
 from   .list_tab import ListTab
 from   .lookup_tab import LookupTab
 from   .other_tab import OtherTab
-from   .ui import quit_app, reload_page, tell, alert, warn, confirm, notify
-from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
+from   .ui import quit_app, reload_page, confirm, notify
+from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
+from   .ui import image_data, user_file, JS_CODE, CSS_CODE
 
 
 # Internal constants.
@@ -74,7 +76,7 @@ from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
 _DIRS = AppDirs('Foliage', 'CaltechLibrary')
 '''Platform-specific directories for Foliage data.'''
 
-_TABS = [ListTab(), LookupTab(), ChangeTab(), DeleteTab(), OtherTab()]
+_TABS = [ChangeTab(), ListTab(), LookupTab(), DeleteTab(), OtherTab()]
 '''List of tabs making up the Foliage application.'''
 
 
@@ -134,6 +136,7 @@ the credentials again.
         exit()
 
     config_debug(debug)                # Set up debugging before anything else.
+    config_interrupt(raise_exception = Interrupted)
     config_backup_dir(None if backup_dir == 'B' else backup_dir)
     config_credentials(None if creds_file == 'C' else creds_file, not no_keyring)
     config_port(8080 if port == 'P' else port)
@@ -171,7 +174,7 @@ the credentials again.
         summary = antiformat(exception[1])
         details = antiformat(''.join(format_exception(*exception)))
         log(f'Exception: {summary}\n{details}')
-        alert('Error: ' + summary, False)
+        note_error('Error: ' + summary, False)
         # This is a sledgehammer, but it kills everything, including ongoing
         # network get/post. I have not found a more reliable way to interrupt.
         os._exit(1)
@@ -209,17 +212,13 @@ def foliage():
         notify('No network -- cannot proceed.')
         quit_app(ask_confirm = False)
 
-    creds = credentials_from_env()
-    if not credentials_complete(creds):
+    if not credentials_complete(credentials_from_env()):
         creds = credentials_from_user(initial_creds = creds)
         if not credentials_complete(creds):
             notify('Unable to proceed without complete credentials. Quitting.')
             quit_app(ask_confirm = False)
-        if config('USE_KEYRING', cast = bool):
-            save_credentials(creds)
-            tell('FOLIO credentials obtained and stored.')
-    use_credentials(creds)
-    if not Folio.validated_credentials():
+        use_credentials(creds)
+    if not Folio.credentials_valid():
         notify('Invalid FOLIO credentials. Quitting.')
         quit_app(ask_confirm = False)
 
@@ -262,7 +261,7 @@ def config_debug(debug_arg):
                 log_file = debug_arg
                 log_dir = dirname(log_file)
                 if not writable(log_dir):
-                    alert(f'Can\'t write debug ouput in {log_dir}', False)
+                    note_error(f'Can\'t write debug ouput in {log_dir}', False)
                     exit()
             faulthandler.enable()
             if not sys.platform.startswith('win'): # Can't use next part on Win
@@ -270,7 +269,7 @@ def config_debug(debug_arg):
                 from boltons.debugutils import pdb_on_signal
                 pdb_on_signal(signal.SIGUSR1)
 
-            warn('Debug & auto-reload are on. "kill -USR1 pid" for pdb.', False)
+            note_warn('Debug & auto-reload are on. "kill -USR1 pid" for pdb.', False)
 
             # Turn on debug logging in PyWebIO & Tornado. That ends up enabling
             # logging in hpack, which is too much, so turn that off separately.
@@ -281,15 +280,15 @@ def config_debug(debug_arg):
         # Turn on debug tracing to the destination we ended up deciding to use.
         set_debug(True, log_file or '-')
     except PermissionError:
-        warn(f'Permission denied creating log file {antiformat(log_file)}', False)
+        note_warn(f'Permission denied creating log file {antiformat(log_file)}', False)
     except FileNotFoundError:
-        warn(f'Cannot write log file {antiformat(log_file)}', False)
+        note_warn(f'Cannot write log file {antiformat(log_file)}', False)
     except KeyboardInterrupt:
         # Need to catch this separately or else it will end up ignored by
         # virtue of the next clause catching all Exceptions.
         exit()
     except Exception as ex:
-        warn(f'Unable to create log file {antiformat(log_file)}', False)
+        note_warn(f'Unable to create log file {antiformat(log_file)}', False)
 
     # Make settings accessible in other parts of the program.
     os.environ['DEBUG'] = str(debug_arg != 'OUT')
@@ -300,10 +299,10 @@ def config_backup_dir(backup_dir):
     if not backup_dir:
         backup_dir = config('BACKUP_DIR', default = _DIRS.user_log_dir)
     if exists(backup_dir) and not isdir(backup_dir):
-        alert(f'Not a directory: {antiformat(backup_dir)}', False)
+        note_error(f'Not a directory: {antiformat(backup_dir)}', False)
         exit(1)
     elif not writable(backup_dir):
-        alert(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
+        note_error(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
         exit(1)
     if not exists(backup_dir):
         log(f'creating backup directory {antiformat(backup_dir)}')
@@ -311,27 +310,30 @@ def config_backup_dir(backup_dir):
             makedirs(backup_dir)
         except OSError as ex:
             log(f'failed to create {antiformat(backup_dir)}: ' + str(ex))
-            alert(f'Unable to create backup directory {backup_dir}', False)
+            note_error(f'Unable to create backup directory {backup_dir}', False)
             exit(1)
     os.environ['BACKUP_DIR'] = backup_dir
 
 
 def config_credentials(creds_file, use_keyring):
+    os.environ['USE_KEYRING'] = str(use_keyring)
+    os.environ['CREDS_FILE'] = creds_file or 'None'
+
     creds = None
     if creds_file:
         if not exists(creds_file):
-            alert(f'Credentials file does not exist: {creds_file}', False)
+            note_error(f'Credentials file does not exist: {creds_file}', False)
             exit(1)
         if not readable(creds_file):
-            alert(f'Credentials file not readable: {creds_file}', False)
+            note_error(f'Credentials file not readable: {creds_file}', False)
             exit(1)
         creds = credentials_from_file(creds_file)
         if not creds:
-            alert(f'Failed to read credentials from {creds_file}', False)
+            note_error(f'Failed to read credentials from {creds_file}', False)
             exit(1)
         if not credentials_complete(creds):
             # Consider it an error to be told to use a file and it's incomplete
-            alert(f'Incomplete credentials in {creds_file}', False)
+            note_error(f'Incomplete credentials in {creds_file}', False)
             exit(1)
     if not creds:
         creds = credentials_from_env()
@@ -342,22 +344,17 @@ def config_credentials(creds_file, use_keyring):
             creds = keyring_creds
     if creds:
         use_credentials(creds)
-        # We got credentials but not from the keyring. Save them.
-        if not keyring_creds and use_keyring:
-            save_credentials(creds)
-    os.environ['USE_KEYRING'] = str(use_keyring)
-    os.environ['CREDS_FILE'] = creds_file or 'None'
 
 
 def config_demo_mode(demo_mode):
     os.environ['DEMO_MODE'] = str(demo_mode)
     if demo_mode:
-        warn('Demo mode is on -- changes to FOLIO will NOT be made', False)
+        note_warn('Demo mode is on -- changes to FOLIO will NOT be made', False)
 
 
 def config_port(port):
     if not isint(port):
-        alert(f'Port number value is not an integer: antiformat(port)', False)
+        note_error(f'Port number value is not an integer: antiformat(port)', False)
         exit(1)
     os.environ['PORT'] = str(port)
 

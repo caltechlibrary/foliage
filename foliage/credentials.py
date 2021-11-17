@@ -31,7 +31,7 @@ if sys.platform.startswith('darwin'):
     from keyring.backends.OS_X import Keyring
 
 from .folio import Folio
-from .ui import confirm
+from .ui import confirm, note_info
 
 
 # Private constants.
@@ -130,6 +130,8 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     if not token:
         notify('Failed to get a token from FOLIO.')
         return None
+    else:
+        note_info('New FOLIO API token obtained.')
 
     log(f'got credentials from user')
     return Credentials(url = pin.url, tenant_id = pin.tenant_id, token = token)
@@ -161,23 +163,16 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
     return None
 
 
-def save_credentials(creds, ring = _KEYRING):
-    '''Save the user's credentials.'''
-    if sys.platform.startswith('win'):
-        keyring.set_keyring(WinVaultKeyring())
-    if sys.platform.startswith('darwin'):
-        keyring.set_keyring(Keyring())
-    value = _encoded(creds.url, creds.tenant_id, creds.token)
-    if __debug__: log(f'storing "{value}" to keyring {_KEYRING}')
-    keyring.set_password(ring, getpass.getuser(), value)
-
-
 def use_credentials(creds):
-    '''Set global environment variables for the credentials as given.'''
+    '''Set run-time environment credentials and save them to the keyring.'''
     log(f'setting environment variables for credentials using {creds}')
     os.environ['FOLIO_OKAPI_URL']       = creds.url
     os.environ['FOLIO_OKAPI_TENANT_ID'] = creds.tenant_id
     os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
+    if config('USE_KEYRING', cast = bool):
+        keyring_creds = credentials_from_keyring()
+        if creds != keyring_creds:
+            _store_credentials(creds)
 
 
 def current_credentials():
@@ -223,3 +218,14 @@ def _creds_from_source(source = None, where = ''):
     complete = 'complete' if credentials_complete(creds) else 'not complete'
     log(f'credentials in {where} are {complete}')
     return creds
+
+
+def _store_credentials(creds, ring = _KEYRING):
+    '''Save the user's credentials.'''
+    if sys.platform.startswith('win'):
+        keyring.set_keyring(WinVaultKeyring())
+    if sys.platform.startswith('darwin'):
+        keyring.set_keyring(Keyring())
+    value = _encoded(creds.url, creds.tenant_id, creds.token)
+    if __debug__: log(f'storing "{value}" to keyring {_KEYRING}')
+    keyring.set_password(ring, getpass.getuser(), value)
