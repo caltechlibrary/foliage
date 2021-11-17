@@ -126,6 +126,8 @@ _RETRY_TIME_FACTOR = 2
 class Folio():
     '''Interface to a FOLIO server using Okapi.'''
 
+    _type_cache = {}
+
     def __new__(cls, *args, **kwds):
         '''Construct object instance as a singleton.'''
 
@@ -645,6 +647,9 @@ class Folio():
         '''Return a list of types of type_kind.'''
         if type_kind not in TypeKind:
             raise RuntimeError(f'Unknown type kind {type_kind}')
+        if type_kind in self._type_cache:
+            log(f'returning cached value of types {type_kind}')
+            return self._type_cache[type_kind]
 
         def result_parser(response):
             if not response:
@@ -660,7 +665,10 @@ class Folio():
                 raise RuntimeError('Problem retrieving list of types')
 
         endpoint = '/' + type_kind + '?limit=1000'
-        return self._folio('get', endpoint, result_parser)
+        type_list = self._folio('get', endpoint, result_parser)
+        if type_list:
+            self._type_cache[type_kind] = type_list
+        return type_list
 
 
     # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
