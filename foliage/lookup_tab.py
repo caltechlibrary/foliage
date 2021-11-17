@@ -10,8 +10,9 @@ file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened
+from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait
+from   commonpy.interrupt import wait, interrupt, interrupted, reset
 import json
 from   pprint import pformat
 from   pywebio.input import input, select, checkbox, radio
@@ -31,7 +32,9 @@ from   .base_tab import FoliageTab
 from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .folio import unique_identifiers
-from   .ui import alert, warn, confirm, notify, user_file
+from   .ui import confirm, notify, user_file
+from   .ui import tell_success, tell_warning, tell_failure
+from   .ui import note_info, note_warn, note_error
 
 
 # Tab definition class.
@@ -64,21 +67,23 @@ def tab_contents():
             put_radio('select_kind_find', inline = True,
                       label = 'Type of record to retrieve:',
                       options = [ ('Item', RecordKind.ITEM, True),
+                                  ('Holdings', RecordKind.HOLDINGS),
                                   ('Instance', RecordKind.INSTANCE),
                                   ('Loan', RecordKind.LOAN),
                                   ('User', RecordKind.USER)]),
-            put_markdown('_Note: loans found using item, instance, or user'
-                         + ' identifiers are **open** loans only. Likewise,'
-                         + ' user records found using item/instance/loan id\'s'
+            put_markdown('_Note: loan records found using item, holdings,'
+                         + ' instance or user identifiers are **open** loans'
+                         + ' only. Likewise, user records found using'
+                         + ' item/holdings/instance/loan id\'s'
                          + ' are based on **open** loans only._'),
-        ]], cell_widths = '47% 53%'),
+        ]], cell_widths = '40% 60%'),
         put_radio('show_raw', inline = True,
                   options = [('Summary format', 'summary', True),
                              ('Raw data format', 'json')]),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
             put_text(''),    # Adds a column, pushing next item to the right.
-            put_button(' Clear ', outline = True,
+            put_button('Clear', outline = True,
                        onclick = lambda: clear_tab()).style('text-align: right')
         ])
     ]
@@ -93,6 +98,12 @@ def clear_tab():
     pin.textbox_find = ''
 
 
+def stop():
+    log(f'stopping')
+    interrupt()
+    set_processbar('bar', 1)
+
+
 def load_file():
     log(f'user requesting file upload')
     if (file := user_file('Upload a file containing identifiers')):
@@ -101,42 +112,55 @@ def load_file():
 
 def do_find():
     log(f'do_find invoked')
-    folio = Folio()
     if not pin.textbox_find:
-        alert('Please input at least one barcode or other id.')
+        note_error('Please input at least one barcode or other id.')
         return
     with use_scope('output', clear = True):
+        reset()
+        record_kind = pin.select_kind_find
+        if record_kind in ['user', 'loan']:
+            put_markdown(f'_Searches involving {record_kind} records can take'
+                         + ' a very long time. Please be patient._'
+                         ).style('color: DarkOrange; text-align: center')
         identifiers = unique_identifiers(pin.textbox_find)
         steps = len(identifiers) + 1
-        put_processbar('bar', init = 1/steps);
+        put_grid([[
+            put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
+            put_button('Stop', outline = True, color = 'danger',
+                       onclick = lambda: stop()
+                       ).style('text-align: right; margin-right: 17px')
+            ]], cell_widths = '85% 15%')
+        folio = Folio()
         for index, id in enumerate(identifiers, start = 2):
             put_html('<br>')
-            id_type = folio.record_id_type(id)
-            if id_type == RecordIdKind.UNKNOWN:
-                log(f'could not recognize type of {id}')
-                put_error(f'Could not recognize the identifier type of {id}.')
-                set_processbar('bar', index/steps)
-                continue
-
-            record_kind = pin.select_kind_find
             try:
+                id_type = folio.record_id_type(id)
+                if id_type == RecordIdKind.UNKNOWN:
+                    tell_failure(f'Could not recognize the identifier type of {id}.')
+                    set_processbar('bar', index/steps)
+                    continue
                 records = folio.records(id, id_type, record_kind)
-            except Exception as ex:
-                log(f'exception trying to get records for {id}: ' + str(ex))
-                put_error(f'Error: ' + str(ex))
-                break
-            finally:
+                if interrupted():
+                    return
                 set_processbar('bar', index/steps)
-            if not records or len(records) == 0:
-                put_error(f'No {record_kind} record(s) found for {id_type} "{id}".')
-                continue
-            this = pluralized(record_kind + " record", records, True)
-            how = f'by searching for {id_type} **{id}**'
-            put_success(put_markdown(f'Found {this} {how}')).style('text-align: center')
-            show_index = (len(records) > 1)
-            for index, record in enumerate(records, start = 1):
-                print_record(record, record_kind, id, id_type,
-                             index, show_index, pin.show_raw == 'json')
+                if not records or len(records) == 0:
+                    tell_failure(f'No {record_kind} record(s) found for {id_type} "{id}".')
+                    continue
+                this = pluralized(record_kind + " record", records, True)
+                how = f'by searching for {id_type} **{id}**.'
+                tell_success(f'Found {this} {how}')
+                show_index = (len(records) > 1)
+                for index, record in enumerate(records, start = 1):
+                    print_record(record, record_kind, id, id_type,
+                                 index, show_index, pin.show_raw == 'json')
+            except Interrupted as ex:
+                tell_warning('Stopped.')
+                return
+            except Exception as ex:
+                tell_failure(f'Error: ' + str(ex))
+                return
+
+        # This is printed at the bottom, unless we're interrupted.
         put_html('<br>')
         put_button('Export', outline = True,
                    onclick = lambda: export(records, record_kind),
@@ -144,7 +168,7 @@ def do_find():
 
 
 def print_record(record, record_kind, identifier, id_type, index, show_index, show_raw):
-    log(f'printing {record_kind} record {identifier}')
+    log(f'printing {record_kind} record {record["id"]}')
     if show_index:
         put_markdown(f'{record_kind.title()} record #{index}:')
 
@@ -174,6 +198,16 @@ def print_record(record, record_kind, identifier, id_type, index, show_index, sh
             [f'{record_kind.title()} id' , record['id']],
             ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
             ['HRID'                      , record['hrid']],
+            ['Created'                   , record['metadata']['createdDate']],
+            ['Updated'                   , record['metadata']['updatedDate']],
+        ]).style('margin-left: 2em; font-size: 90%')
+    elif record_kind == 'holdings':
+        # Caution: left-hand values contain nonbreaking spaces (invisible here).
+        put_table([
+            [f'{record_kind.title()} id' , record['id']],
+            ['HRID'                      , record['hrid']],
+            ['Holdings type id'          , record['holdingsTypeId']],
+            ['Instance id'               , record['instanceId']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
         ]).style('margin-left: 2em; font-size: 90%')
