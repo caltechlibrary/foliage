@@ -11,7 +11,8 @@ file "LICENSE" for more information.
 
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
-from   commonpy.interrupt import wait
+from   commonpy.exceptions import Interrupted
+from   commonpy.interrupt import wait, interrupted
 from   commonpy.string_utils import antiformat
 from   commonpy.network_utils import net
 from   datetime import datetime as dt
@@ -50,6 +51,7 @@ class RecordIdKind(ExtendedEnum):
     INSTANCE_HRID = 'instance hrid'
     ACCESSION     = 'accession number'
     HOLDINGS_ID   = 'holdings id'
+    HOLDINGS_HRID = 'holdings hrid'
     USER_ID       = 'user id'
     USER_BARCODE  = 'user barcode'
     LOAN_ID       = 'loan id'
@@ -236,87 +238,64 @@ class Folio():
             # Given a uuid, there's no way to ask Folio what kind it is, b/c
             # of Folio's microarchitecture & the lack of a central coordinating
             # authority.  So we have to ask different modules in turn.
-            response = self._folio('get', f'/item-storage/items/{id}?limit=0')
-            if response:
-                if response.status_code == 200:
-                    log(f'recognized {id} as an item id')
-                    return RecordIdKind.ITEM_ID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
 
-            response = self._folio('get', f'/instance-storage/instances/{id}?limit=0')
-            if response:
-                if response.status_code == 200:
-                    log(f'recognized {id} as an instance id')
-                    return RecordIdKind.INSTANCE_ID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
+            def record_exists(endpoint):
+                if (response := self._folio('get', f'{endpoint}?limit=0')):
+                    if response.status_code == 200:
+                        return True
+                    elif response.status_code >= 500:
+                        raise RuntimeError('FOLIO server error')
+                return False
 
-            response = self._folio('get', f'/holdings-storage/holdings/{id}?limit=0')
-            if response:
-                if response.status_code == 200:
-                    log(f'recognized {id} as a holdings id')
-                    return RecordIdKind.HOLDINGS_ID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
-
-            response = self._folio('get', f'/users/{id}?limit=0')
-            if response:
-                if response.status_code == 200:
-                    log(f'recognized {id} as a user id')
-                    return RecordIdKind.USER_ID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
-
-            response = self._folio('get', f'/loan-storage/loans/{id}?limit=0')
-            if response:
-                if response.status_code == 200:
-                    log(f'recognized {id} as a loan id')
-                    return RecordIdKind.LOAN_ID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
+            if record_exists(f'/item-storage/items/{id}'):
+                log(f'recognized {id} as an item id')
+                return RecordIdKind.ITEM_ID
+            if record_exists(f'/instance-storage/instances/{id}'):
+                log(f'recognized {id} as an instance id')
+                return RecordIdKind.INSTANCE_ID
+            if record_exists(f'/holdings-storage/holdings/{id}'):
+                log(f'recognized {id} as a holdings id')
+                return RecordIdKind.HOLDINGS_ID
+            if record_exists(f'/users/{id}'):
+                log(f'recognized {id} as a user id')
+                return RecordIdKind.USER_ID
+            if record_exists(f'/loan-storage/loans/{id}'):
+                log(f'recognized {id} as a loan id')
+                return RecordIdKind.LOAN_ID
         else:
-            response = self._folio('get', f'/users?query=barcode={id}&limit=0')
-            if response:
-                if response.status_code == 200:
-                    # This endpoint always return a value, even when there
-                    # are no hits, so we have to look inside.
-                    data_dict = json.loads(response.text)
-                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
-                        log(f'recognized {id} as a user barcode')
-                        return RecordIdKind.USER_BARCODE
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
+            # We have a value that's more ambiguous. Try some searches.
 
-            response = self._folio('get', f'/item-storage/items?query=hrid={id}&limit=0')
-            if response:
-                if response.status_code == 200:
-                    # This endpoint always return a value, even when there
-                    # are no hits, so we have to look inside.
-                    data_dict = json.loads(response.text)
-                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
-                        log(f'recognized {id} as an item hrid')
-                        return RecordIdKind.ITEM_HRID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
+            def id_found(search):
+                if (response := self._folio('get', f'{search}&limit=0')):
+                    if response.status_code == 200:
+                        # The endpoint always return a value, even when there
+                        # are no hits, so we have to look inside.
+                        data = json.loads(response.text)
+                        if data and int(data.get('totalRecords', 0)) > 0:
+                            return True
+                    elif response.status_code >= 500:
+                        raise RuntimeError('FOLIO server error')
+                return False
 
-            response = self._folio('get', f'/instance-storage/instances?query=hrid={id}&limit=0')
-            if response:
-                if response.status_code == 200:
-                    # This endpoint always return a value, even when there
-                    # are no hits, so we have to look inside.
-                    data_dict = json.loads(response.text)
-                    if 'totalRecords' in data_dict and int(data_dict['totalRecords']) > 0:
-                        log(f'recognized {id} as an instance hrid')
-                        return RecordIdKind.INSTANCE_HRID
-                elif response.status_code >= 500:
-                    raise RuntimeError('FOLIO server error')
+            if id_found(f'/users?query=barcode={id}'):
+                log(f'recognized {id} as a user barcode')
+                return RecordIdKind.USER_BARCODE
+            if id_found(f'/item-storage/items?query=hrid={id}'):
+                log(f'recognized {id} as an item hrid')
+                return RecordIdKind.ITEM_HRID
+            if id_found(f'/instance-storage/instances?query=hrid={id}'):
+                log(f'recognized {id} as an instance hrid')
+                return RecordIdKind.INSTANCE_HRID
+            if id_found(f'/holdings-storage/holdings?query=hrid={id}'):
+                log(f'recognized {id} as a holdings hrid')
+                return RecordIdKind.HOLDINGS_HRID
 
         # If we end up here, we're out of ideas.
         return RecordIdKind.UNKNOWN
 
 
     def records(self, id, id_type, requested = None):
+
         def record_list(key, response):
             if not response or not response.text:
                 log(f'FOLIO returned no result for {id}')
@@ -342,7 +321,7 @@ class Folio():
                 requested = 'item'
             elif id_type in [RecordIdKind.USER_ID, RecordIdKind.USER_BARCODE]:
                 requested = 'user'
-            elif id_type == RecordIdKind.HOLDINGS_ID:
+            elif id_type in [RecordIdKind.HOLDINGS_ID, RecordIdKind.HOLDINGS_HRID]:
                 requested = 'holdings'
             elif id_type == RecordIdKind.LOAN_ID:
                 requested = 'loan'
@@ -368,11 +347,17 @@ class Folio():
                 endpoint = f'/inventory/items?query=instance.id=={id}&limit=10000'
             elif id_type == RecordIdKind.INSTANCE_HRID:
                 endpoint = f'/inventory/items?query=instance.hrid=={id}&limit=10000'
-            elif id_type == RecordIdKind.HOLDINGS_ID:
-                endpoint = f'/inventory/items?query=holdingsRecordId=={id}&limit=10000'
             elif id_type == RecordIdKind.ACCESSION:
                 inst_id = instance_id_from_accession(id)
                 endpoint = f'/inventory/items?query=instance.id=={inst_id}&limit=10000'
+            elif id_type == RecordIdKind.HOLDINGS_ID:
+                endpoint = f'/inventory/items?query=holdingsRecordId=={id}&limit=10000'
+            elif id_type == RecordIdKind.HOLDINGS_HRID:
+                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings')
+                if not holdings:
+                    return []
+                holdings_id = holdings[0]['id']
+                return self.records(holdings_id, RecordIdKind.HOLDINGS_ID, 'item')
             elif id_type == RecordIdKind.USER_ID:
                 # Can't get items for a user directly.
                 log(f'need to find loans for user {id}')
@@ -384,6 +369,8 @@ class Folio():
                 # The loans have item itemId's. Use that to retrieve item recs.
                 items = []
                 for loan in active:
+                    if interrupted():
+                        return []
                     item_id = loan['itemId']
                     items += self.records(item_id, RecordIdKind.ITEM_ID, 'item')
                 return items
@@ -425,6 +412,12 @@ class Folio():
                     return []
                 instance_id = holdings[0]['instanceId']
                 return self.records(instance_id, RecordIdKind.INSTANCE_ID)
+            elif id_type == RecordIdKind.HOLDINGS_HRID:
+                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID)
+                if not holdings:
+                    return []
+                instance_id = holdings[0]['instanceId']
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID)
             elif id_type == RecordIdKind.LOAN_ID:
                 loans = self.records(id, RecordIdKind.LOAN_ID)
                 if not loans:
@@ -439,6 +432,8 @@ class Folio():
                 item_ids = [loan['itemId'] for loan in active]
                 instances = []
                 for id in item_ids:
+                    if interrupted():
+                        return []
                     instances += self.records(id, RecordIdKind.ITEM_ID, 'instance')
                 return instances
             elif id_type == RecordIdKind.USER_BARCODE:
@@ -449,6 +444,8 @@ class Folio():
                 item_ids = [loan['itemId'] for loan in active]
                 instances = []
                 for id in item_ids:
+                    if interrupted():
+                        return []
                     instances += self.records(id, RecordIdKind.ITEM_ID, 'instance')
                 return instances
             else:
@@ -523,6 +520,12 @@ class Folio():
                     return []
                 instance_id = holdings[0]['instanceId']
                 return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan')
+            elif id_type == RecordIdKind.HOLDINGS_HRID:
+                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID)
+                if not holdings:
+                    return []
+                instance_id = holdings[0]['instanceId']
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan')
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
 
@@ -559,6 +562,8 @@ class Folio():
                 user_ids = [loan['userId'] for loan in active]
                 user_records = []
                 for id in user_ids:
+                    if interrupted():
+                        return []
                     user_records += self.records(id, RecordIdKind.USER_ID, 'user')
                 return user_records
             elif id_type == RecordIdKind.INSTANCE_HRID:
@@ -579,7 +584,18 @@ class Folio():
                     return []
                 user_id = records[0]['userId']
                 return self.records(user_id, RecordIdKind.USER_ID, 'user')
-            # elif id_type == RecordIdKind.HOLDINGS_ID:
+            elif id_type == RecordIdKind.HOLDINGS_ID:
+                records = self.records(id, RecordIdKind.HOLDINGS_ID)
+                if not records:
+                    return []
+                instance_id = records[0]['instanceId']
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'user')
+            elif id_type == RecordIdKind.HOLDINGS_HRID:
+                records = self.records(id, RecordIdKind.HOLDINGS_HRID)
+                if not records:
+                    return []
+                instance_id = records[0]['instanceId']
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'user')
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
 
@@ -587,6 +603,9 @@ class Folio():
             if id_type == RecordIdKind.HOLDINGS_ID:
                 data_extractor = partial(record_list, None)
                 endpoint = f'/holdings-storage/holdings/{id}'
+            elif id_type == RecordIdKind.HOLDINGS_HRID:
+                data_extractor = partial(record_list, 'holdingsRecords')
+                endpoint = f'/holdings-storage/holdings?query=hrid=={id}&limit=10000'
             elif id_type == RecordIdKind.INSTANCE_ID:
                 data_extractor = partial(record_list, 'holdingsRecords')
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={id}&limit=10000'
@@ -606,9 +625,28 @@ class Folio():
                 data_extractor = partial(record_list, 'holdingsRecords')
                 inst_id = instance_id_from_accession(id)
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={inst_id}&limit=10000'
-            # elif id_type == RecordIdKind.LOAN_ID:
-            # elif id_type == RecordIdKind.USER_ID:
-            # elif id_type == RecordIdKind.USER_BARCODE:
+            elif id_type == RecordIdKind.LOAN_ID:
+                records = self.records(id, RecordIdKind.LOAN_ID, 'loan')
+                if not records:
+                    return []
+                item_id = records[0]['itemId']
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'holdings')
+            elif id_type == RecordIdKind.USER_ID:
+                loans = self.records(id, RecordIdKind.USER_ID, 'loan')
+                if not loans:
+                    return []
+                loan_ids = [loan['id'] for loan in loans]
+                holdings_records = []
+                for id in loan_ids:
+                    if interrupted():
+                        return []
+                    holdings_records += self.records(id, RecordIdKind.LOAN_ID, 'holdings')
+                return holdings_records
+            elif id_type == RecordIdKind.USER_BARCODE:
+                user = self.records(id, RecordIdKind.USER_BARCODE, 'user')
+                if not user:
+                    return []
+                return self.records(user['id'], RecordIdKind.USER_ID, 'holdings')
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_type.value}')
 
@@ -638,11 +676,6 @@ class Folio():
 
         endpoint = '/' + type_kind + '?limit=1000'
         return self._folio('get', endpoint, result_parser)
-
-
-    def update(self, record):
-        '''Update the given record by doing a PUT in Folio.'''
-        pass
 
 
     # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
@@ -690,13 +723,17 @@ def instance_id_from_accession(an):
 
 def unique_identifiers(text):
     lines = text.splitlines()
-    identifiers = flattened(re.split(r'\s+|,+', line) for line in lines)
+    identifiers = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
     identifiers = [id.replace('"', '') for id in identifiers]
+    identifiers = [id.replace("'", '') for id in identifiers]
     identifiers = [id.replace(':', '') for id in identifiers]
     return unique(filter(None, identifiers))
 
 
 def back_up_record(record):
+    if config('DEMO_MODE', cast = bool):
+        log(f'demo mode in effect -- not backing up record')
+        return
     backup_dir = config('BACKUP_DIR')
     timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
     id = record['id']
