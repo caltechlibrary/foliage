@@ -32,8 +32,9 @@ from   .base_tab import FoliageTab
 from   .credentials import credentials_from_user, current_credentials
 from   .credentials import save_credentials, use_credentials, credentials_complete
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .ui import quit_app, reload_page, alert, warn, confirm, notify
-from   .ui import image_data, user_file, JS_CODE, CSS_CODE, alert, warn
+from   .ui import quit_app, reload_page, confirm, notify
+from   .ui import image_data, user_file, JS_CODE, CSS_CODE
+from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
 # Tab definition class.
@@ -90,6 +91,9 @@ def edit_credentials():
         log(f'user has provided updated credentials')
         if config('USE_KEYRING', cast = bool):
             save_credentials(creds)
+            note_info('FOLIO credentials obtained and stored.')
+        else:
+            note_info('FOLIO credentials obtained.')
         use_credentials(creds)
     else:
         log(f'credentials unchanged')
@@ -104,10 +108,10 @@ def show_log_file():
     log(f'user invoked Show log file')
     log_file = config('LOG_FILE')
     if log_file == '-':
-        warn('No log file -- log output is being directed to the terminal.')
+        note_warn('No log file -- log output is being directed to the terminal.')
         return
     elif log_file and exists(log_file):
         if readable(log_file):
             webbrowser.open_new("file://" + log_file)
         else:
-            alert(f'Log file is unreadable -- please report this error.')
+            note_error(f'Log file is unreadable -- please report this error.')
