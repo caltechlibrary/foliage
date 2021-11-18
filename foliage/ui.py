@@ -224,6 +224,11 @@ def notify(msg):
     eval_js(f'alert("{msg}")')
 
 
+def stop_processbar():
+    '''Stop the animation of the PyWebIO process bar.'''
+    eval_js('''$("#webio-processbar-bar").removeClass("progress-bar-animated");''')
+
+
 def quit_app(ask_confirm = True):
     log(f'quitting (ask = {antiformat(ask_confirm)})')
     wait(0.25)

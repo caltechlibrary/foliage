@@ -29,7 +29,7 @@ from   sidetrack import set_debug, log
 from   .base_tab import FoliageTab
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .folio import unique_identifiers, back_up_record
-from   .ui import confirm, notify, user_file
+from   .ui import confirm, notify, user_file, stop_processbar
 from   .ui import tell_success, tell_warning, tell_failure
 from   .ui import note_info, note_warn, note_error
 
@@ -80,10 +80,12 @@ def clear_tab():
     clear('output')
     pin.textbox_delete = ''
 
+
 def load_file():
     log(f'user requesting file upload')
     if (file := user_file('Upload a file containing identifiers')):
         pin.textbox_delete = file
+
 
 def do_delete():
     log(f'do_delete invoked')
@@ -125,6 +127,9 @@ def do_delete():
             else:
                 tell_warning('Instance record deletion is currently turned off.')
                 # delete_instance(folio, record, id)
+
+        # Finished.
+        stop_processbar()
 
 
 def delete_item(folio, record, for_id = None):

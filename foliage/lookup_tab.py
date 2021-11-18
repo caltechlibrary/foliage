@@ -26,6 +26,7 @@ from   pywebio.output import put_processbar, set_processbar, put_loading
 from   pywebio.output import put_column
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
+from   pywebio.session import run_js, eval_js
 from   sidetrack import set_debug, log
 import threading
 
@@ -33,7 +34,7 @@ from   .base_tab import FoliageTab
 from   .export import export
 from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   .folio import unique_identifiers
-from   .ui import confirm, notify, user_file
+from   .ui import confirm, notify, user_file, stop_processbar
 from   .ui import tell_success, tell_warning, tell_failure
 from   .ui import note_info, note_warn, note_error
 
@@ -107,9 +108,12 @@ def clear_tab():
 
 
 def stop():
+    global _last_textbox
     log(f'stopping')
     interrupt()
     set_processbar('bar', 1)
+    stop_processbar()
+    _last_textbox = ''
 
 
 def load_file():
@@ -184,6 +188,7 @@ def do_find():
                 return
 
         # This is printed at the bottom of the output, unless we're interrupted.
+        stop_processbar()
         put_html('<br>')
         put_button('Export', outline = True,
                    onclick = lambda: export(records, record_kind),
