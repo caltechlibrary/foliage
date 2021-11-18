@@ -40,7 +40,7 @@ from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 class ListTab(FoliageTab):
     def contents(self):
-        return {'title': 'List IDs', 'content': tab_contents()}
+        return {'title': 'List UUIDs', 'content': tab_contents()}
 
     def pin_watchers(self):
         return {}
