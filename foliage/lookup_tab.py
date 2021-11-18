@@ -27,6 +27,7 @@ from   pywebio.output import put_column
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
+import threading
 
 from   .base_tab import FoliageTab
 from   .export import export
@@ -64,7 +65,7 @@ def tab_contents():
         ]], cell_widths = 'auto 100px'),
         put_textarea('textbox_find', rows = 4),
         put_grid([[
-            put_radio('select_kind_find', inline = True,
+            put_radio('select_kind', inline = True,
                       label = 'Type of record to retrieve:',
                       options = [ ('Item', RecordKind.ITEM, True),
                                   ('Holdings', RecordKind.HOLDINGS),
@@ -92,10 +93,17 @@ def tab_contents():
 # Miscellaneous helper functions.
 # .............................................................................
 
+_last_textbox = ''
+_last_results = {}
+_last_kind = None
+
+
 def clear_tab():
+    global _last_textbox
     log(f'clearing tab')
     clear('output')
     pin.textbox_find = ''
+    _last_textbox = ''
 
 
 def stop():
@@ -111,21 +119,32 @@ def load_file():
 
 
 def do_find():
+    global _last_results
+    global _last_textbox
+    global _last_kind
     log(f'do_find invoked')
     if not pin.textbox_find:
         note_error('Please input at least one barcode or other id.')
         return
+    reuse_results = False
+    if pin.textbox_find == _last_textbox and pin.select_kind == _last_kind:
+        if user_wants_reuse():
+            reuse_results = True
+        else:
+            _last_results = {}
+    _last_textbox = pin.textbox_find
+    _last_kind = pin.select_kind
     with use_scope('output', clear = True):
         reset()
-        record_kind = pin.select_kind_find
-        if record_kind in ['user', 'loan']:
+        record_kind = pin.select_kind
+        if record_kind in ['user', 'loan'] and not reuse_results:
             put_markdown(f'_Searches involving {record_kind} records can take'
                          + ' a very long time. Please be patient._'
-                         ).style('color: DarkOrange; text-align: center')
+                         ).style('color: DarkOrange; margin-left: 17px')
         identifiers = unique_identifiers(pin.textbox_find)
         steps = len(identifiers) + 1
         put_grid([[
-            put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
+            put_processbar('bar', init = 1/steps).style('margin-top: 11px; margin-left: 17px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()
                        ).style('text-align: right; margin-right: 17px')
@@ -139,7 +158,11 @@ def do_find():
                     tell_failure(f'Unrecognized identifier kind: {id}.')
                     set_processbar('bar', index/steps)
                     continue
-                records = folio.records(id, id_kind, record_kind)
+                if reuse_results:
+                    records = _last_results.get(id)
+                else:
+                    records = folio.records(id, id_kind, record_kind)
+                    _last_results[id] = records
                 if interrupted():
                     return
                 set_processbar('bar', index/steps)
@@ -160,11 +183,11 @@ def do_find():
                 tell_failure(f'Error: ' + str(ex))
                 return
 
-        # This is printed at the bottom, unless we're interrupted.
+        # This is printed at the bottom of the output, unless we're interrupted.
         put_html('<br>')
         put_button('Export', outline = True,
                    onclick = lambda: export(records, record_kind),
-                   ).style('margin-left: 0').style('margin-left: 10px; float: right')
+                   ).style('margin-left: 0').style('margin-left: 10px; float: right; margin-right: 17px')
 
 
 def print_record(record, record_kind, identifier, id_kind, index, show_index, show_raw):
@@ -189,7 +212,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['HRID'                      , record['hrid']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('margin-left: 2em; font-size: 90%')
+        ]).style('font-size: 90%')
     elif record_kind == 'instance':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -200,7 +223,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['HRID'                      , record['hrid']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('margin-left: 2em; font-size: 90%')
+        ]).style('font-size: 90%')
     elif record_kind == 'holdings':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -210,7 +233,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Instance id'               , record['instanceId']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('margin-left: 2em; font-size: 90%')
+        ]).style('font-size: 90%')
     elif record_kind == 'user':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -220,7 +243,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Patron group'              , record['patronGroup']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('margin-left: 2em; font-size: 90%')
+        ]).style('font-size: 90%')
     elif record_kind == 'loan':
         put_table([
             [f'{record_kind.title()} id' , record['id']],
@@ -230,4 +253,32 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Due date'                  , record['dueDate']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('margin-left: 2em; font-size: 90%')
+        ]).style('font-size: 90%')
+
+
+def user_wants_reuse():
+    event = threading.Event()
+    answer = False
+
+    def clk(val):
+        nonlocal answer
+        answer = val
+        event.set()
+
+    pins = [
+        put_text('The list of identifiers and the type of record to retrieve'
+                 + ' are unchanged from the previous lookup. Should the results'
+                 + ' be reused, or should the identifiers be looked up again?'),
+        put_html('<br>'),
+        put_buttons([
+            {'label': 'Reuse the results', 'value': True},
+            {'label': 'Search again', 'value': False, 'color': 'secondary'},
+        ], onclick = clk).style('float: left')
+    ]
+    popup(title = 'Should results be reused?', content = pins, closable = False)
+
+    event.wait()
+    close_popup()
+    wait(0.5)                           # Give time for popup to go away.
+
+    return answer
