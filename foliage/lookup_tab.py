@@ -111,7 +111,6 @@ def stop():
     global _last_textbox
     log(f'stopping')
     interrupt()
-    set_processbar('bar', 1)
     stop_processbar()
     _last_textbox = ''
 
@@ -168,7 +167,7 @@ def do_find():
                     records = folio.records(id, id_kind, record_kind)
                     _last_results[id] = records
                 if interrupted():
-                    return
+                    break
                 set_processbar('bar', index/steps)
                 if not records or len(records) == 0:
                     tell_failure(f'No {record_kind} record(s) found for {id_kind} "{id}".')
@@ -180,9 +179,10 @@ def do_find():
                 for index, record in enumerate(records, start = 1):
                     print_record(record, record_kind, id, id_kind,
                                  index, show_index, pin.show_raw == 'json')
+                    if interrupted:
+                        break
             except Interrupted as ex:
                 tell_warning('Stopped.')
-                return
             except Exception as ex:
                 tell_failure(f'Error: ' + str(ex))
                 return
@@ -190,9 +190,12 @@ def do_find():
         # This is printed at the bottom of the output, unless we're interrupted.
         stop_processbar()
         put_html('<br>')
-        put_button('Export', outline = True,
-                   onclick = lambda: export(records, record_kind),
-                   ).style('margin-left: 0').style('margin-left: 10px; float: right; margin-right: 17px')
+        if interrupted():
+            tell_warning('Stopped.')
+        else:
+            put_button('Export', outline = True,
+                       onclick = lambda: do_export(_last_results, record_kind),
+                       ).style('margin-left: 10px; float: right; margin-right: 17px')
 
 
 def print_record(record, record_kind, identifier, id_kind, index, show_index, show_raw):
@@ -287,3 +290,10 @@ def user_wants_reuse():
     wait(0.5)                           # Give time for popup to go away.
 
     return answer
+
+
+def do_export(results, record_kind):
+    log(f'exporting {record_kind} {pluralized("record", results, True)}')
+    # Results is a dictionary; each value is a list of records. Unwind it.
+    all_records = [item for value in results.values() for item in value]
+    export(all_records, record_kind)
