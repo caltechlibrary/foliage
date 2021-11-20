@@ -50,7 +50,7 @@ class LookupTab(FoliageTab):
         return {}
 
 
-# Tab creation function.
+# Tab body.
 # .............................................................................
 
 def tab_contents():
@@ -59,8 +59,8 @@ def tab_contents():
         put_grid([[
             put_markdown('Input one or more item barcode, item id, item hrid,'
                          + ' instance id, instance hrid, instance accession'
-                         + ' number, user id, or user barcode in the field'
-                         + ' below, or by uploading a text file.'),
+                         + ' number, loan id, loan hrid, user id, or user barcode'
+                         + ' in the field below, or by uploading a text file.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -79,9 +79,13 @@ def tab_contents():
                          + ' item/holdings/instance/loan id\'s'
                          + ' are based on **open** loans only._'),
         ]], cell_widths = '40% 60%'),
-        put_radio('show_raw', inline = True,
-                  options = [('Summary format', 'summary', True),
-                             ('Raw data format', 'json')]),
+        put_grid([[
+            put_radio('show_raw', inline = True,
+                      options = [('Summary format', 'summary', True),
+                                 ('Raw data format', 'json')]),
+            put_checkbox("inventory_api", inline = True,
+                         options = [('Use inventory API for items and instances', True, True)]),
+        ]], cell_widths = '58% 42%'),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
             put_text(''),    # Adds a column, pushing next item to the right.
@@ -91,20 +95,24 @@ def tab_contents():
     ]
 
 
-# Miscellaneous helper functions.
+# Tab implementation.
 # .............................................................................
 
 _last_textbox = ''
 _last_results = {}
 _last_kind = None
+_last_inventory_api = True
 
 
 def clear_tab():
     global _last_textbox
+    global _last_inventory_api
     log(f'clearing tab')
     clear('output')
     pin.textbox_find = ''
+    pin.inventory_api = [True]
     _last_textbox = ''
+    _last_inventory_api = [True]
 
 
 def stop():
@@ -117,82 +125,94 @@ def stop():
 
 def load_file():
     log(f'user requesting file upload')
-    if (file := user_file('Upload a file containing identifiers')):
-        pin.textbox_find = file
+    if (contents := user_file('Upload a file containing identifiers')):
+        pin.textbox_find = contents
 
 
 def do_find():
     global _last_results
     global _last_textbox
     global _last_kind
+    global _last_inventory_api
     log(f'do_find invoked')
-    if not pin.textbox_find:
+    # Normally we'd want to find out if they input any identifiers, but I want
+    # to detect *any* change to the input box, so this is a lower-level test.
+    if not pin.textbox_find.strip():
         note_error('Please input at least one barcode or other id.')
         return
     reuse_results = False
-    if pin.textbox_find == _last_textbox and pin.select_kind == _last_kind:
+    if (pin.textbox_find == _last_textbox and pin.select_kind == _last_kind
+        and pin.inventory_api == _last_inventory_api):
         if user_wants_reuse():
             reuse_results = True
         else:
             _last_results = {}
     _last_textbox = pin.textbox_find
     _last_kind = pin.select_kind
+    _last_inventory_api = pin.inventory_api
+    reset()
     with use_scope('output', clear = True):
-        reset()
+        put_markdown(f'_Certain lookups can take a very long time. Please be'
+                     + ' patient._').style('color: DarkOrange; margin-left: 17px')
         record_kind = pin.select_kind
-        if record_kind in ['user', 'loan'] and not reuse_results:
-            put_markdown(f'_Searches involving {record_kind} records can take'
-                         + ' a very long time. Please be patient._'
-                         ).style('color: DarkOrange; margin-left: 17px')
         identifiers = unique_identifiers(pin.textbox_find)
         steps = len(identifiers) + 1
         put_grid([[
             put_processbar('bar', init = 1/steps).style('margin-top: 11px; margin-left: 17px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()
-                       ).style('text-align: right; margin-right: 17px')
-            ]], cell_widths = '85% 15%')
+                       ).style('text-align: right; margin-left: 17px')
+            ]], cell_widths = '85% 15%').style('margin-right: 17px')
         folio = Folio()
-        for index, id in enumerate(identifiers, start = 2):
+        for count, id in enumerate(identifiers, start = 2):
             put_html('<br>')
             try:
+                # Figure out what kind of identifier we were given.
                 id_kind = folio.record_id_kind(id)
                 if id_kind == RecordIdKind.UNKNOWN:
                     tell_failure(f'Unrecognized identifier kind: {id}.')
-                    set_processbar('bar', index/steps)
                     continue
+
+                # Get the record.
                 if reuse_results:
                     records = _last_results.get(id)
                 else:
-                    records = folio.records(id, id_kind, record_kind)
+                    records = folio.records(id, id_kind, record_kind, pin.inventory_api)
                     _last_results[id] = records
                 if interrupted():
                     break
-                set_processbar('bar', index/steps)
                 if not records or len(records) == 0:
                     tell_failure(f'No {record_kind} record(s) found for {id_kind} "{id}".')
                     continue
-                this = pluralized(record_kind + " record", records, True)
+
+                # Report the results & how we got them.
+                if pin.inventory_api and record_kind in ['item', 'instance']:
+                    source = 'inventory'
+                else:   # Most records kinds only have storage API endpoints.
+                    source = 'storage'
+                this = pluralized(record_kind + f' {source} record', records, True)
                 how = f'by searching for {id_kind} **{id}**.'
                 tell_success(f'Found {this} {how}')
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
                     print_record(record, record_kind, id, id_kind,
                                  index, show_index, pin.show_raw == 'json')
-                    if interrupted:
+                    if interrupted():
                         break
             except Interrupted as ex:
-                tell_warning('Stopped.')
+                break
             except Exception as ex:
                 tell_failure(f'Error: ' + str(ex))
                 return
-
-        # This is printed at the bottom of the output, unless we're interrupted.
+            finally:
+                set_processbar('bar', count/steps)
         stop_processbar()
         put_html('<br>')
         if interrupted():
-            tell_warning('Stopped.')
+            tell_warning('**Stopped**.')
         else:
+            what = pluralized(f'{record_kind} identifier', identifiers, True)
+            put_markdown(f'Finished looking up {what}.').style('text-align: center')
             put_button('Export', outline = True,
                        onclick = lambda: do_export(_last_results, record_kind),
                        ).style('margin-left: 10px; float: right; margin-right: 17px')
