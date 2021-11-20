@@ -90,6 +90,7 @@ def load_file():
 def do_delete():
     log(f'do_delete invoked')
     folio = Folio()
+    reset()
     if not pin.textbox_delete:
         note_error('Please input at least one barcode or other type of id.')
         return
