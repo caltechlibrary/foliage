@@ -76,7 +76,7 @@ from   .ui import image_data, user_file, JS_CODE, CSS_CODE
 _DIRS = AppDirs('Foliage', 'CaltechLibrary')
 '''Platform-specific directories for Foliage data.'''
 
-_TABS = [ChangeTab(), ListTab(), LookupTab(), DeleteTab(), OtherTab()]
+_TABS = [ListTab(), LookupTab(), ChangeTab(), DeleteTab(), OtherTab()]
 '''List of tabs making up the Foliage application.'''
 
 
@@ -174,14 +174,22 @@ the credentials again.
         summary = antiformat(exception[1])
         details = antiformat(''.join(format_exception(*exception)))
         log(f'Exception: {summary}\n{details}')
-        note_error('Error: ' + summary, False)
+        # Try to tell the user what happened, if we can.
+        try:
+            note_error('Error: ' + summary, False)
+            wait(2)
+            log('closing application window')
+            run_js('close_window()')
+        except:
+            pass
+        log('exiting forcefully with error code')
         # This is a sledgehammer, but it kills everything, including ongoing
         # network get/post. I have not found a more reliable way to interrupt.
         os._exit(1)
 
     # And exit ----------------------------------------------------------------
 
-    log('Exiting normally.')
+    log('exiting normally')
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
 
 
@@ -222,6 +230,7 @@ def foliage():
         notify('Invalid FOLIO credentials. Quitting.')
         quit_app(ask_confirm = False)
 
+    # Create a single dict from all the separate pin_watchers dicts.
     watchers  = dict(ChainMap(*[tab.pin_watchers() for tab in _TABS]))
     pin_names = list(watchers.keys())
     log(f'entering pin handler loop for pins {pin_names}')
