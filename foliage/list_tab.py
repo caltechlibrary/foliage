@@ -11,7 +11,7 @@ file "LICENSE" for more information.
 
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait
+from   commonpy.interrupt import wait, interrupt, interrupted, reset
 from   pprint import pformat
 import pyperclip
 from   pywebio.input import input, select, checkbox, radio
@@ -46,7 +46,7 @@ class ListTab(FoliageTab):
         return {}
 
 
-# Miscellaneous helper functions.
+# Tab body.
 # .............................................................................
 
 def tab_contents():
@@ -96,6 +96,9 @@ def tab_contents():
         ]])
     ]
 
+
+# Tab implementation.
+# .............................................................................
 
 def clear_tab():
     log(f'clearing tab')
@@ -104,6 +107,7 @@ def clear_tab():
 
 def do_list():
     folio = Folio()
+    reset()
     with use_scope('output', clear = True):
         put_processbar('bar', init = 1/2)
         requested = pin.list_type
