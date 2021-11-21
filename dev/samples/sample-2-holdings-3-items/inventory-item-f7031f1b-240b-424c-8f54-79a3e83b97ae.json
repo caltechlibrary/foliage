@@ -1,0 +1,105 @@
+{ 'barcode': '35047017948779',
+  'callNumber': 'QC806 .F625 2005',
+  'circulationNotes': [ { 'date': None,
+                          'id': '3d01f6d6-6ae1-4561-b9a8-d68bd32fcab4',
+                          'note': '06-20-05 ON RESERVE FOR geology new book '
+                                  'shelf : 07-18-05 OFF RESERVE FOR geology '
+                                  'new book shelf. CIRCED 1 TIMES : 12-29-05 '
+                                  'ON RESERVE FOR Ge102 : 03-20-06 OFF RESERVE '
+                                  'FOR Ge102. CIRCED 0 TIMES : 09-20-07 ON '
+                                  'RESERVE FOR Ge161 : 12-18-07 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-07-08 ON '
+                                  'RESERVE FOR Ge163 : 06-16-08 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 09-30-08 ON '
+                                  'RESERVE FOR Ge161 : 12-19-08 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-20-09 ON '
+                                  'RESERVE FOR Ge163 : 06-19-09 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 08-17-09 ON '
+                                  'RESERVE FOR Ge161 : 12-21-09 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-07-11 ON '
+                                  'RESERVE FOR Ge163 : 04-11-11 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 04-11-11 ON '
+                                  'RESERVE FOR Ge163 : 06-13-11 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 08-01-11 ON '
+                                  'RESERVE FOR Ge121a : 08-01-11 OFF RESERVE '
+                                  'FOR Ge121a. CIRCED 0 TIMES : 08-01-11 ON '
+                                  'RESERVE FOR Ge161 : 01-03-12 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-05-13 ON '
+                                  'RESERVE FOR Ge163 : 06-19-13 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES',
+                          'noteType': 'Check in',
+                          'source': { 'id': '25148b30-565b-4012-8300-451fb5cbe124',
+                                      'personal': { 'firstName': 'Migration',
+                                                    'lastName': 'Data'}},
+                          'staffOnly': True},
+                        { 'date': None,
+                          'id': '9bb5706a-680c-425d-8809-3048638509b3',
+                          'note': '06-20-05 ON RESERVE FOR geology new book '
+                                  'shelf : 07-18-05 OFF RESERVE FOR geology '
+                                  'new book shelf. CIRCED 1 TIMES : 12-29-05 '
+                                  'ON RESERVE FOR Ge102 : 03-20-06 OFF RESERVE '
+                                  'FOR Ge102. CIRCED 0 TIMES : 09-20-07 ON '
+                                  'RESERVE FOR Ge161 : 12-18-07 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-07-08 ON '
+                                  'RESERVE FOR Ge163 : 06-16-08 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 09-30-08 ON '
+                                  'RESERVE FOR Ge161 : 12-19-08 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-20-09 ON '
+                                  'RESERVE FOR Ge163 : 06-19-09 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 08-17-09 ON '
+                                  'RESERVE FOR Ge161 : 12-21-09 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-07-11 ON '
+                                  'RESERVE FOR Ge163 : 04-11-11 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 04-11-11 ON '
+                                  'RESERVE FOR Ge163 : 06-13-11 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES : 08-01-11 ON '
+                                  'RESERVE FOR Ge121a : 08-01-11 OFF RESERVE '
+                                  'FOR Ge121a. CIRCED 0 TIMES : 08-01-11 ON '
+                                  'RESERVE FOR Ge161 : 01-03-12 OFF RESERVE '
+                                  'FOR Ge161. CIRCED 0 TIMES : 04-05-13 ON '
+                                  'RESERVE FOR Ge163 : 06-19-13 OFF RESERVE '
+                                  'FOR Ge163. CIRCED 0 TIMES',
+                          'noteType': 'Check out',
+                          'source': { 'id': '25148b30-565b-4012-8300-451fb5cbe124',
+                                      'personal': { 'firstName': 'Migration',
+                                                    'lastName': 'Data'}},
+                          'staffOnly': True}],
+  'contributorNames': [{'name': 'Fowler, C. M. R'}],
+  'discoverySuppress': None,
+  'effectiveCallNumberComponents': { 'callNumber': 'QC806 .F625 2005',
+                                     'prefix': None,
+                                     'suffix': None,
+                                     'typeId': '95467209-6d7b-468b-94df-0f5d7ad2747d'},
+  'effectiveLocation': { 'id': 'e418607a-70b6-482c-9a94-b2e56ec12110',
+                         'name': 'Geology South Mudd room I books'},
+  'effectiveShelvingOrder': 'QC 3806 F625 42005 C 11',
+  'electronicAccess': [],
+  'enumeration': 'c.1',
+  'formerIds': [],
+  'holdingsRecordId': '795b4843-2736-4ccc-ade6-c928f8628831',
+  'hrid': 'it00001916334',
+  'id': 'f7031f1b-240b-424c-8f54-79a3e83b97ae',
+  'isBoundWith': False,
+  'itemLevelCallNumber': 'QC806 .F625 2005',
+  'lastCheckIn': { 'dateTime': '2021-10-05T17:19:28.499Z',
+                   'servicePointId': '08f9c45c-b1c2-4f00-8f2f-32d9839ac623',
+                   'staffMemberId': 'e76bb7fc-97a6-46d1-b217-dda68016a0fa'},
+  'links': { 'self': 'http://127.0.0.1:8082/inventory/items/f7031f1b-240b-424c-8f54-79a3e83b97ae'},
+  'materialType': { 'id': '5c9c47e6-87c8-4bf6-96bb-07effd7dfcca',
+                    'name': 'book'},
+  'metadata': { 'createdByUserId': '25148b30-565b-4012-8300-451fb5cbe124',
+                'createdDate': '2021-09-15T21:55:54.055+00:00',
+                'updatedByUserId': 'e76bb7fc-97a6-46d1-b217-dda68016a0fa',
+                'updatedDate': '2021-10-05T17:19:28.794+00:00'},
+  'notes': [],
+  'permanentLoanType': { 'id': 'fc28b28f-6dc0-42a9-b35e-75af0cfbd4ac',
+                         'name': 'circulating-loan-type'},
+  'permanentLocation': { 'id': 'e418607a-70b6-482c-9a94-b2e56ec12110',
+                         'name': 'Geology South Mudd room I books'},
+  'purchaseOrderLineIdentifier': None,
+  'statisticalCodeIds': [],
+  'status': {'date': '2021-10-05T17:19:28.797+00:00', 'name': 'Available'},
+  'tags': {'tagList': []},
+  'title': 'The solid earth : an introduction to global geophysics / C.M.R. '
+           'Fowler',
+  'yearCaption': []}

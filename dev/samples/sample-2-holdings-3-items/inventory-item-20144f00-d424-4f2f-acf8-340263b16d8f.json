@@ -1,0 +1,70 @@
+{ 'barcode': '35047018086744',
+  'callNumber': 'QC806 .F625 2005',
+  'circulationNotes': [ { 'date': None,
+                          'id': '62e6905a-0cec-459f-99fc-4a0035f50d24',
+                          'note': '09-06-13 ON RESERVE FOR Ge161 : 12-18-13 '
+                                  'OFF RESERVE FOR Ge161. CIRCED 0 TIMES : '
+                                  '04-01-14 ON RESERVE FOR Ge163 : 06-16-14 '
+                                  'OFF RESERVE FOR Ge163. CIRCED 0 TIMES : '
+                                  '09-05-14 ON RESERVE FOR Ge161 : 12-17-14 '
+                                  'OFF RESERVE FOR Ge161. CIRCED 0 TIMES : '
+                                  '03-31-15 ON RESERVE FOR Ge163 : 06-15-15 '
+                                  'OFF RESERVE FOR Ge163. CIRCED 0 TIMES',
+                          'noteType': 'Check in',
+                          'source': { 'id': '25148b30-565b-4012-8300-451fb5cbe124',
+                                      'personal': { 'firstName': 'Migration',
+                                                    'lastName': 'Data'}},
+                          'staffOnly': True},
+                        { 'date': None,
+                          'id': '286e0431-adf5-4754-82e3-c7f44ef0c444',
+                          'note': '09-06-13 ON RESERVE FOR Ge161 : 12-18-13 '
+                                  'OFF RESERVE FOR Ge161. CIRCED 0 TIMES : '
+                                  '04-01-14 ON RESERVE FOR Ge163 : 06-16-14 '
+                                  'OFF RESERVE FOR Ge163. CIRCED 0 TIMES : '
+                                  '09-05-14 ON RESERVE FOR Ge161 : 12-17-14 '
+                                  'OFF RESERVE FOR Ge161. CIRCED 0 TIMES : '
+                                  '03-31-15 ON RESERVE FOR Ge163 : 06-15-15 '
+                                  'OFF RESERVE FOR Ge163. CIRCED 0 TIMES',
+                          'noteType': 'Check out',
+                          'source': { 'id': '25148b30-565b-4012-8300-451fb5cbe124',
+                                      'personal': { 'firstName': 'Migration',
+                                                    'lastName': 'Data'}},
+                          'staffOnly': True}],
+  'contributorNames': [{'name': 'Fowler, C. M. R'}],
+  'discoverySuppress': None,
+  'effectiveCallNumberComponents': { 'callNumber': 'QC806 .F625 2005',
+                                     'prefix': None,
+                                     'suffix': None,
+                                     'typeId': '95467209-6d7b-468b-94df-0f5d7ad2747d'},
+  'effectiveLocation': { 'id': 'de556b3e-6c9a-4bb5-9087-075c6dddea2a',
+                         'name': 'Geology limited reserves'},
+  'effectiveShelvingOrder': 'QC 3806 F625 42005 C 12',
+  'electronicAccess': [],
+  'enumeration': 'c.2',
+  'formerIds': [],
+  'holdingsRecordId': 'c0b6d0cf-38d0-43f7-b476-7debbba52bc5',
+  'hrid': 'it00001916879',
+  'id': '20144f00-d424-4f2f-acf8-340263b16d8f',
+  'isBoundWith': False,
+  'itemLevelCallNumber': 'QC806 .F625 2005',
+  'links': { 'self': 'http://127.0.0.1:8082/inventory/items/20144f00-d424-4f2f-acf8-340263b16d8f'},
+  'materialType': { 'id': '5c9c47e6-87c8-4bf6-96bb-07effd7dfcca',
+                    'name': 'book'},
+  'metadata': { 'createdByUserId': '25148b30-565b-4012-8300-451fb5cbe124',
+                'createdDate': '2021-09-15T21:55:54.055+00:00',
+                'updatedByUserId': '1ec86111-6669-47da-915c-2314aa664115',
+                'updatedDate': '2021-09-24T00:11:26.658+00:00'},
+  'notes': [],
+  'permanentLoanType': { 'id': 'fc28b28f-6dc0-42a9-b35e-75af0cfbd4ac',
+                         'name': 'circulating-loan-type'},
+  'permanentLocation': { 'id': '817af180-8807-413a-861e-d483b2b97025',
+                         'name': 'Geology main reading room reference'},
+  'purchaseOrderLineIdentifier': None,
+  'statisticalCodeIds': [],
+  'status': {'date': '2021-09-15T21:33:50.369+00:00', 'name': 'Available'},
+  'tags': {'tagList': []},
+  'temporaryLocation': { 'id': 'de556b3e-6c9a-4bb5-9087-075c6dddea2a',
+                         'name': 'Geology limited reserves'},
+  'title': 'The solid earth : an introduction to global geophysics / C.M.R. '
+           'Fowler',
+  'yearCaption': []}
