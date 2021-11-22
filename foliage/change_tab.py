@@ -31,12 +31,12 @@ from   sidetrack import set_debug, log
 import sys
 import threading
 
-from   .base_tab import FoliageTab
-from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .folio import unique_identifiers, back_up_record
-from   .ui import confirm, notify, user_file
-from   .ui import tell_success, tell_warning, tell_failure, stop_processbar
-from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
+from   foliage.base_tab import FoliageTab
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.folio import unique_identifiers, back_up_record
+from   foliage.ui import confirm, notify, user_file
+from   foliage.ui import tell_success, tell_warning, tell_failure, stop_processbar
+from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
 # Tab definition class.

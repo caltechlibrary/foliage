@@ -9,7 +9,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
-from   enum import Enum, EnumMeta
+from enum import Enum, EnumMeta
 
 # The following class was based in part on the posting by user "Pierre D" at
 # https://stackoverflow.com/a/65225753/743730 made on 2020-12-09.

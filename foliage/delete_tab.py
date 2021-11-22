@@ -26,12 +26,12 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 
-from   .base_tab import FoliageTab
-from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .folio import unique_identifiers, back_up_record
-from   .ui import confirm, notify, user_file, stop_processbar
-from   .ui import tell_success, tell_warning, tell_failure
-from   .ui import note_info, note_warn, note_error
+from   foliage.base_tab import FoliageTab
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.folio import unique_identifiers, back_up_record
+from   foliage.ui import confirm, notify, user_file, stop_processbar
+from   foliage.ui import tell_success, tell_warning, tell_failure
+from   foliage.ui import note_info, note_warn, note_error
 
 
 # Tab definition class.

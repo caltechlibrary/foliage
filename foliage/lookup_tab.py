@@ -30,13 +30,13 @@ from   pywebio.session import run_js, eval_js
 from   sidetrack import set_debug, log
 import threading
 
-from   .base_tab import FoliageTab
-from   .export import export
-from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .folio import unique_identifiers
-from   .ui import confirm, notify, user_file, stop_processbar
-from   .ui import tell_success, tell_warning, tell_failure
-from   .ui import note_info, note_warn, note_error
+from   foliage.base_tab import FoliageTab
+from   foliage.export import export
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.folio import unique_identifiers
+from   foliage.ui import confirm, notify, user_file, stop_processbar
+from   foliage.ui import tell_success, tell_warning, tell_failure
+from   foliage.ui import note_info, note_warn, note_error
 
 
 # Tab definition class.

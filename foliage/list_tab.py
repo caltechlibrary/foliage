@@ -28,11 +28,11 @@ from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 import threading
 
-from   .base_tab import FoliageTab
-from   .export import export
-from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .ui import confirm, notify
-from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
+from   foliage.base_tab import FoliageTab
+from   foliage.export import export
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.ui import confirm, notify
+from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
 # Tab definition class.

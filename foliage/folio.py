@@ -27,8 +27,8 @@ import re
 from   sidetrack import set_debug, log
 from   validators.url import url as valid_url
 
-from   .enum_utils import MetaEnum, ExtendedEnum
-from   .exceptions import FolioError
+from   foliage.enum_utils import MetaEnum, ExtendedEnum
+from   foliage.exceptions import FolioError
 
 
 # Public data types.

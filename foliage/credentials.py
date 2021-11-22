@@ -30,8 +30,8 @@ if sys.platform.startswith('darwin'):
     import keyring.backends
     from keyring.backends.OS_X import Keyring
 
-from .folio import Folio
-from .ui import confirm, note_info
+from foliage.folio import Folio
+from foliage.ui import confirm, note_info
 
 
 # Private constants.

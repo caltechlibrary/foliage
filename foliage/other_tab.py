@@ -29,13 +29,13 @@ from   tempfile import NamedTemporaryFile
 import threading
 import webbrowser
 
-from   .base_tab import FoliageTab
-from   .credentials import credentials_from_user, current_credentials
-from   .credentials import use_credentials
-from   .folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   .ui import quit_app, reload_page, confirm, notify
-from   .ui import image_data, user_file, JS_CODE, CSS_CODE
-from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
+from   foliage.base_tab import FoliageTab
+from   foliage.credentials import credentials_from_user, current_credentials
+from   foliage.credentials import use_credentials
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.ui import quit_app, reload_page, confirm, notify
+from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
+from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
 # Tab definition class.
