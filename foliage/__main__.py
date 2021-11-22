@@ -310,9 +310,6 @@ def config_backup_dir(backup_dir):
     if exists(backup_dir) and not isdir(backup_dir):
         note_error(f'Not a directory: {antiformat(backup_dir)}', False)
         exit(1)
-    elif not writable(backup_dir):
-        note_error(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
-        exit(1)
     if not exists(backup_dir):
         log(f'creating backup directory {antiformat(backup_dir)}')
         try:
@@ -321,6 +318,9 @@ def config_backup_dir(backup_dir):
             log(f'failed to create {antiformat(backup_dir)}: ' + str(ex))
             note_error(f'Unable to create backup directory {backup_dir}', False)
             exit(1)
+    if not writable(backup_dir):
+        note_error(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
+        exit(1)
     os.environ['BACKUP_DIR'] = backup_dir
 
 
