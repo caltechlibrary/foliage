@@ -221,7 +221,7 @@ def foliage():
         quit_app(ask_confirm = False)
 
     if not credentials_complete(credentials_from_env()):
-        creds = credentials_from_user(initial_creds = creds)
+        creds = credentials_from_user(initial_creds = credentials_from_env())
         if not credentials_complete(creds):
             notify('Unable to proceed without complete credentials. Quitting.')
             quit_app(ask_confirm = False)
