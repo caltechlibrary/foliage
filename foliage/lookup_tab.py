@@ -82,9 +82,12 @@ def tab_contents():
         put_grid([[
             put_radio('show_raw', inline = True,
                       options = [('Summary format', 'summary', True),
-                                 ('Raw data format', 'json')]),
+                                 ('Raw data format', 'json')],
+                      help_text = 'Controls the format of the output produced.'),
             put_checkbox("inventory_api", inline = True,
-                         options = [('Use inventory API for items and instances', True, True)]),
+                         options = [('Use inventory API for items and instances',
+                                     True, True)],
+                         help_text = 'When deselected, the storage API is used.'),
         ]], cell_widths = '58% 42%'),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
