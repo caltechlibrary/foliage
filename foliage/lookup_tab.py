@@ -78,7 +78,7 @@ def tab_contents():
                          + ' only. Likewise, user records found using'
                          + ' item/holdings/instance/loan id\'s'
                          + ' are based on **open** loans only._'),
-        ]], cell_widths = '40% 60%'),
+        ]], cell_widths = '39% 60%'),
         put_grid([[
             put_radio('show_raw', inline = True,
                       options = [('Summary format', 'summary', True),

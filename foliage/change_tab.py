@@ -28,6 +28,7 @@ from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
 from   sidetrack import set_debug, log
+import sys
 import threading
 
 from   .base_tab import FoliageTab
@@ -54,6 +55,9 @@ class ChangeTab(FoliageTab):
 
 def tab_contents():
     log(f'generating change tab contents')
+    # FIXME what causes these diffs on windows?
+    textarea_rows = 11 if sys.platform.startswith('win') else 10
+    margin_adjust = 'margin-top: -1em' if sys.platform.startswith('win') else ''
     return [
         put_grid([[
             put_markdown('Input one or more **item** barcodes, id\'s, or hrid\'s;'
@@ -67,7 +71,7 @@ def tab_contents():
         put_grid([[
             put_grid([
                 [put_markdown('Identifiers of items to be changed:')],
-                [put_textarea('textbox_ids', rows = 10)],
+                [put_textarea('textbox_ids', rows = textarea_rows)],
                 ]),
             put_grid([
                 [put_text('Field to be changed:')],
@@ -80,7 +84,7 @@ def tab_contents():
                           options = [ ('Add value', 'add', True),
                                       ('Change value', 'change'),
                                       ('Delete value', 'delete')]
-                           ).style('margin-bottom: 0.3em')],
+                           ).style(f'margin-bottom: 0.3em; {margin_adjust}')],
                 [put_text('Current field value:').style('opacity: 0.3')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_value('old')),
