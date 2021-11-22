@@ -55,19 +55,20 @@ from   pywebio.session import run_js, eval_js, download
 from   sidetrack import set_debug, log
 from   tornado.template import Template
 
-from   .change_tab import ChangeTab
-from   .credentials import credentials_from_user, credentials_from_keyring
-from   .credentials import use_credentials, credentials_complete
-from   .credentials import credentials_from_file, credentials_from_env
-from   .delete_tab import DeleteTab
-from   .enum_utils import MetaEnum, ExtendedEnum
-from   .folio import Folio
-from   .list_tab import ListTab
-from   .lookup_tab import LookupTab
-from   .other_tab import OtherTab
-from   .ui import quit_app, reload_page, confirm, notify
-from   .ui import note_info, note_warn, note_error, tell_success, tell_failure
-from   .ui import image_data, user_file, JS_CODE, CSS_CODE
+import foliage
+from   foliage.change_tab import ChangeTab
+from   foliage.credentials import credentials_from_user, credentials_from_keyring
+from   foliage.credentials import use_credentials, credentials_complete
+from   foliage.credentials import credentials_from_file, credentials_from_env
+from   foliage.delete_tab import DeleteTab
+from   foliage.enum_utils import MetaEnum, ExtendedEnum
+from   foliage.folio import Folio
+from   foliage.list_tab import ListTab
+from   foliage.lookup_tab import LookupTab
+from   foliage.other_tab import OtherTab
+from   foliage.ui import quit_app, reload_page, confirm, notify
+from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
+from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
 
 
 # Internal constants.
@@ -146,18 +147,22 @@ the credentials again.
 
     log('='*8 + f' started {timestamp()} ' + '='*8)
     log_config()
-    exception = None
+    exception = exception_info = None
     try:
+        log('configuring PyWebIO server')
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
 
         # This uses a custom index page template created by copying the PyWebIO
         # default and modifying it.
         here = realpath(dirname(__file__))
-        with open(join(here, 'data', 'index.tpl')) as index_tpl:
+        index_tpl = join(here, 'data', 'index.tpl')
+        with open(index_tpl, encoding = 'utf-8') as index_tpl:
+            log(f'reading index page template {index_tpl}')
             index_page_template = Template(index_tpl.read())
         pywebio.platform.utils._index_page_tpl = index_page_template
 
         # cdn parameter makes it load PyWebIO JS code from our local copy.
+        log('starting PyWebIO server')
         start_server(foliage, auto_open_webbrowser = True, cdn = False,
                      port = os.environ['PORT'], debug = os.environ['DEBUG'])
     except KeyboardInterrupt as ex:
@@ -165,15 +170,17 @@ the credentials again.
         log(f'keyboard interrupt received')
         pass
     except Exception as ex:
-        exception = sys.exc_info()
+        exception = ex
+        exception_info = sys.exc_info()
 
     # Try to deal with exceptions gracefully ----------------------------------
 
     if exception:
+        log('Main caught exception: ' + str(exception))
         from traceback import format_exception
-        summary = antiformat(exception[1])
-        details = antiformat(''.join(format_exception(*exception)))
-        log(f'Exception: {summary}\n{details}')
+        summary = exception_info[1]
+        details = ''.join(format_exception(*exception_info))
+        log('Exception info: ' + summary + '\n' + details)
         # Try to tell the user what happened, if we can.
         try:
             note_error('Error: ' + summary, False)
@@ -197,7 +204,7 @@ the credentials again.
 # .............................................................................
 
 def foliage():
-    log(f'generating main Foliage page')
+    log('generating main Foliage page')
     put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
     put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
@@ -214,6 +221,8 @@ def foliage():
         put_warning('Demo mode in effect').style(
             'position: absolute; left: calc(50% - 5.5em); width: 11em;'
             + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
+    else:
+        log('Demo mode not in effect')
 
     # Make sure we have a network before trying to test Folio creds.
     if not network_available:
@@ -306,7 +315,8 @@ def config_debug(debug_arg):
 
 def config_backup_dir(backup_dir):
     if not backup_dir:
-        backup_dir = config('BACKUP_DIR', default = _DIRS.user_log_dir)
+        default_backups =  join(_DIRS.user_data_dir, 'Backups')
+        backup_dir = config('BACKUP_DIR', default = default_backups)
     if exists(backup_dir) and not isdir(backup_dir):
         note_error(f'Not a directory: {antiformat(backup_dir)}', False)
         exit(1)
@@ -315,8 +325,7 @@ def config_backup_dir(backup_dir):
         try:
             makedirs(backup_dir)
         except OSError as ex:
-            log(f'failed to create {antiformat(backup_dir)}: ' + str(ex))
-            note_error(f'Unable to create backup directory {backup_dir}', False)
+            note_error(f'Unable to create backup directory {antiformat(backup_dir)}', False)
             exit(1)
     if not writable(backup_dir):
         note_error(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
