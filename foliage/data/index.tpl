@@ -56,7 +56,7 @@
 <script src="{{ base_url }}js/purify.min.js"></script>  <!-- XSS sanitizer -->
 <script>
     if (window.navigator.userAgent.indexOf('MSIE ') !== -1 || window.navigator.userAgent.indexOf('Trident/') !== -1)
-        $('#output-container').html('<div class="alert alert-danger" role="alert"> Sorry, this website does not support IE browser. ☹ </div>');
+        $('#output-container').html('<div class="alert alert-danger" role="alert"> Sorry, this website does not support IE browser.</div>');
 </script>
 <script src="{{ base_url }}js/pywebio.min.js"></script>
 
