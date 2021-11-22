@@ -25,6 +25,7 @@ from   pywebio.output import put_column
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
+from   tempfile import NamedTemporaryFile
 import threading
 import webbrowser
 
@@ -107,6 +108,14 @@ def show_log_file():
         return
     elif log_file and exists(log_file):
         if readable(log_file):
-            webbrowser.open_new("file://" + log_file)
+            tmp_file = NamedTemporaryFile(delete = False).name + '.html'
+            log(f'created temporary file {tmp_file}')
+            with open(log_file, 'r') as f_txt:
+                with open(tmp_file, 'w') as f_html:
+                    f_html.write('<html><body><pre>')
+                    f_html.write(f_txt.read())
+                    f_html.write('</pre></body></html>')
+            log(f'asking browser to open {tmp_file}')
+            webbrowser.open_new("file://" + tmp_file)
         else:
             note_error(f'Log file is unreadable -- please report this error.')
