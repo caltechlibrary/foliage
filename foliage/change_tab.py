@@ -270,27 +270,21 @@ def do_change():
 
 
 def change_location(record):
+    # Get the list of known types again (folio.py will have cached it) and
+    # create a mapping of value names to type objects.
+    folio = Folio()
+    types = {}
+    for item in folio.types(known_fields[pin.chg_field].type):
+        types[item['name']] = item
+
     id = record['id']
     field_key = known_fields[pin.chg_field].key
-    if record.get(field_key, None):
+    if (current_value := record.get(field_key, None)):
         if pin.chg_op == 'add':
             tell_warning(f'Item **{id}** has an existing value for field'
                          + f' _{field_key}_ – skipping.')
             return
-    elif pin.chg_op in ['change', 'delete']:
-        tell_warning(f'Item **{id}** has no field _{field_key}_ – skipping.')
-        return
-
-    # Get the list of known types again (folio.py will have cached it) and
-    # create a mapping of value names to type objects.
-    types = {}
-    for item in Folio().types(known_fields[pin.chg_field].type):
-        types[item['name']] = item
-
-    # Check if this record already has the desired new value.
-    # (In item records from the Folio storage API, the values is a type id.)
-    if (current_value := record.get(field_key, None)):
-        # If we get here & it has a value, means we're doing a change or delete.
+        # We're doing change or delete. Existing value must match expected one.
         if current_value != types[pin.old_value]['id']:
             tell_warning(f'Item **{id}**\'s value for _{field_key}_ is not'
                          + f' "{pin.old_value}" – leaving this record unchanged.')
@@ -302,24 +296,26 @@ def change_location(record):
         elif pin.chg_op == 'delete':
             log(f'deleting field {field_key} from item {id}')
             del record[field_key]
-    else:
-        # If we get here, it has no value and we're doing an add.
+    elif pin.chg_op == 'add':
         log(f'adding {field_key} value "{pin.new_value}" to item {id}')
         back_up_record(record)
         record[field_key] = types[pin.new_value]['id']
+    else:
+        # It doesn't have a value, and we're not doing an add.
+        tell_warning(f'Item **{id}** has no field _{field_key}_ – skipping.')
+        return
 
-    # In some cases we have to adjust holdings records.
+    # If we're changing permanent locations, need deal w/ holdings records.
     if pin.chg_field == 'Permanent location':
         success, error = update_holdings(record)
 
     # Send the updated record to Folio.
     if success:
-        folio = Folio()
         if config('DEMO_MODE', cast = bool):
             log(f'demo mode in effect – pretending to change {id}')
             success, error = True, ''
         else:
-            success, error = folio.write(record, f'/item-storage/items/{id}')
+            success, error = Folio.write(record, f'/item-storage/items/{id}')
 
     # Report the outcome to the user.
     name = pin.chg_field.lower()
@@ -347,30 +343,26 @@ def update_holdings(record):
 
     new_location_id = record['permanentLocation']['id']
     new_location_name = record['permanentLocation']['name']
-    if holding_record['permanentLocationId'] == new_location_id:
-        # Item's perm. location is this holdings' record perm location. Done.
-        log(f'holdings location is same as new location; no updates needed')
-        return True, ''
-
-    log(f'holdings location is not same as new location')
-    # See if the instance has another holdings record with the location.
-    # We can get the instance id from this holdings b/c it will be the same.
-    id = record['id']
-    instance_id = holdings['instanceId']
-    instance_holdings = folio.records(instance_id, RecordIdKind.INSTANCE_ID, 'holdings')
-    for holdings_rec in instance_holdings:
-        if holdings_rec['permanentLocationId'] == new_location_id:
-            new_holdings_id = holdings_rec['id']
-            log(f'updating {id}\'s holdings record to be {new_holdings_id}')
-            record['holdingsRecordId'] = new_holdings_id
-            return True, ''
-    else:
-        # No holdings records found with the new location. Currently not
-        # handled. FIXME: support creating new holdings record.
-        return False, (f'Instance {instance_id} has no holdings record with'
-                       + f' a permanent location of {new_location_name}.  One'
-                       + f' will need to be created before item {id}\'s'
-                       + f' permanent location can be set there.')
+    if holding_record['permanentLocationId'] != new_location_id:
+        log(f'holdings location is not the same as new location')
+        # See if the instance has another holdings record with the location.
+        # We can get the instance id from this holdings b/c it will be the same.
+        id = record['id']
+        instance_id = holdings['instanceId']
+        instance_holdings = folio.records(instance_id, RecordIdKind.INSTANCE_ID, 'holdings')
+        for holdings_rec in instance_holdings:
+            if holdings_rec['permanentLocationId'] == new_location_id:
+                new_holdings_id = holdings_rec['id']
+                log(f'updating {id}\'s holdings record to be {new_holdings_id}')
+                record['holdingsRecordId'] = new_holdings_id
+                return True, ''
+        else:
+            # No holdings records found with the new location. Currently not
+            # handled. FIXME: support creating new holdings record.
+            return False, (f'Instance {instance_id} has no holdings record with'
+                           + f' a permanent location of {new_location_name}.  One'
+                           + f' will need to be created before item {id}\'s'
+                           + f' permanent location can be set there.')
 
 
 Field = namedtuple('Field', 'type key change')
