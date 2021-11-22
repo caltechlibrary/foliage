@@ -100,7 +100,7 @@ def tab_contents():
         put_button('Clear', outline = True,
                    onclick = lambda: clear_tab()).style('float: right; margin-left: 17px'),
         put_button('Change records', color = 'danger',
-                   onclick = lambda: do_change()).style('float: right'),
+                   onclick = lambda: do_change()).style('float: left'),
     ]
 
 
