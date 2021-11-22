@@ -251,12 +251,12 @@ def do_change():
                     tell_failure(f'No item record(s) found for {id_kind} {id}.')
                     continue
                 # FIXME update this when support other record types.
-                record = records[0]
-                known_fields[pin.chg_field].change(record)
+                known_fields[pin.chg_field].change(records[0])
             except Interrupted as ex:
                 break
             except Exception as ex:
                 tell_failure(f'Error: ' + str(ex))
+                stop_processbar()
                 return
             finally:
                 set_processbar('bar', count/steps)
@@ -288,6 +288,7 @@ def change_location(record):
         types[item['name']] = item
 
     # Check if this record already has the desired new value.
+    # (In item records from the Folio storage API, the values is a type id.)
     if (current_value := record.get(field_key, None)):
         # If we get here & it has a value, means we're doing a change or delete.
         if current_value != types[pin.old_value]['id']:
@@ -307,24 +308,18 @@ def change_location(record):
         back_up_record(record)
         record[field_key] = types[pin.new_value]['id']
 
-
-    # FIXME do the holdings update and only do folio put once.
-
+    # In some cases we have to adjust holdings records.
+    if pin.chg_field == 'Permanent location':
+        success, error = update_holdings(record)
 
     # Send the updated record to Folio.
-    folio = Folio()
-    if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to change {id}')
-        success, error = True, ''
-    else:
-        success, error = folio.write(record, f'/item-storage/items/{id}')
-
-    # In some cases we have to adjust holdings records.
-    if success and pin.chg_field == 'Permanent location':
-        # The item's permanent location should match the holdings location. If
-        # items are moving to a different place, they should move into an
-        # existing or a newly created holdings record for that place.
-        success, error = update_holdings(record)
+    if success:
+        folio = Folio()
+        if config('DEMO_MODE', cast = bool):
+            log(f'demo mode in effect – pretending to change {id}')
+            success, error = True, ''
+        else:
+            success, error = folio.write(record, f'/item-storage/items/{id}')
 
     # Report the outcome to the user.
     name = pin.chg_field.lower()
@@ -338,22 +333,21 @@ def change_location(record):
 
 
 def update_holdings(record):
+    # The item's permanent location should match the holdings location. If
+    # items are moving to a different place, they should move into an
+    # existing or a newly created holdings record for that place. At the moment
+    # this does not create new holdings records.
+
     folio = Folio()
-
-    # An item is aossociated with a single holdings record, but an instance may
-    # have multiple holdings records, and a change in permanent location may
-    # require changing the holdings association of an item.
-
-    id = record['id']
     holdings_id = record['holdingsRecordId']
-    holdings_records = folio.records(holdings_id, RecordIdKind.HOLDINGS_ID)
-    if not holdings_records:
+    if (holdings := folio.records(holdings_id, RecordIdKind.HOLDINGS_ID)):
+        holdings_record = holdings_records[0]
+    else:
         return False, f'Could not retrieve holdings record {holdings_id}.'
-    holdings = holdings_records[0]
 
     new_location_id = record['permanentLocation']['id']
     new_location_name = record['permanentLocation']['name']
-    if holdings['permanentLocationId'] == new_location_id:
+    if holding_record['permanentLocationId'] == new_location_id:
         # Item's perm. location is this holdings' record perm location. Done.
         log(f'holdings location is same as new location; no updates needed')
         return True, ''
@@ -361,12 +355,15 @@ def update_holdings(record):
     log(f'holdings location is not same as new location')
     # See if the instance has another holdings record with the location.
     # We can get the instance id from this holdings b/c it will be the same.
+    id = record['id']
     instance_id = holdings['instanceId']
     instance_holdings = folio.records(instance_id, RecordIdKind.INSTANCE_ID, 'holdings')
     for holdings_rec in instance_holdings:
         if holdings_rec['permanentLocationId'] == new_location_id:
             new_holdings_id = holdings_rec['id']
-            break
+            log(f'updating {id}\'s holdings record to be {new_holdings_id}')
+            record['holdingsRecordId'] = new_holdings_id
+            return True, ''
     else:
         # No holdings records found with the new location. Currently not
         # handled. FIXME: support creating new holdings record.
@@ -374,14 +371,6 @@ def update_holdings(record):
                        + f' a permanent location of {new_location_name}.  One'
                        + f' will need to be created before item {id}\'s'
                        + f' permanent location can be set there.')
-
-    log(f'updating {id}\'s holdings record to be {new_holdings_id}')
-    record['holdingsRecordId'] = new_holdings_id
-    if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to change {id}')
-        return True, ''
-    else:
-        return folio.operation('put', f'/item-storage/items/{id}')
 
 
 Field = namedtuple('Field', 'type key change')
