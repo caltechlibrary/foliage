@@ -129,12 +129,14 @@ and store an API token), and then on subsequent runs, Foliage will not ask for
 the credentials again.
 '''
 
-    # Process arguments and handle early exits --------------------------------
+    # Process arguments -------------------------------------------------------
 
     if version:
         from foliage import print_version
         print_version()
         exit()
+
+    log('='*8 + f' started {timestamp()} ' + '='*8)
 
     config_debug(debug)                # Set up debugging before anything else.
     config_interrupt(raise_exception = Interrupted)
@@ -142,11 +144,10 @@ the credentials again.
     config_credentials(None if creds_file == 'C' else creds_file, not no_keyring)
     config_port(8080 if port == 'P' else port)
     config_demo_mode(demo_mode)
+    log_config()
 
     # Do the real work --------------------------------------------------------
 
-    log('='*8 + f' started {timestamp()} ' + '='*8)
-    log_config()
     exception = exception_info = None
     try:
         log('configuring PyWebIO server')
@@ -178,7 +179,7 @@ the credentials again.
     if exception:
         log('Main caught exception: ' + str(exception))
         from traceback import format_exception
-        summary = exception_info[1]
+        summary = str(exception_info[1])
         details = ''.join(format_exception(*exception_info))
         log('Exception info: ' + summary + '\n' + details)
         # Try to tell the user what happened, if we can.
