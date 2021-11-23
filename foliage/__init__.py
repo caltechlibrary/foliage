@@ -17,12 +17,12 @@ file "LICENSE" for more information.
 #  |    by the Makefile. Manual changes to these values will be lost.      |
 #  ╰────────────────────── Notice ── Notice ── Notice ─────────────────────╯
 
-__version__     = '0.0.0'
+__version__     = '0.0.1'
 __description__ = 'Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API'
 __url__         = 'https://github.com/caltechlibrary/foliage'
 __author__      = 'Mike Hucka'
 __email__       = 'helpdesk@library.caltech.edu'
-__license__     = 'BSD 3-clause'
+__license__     = 'BSD 3-clause license'
 
 
 # Miscellaneous utilities.
