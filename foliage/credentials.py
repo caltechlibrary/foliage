@@ -94,10 +94,10 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     log(f'asking user for credentials')
     current = initial_creds or Credentials('', '', '')
     pins = [
-        put_markdown('_The following information is needed to create an API'
-                     + ' token in FOLIO for your account. Your FOLIO login'
-                     + ' and password will_ **not** _be stored anywhere after'
-                     + ' this form disappears_.'),
+        put_markdown('_This information is needed to create a FOLIO API token.'
+                     + ' Your FOLIO login & password will_'
+                     + ' **not** _be stored after this form disappears; only'
+                     + ' the token, URL and tenant id will be stored._'),
         put_input('user',      label = 'FOLIO user name'),
         put_input('password',  label = 'FOLIO password', type = 'password'),
         put_input('url',       label = 'OKAPI URL', value = current.url),
@@ -107,7 +107,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             {'label': 'Cancel', 'value': False, 'color': 'danger'},
         ], onclick = clk).style('float: right')
     ]
-    popup(title = 'FOLIO credentials', content = pins, size = 'large')
+    popup(title = 'FOLIO credentials', content = pins, size = 'medium')
 
     event.wait()
     close_popup()
