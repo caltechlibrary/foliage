@@ -107,8 +107,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             {'label': 'Cancel', 'value': False, 'color': 'danger'},
         ], onclick = clk).style('float: right')
     ]
-    popup(title = 'FOLIO credentials', content = pins,
-          size = 'large', closable = False)
+    popup(title = 'FOLIO credentials', content = pins, size = 'large')
 
     event.wait()
     close_popup()
@@ -155,7 +154,7 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
     if sys.platform.startswith('darwin'):
         keyring.set_keyring(Keyring())
     value = keyring.get_password(ring, getpass.getuser())
-    if __debug__: log(f'got "{value}" from keyring {_KEYRING}')
+    if __debug__: log(f'got credentials from keyring {_KEYRING}')
     if value:
         parts = _decoded(value)
         if all(parts) or partial_ok:
