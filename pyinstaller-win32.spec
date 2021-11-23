@@ -9,13 +9,20 @@
 
 import imp
 import os
+import sys
 from   PyInstaller.building.datastruct import Tree
+import PyInstaller.config
 from   PyInstaller.utils.hooks import copy_metadata
 
-# The list must contain tuples: ('file', 'destination directory').
+# Configure the output directories.
+
+PyInstaller.config.CONF['distpath'] = "./dist/win"
+
+# Format of the following list: ('source file', 'destination in package').
+
 data_files = [ ('foliage/data/index.tpl', 'data'),
-               # I don't know why the next ones need 'foliage/data', but they
-               # won't be found if you just use 'data' like the one above.
+               # I don't know why the next ones need 'foliage/data' for the
+               # destination and just 'data' like the one above.
                ('foliage/data/foliage-icon-r.png', 'foliage/data'),
                ('foliage/data/foliage-icon.png', 'foliage/data'),
                # Local hacked copy of PyWebIO.
@@ -23,7 +30,7 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
                ('../PyWebIO/pywebio/html', 'pywebio/html'),
               ]
 
-# The data_files setting below following fixes this run-time error:
+# The data_files setting below, for humanize, fixes this run-time error:
 #
 #   File "humanize/__init__.py", line 14, in <module>
 #   File "pkg_resources/__init__.py", line 465, in get_distribution
@@ -34,11 +41,12 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
 #   not found and is required by the application
 #
 # I don't actually know why that error occurs.  CommonPy imports humanize,
-# and it has it in its requirements.txt, and PyInstaller looks like it's
-# picking it up.  So I'm stumped about why humanize seems to get missed in
-# the binary produced by PyInstaller.  Even weirder, this was an issue in
-# PyInstaller (https://github.com/jmoiron/humanize/issues/105) and has been
-# closed as solved.  Don't have time to debug more.
+# and does have it in its requirements.txt, and PyInstaller looks like it's
+# picking it up. Even weirder, this was an issue in PyInstaller
+# (https://github.com/jmoiron/humanize/issues/105) and has been closed as
+# solved. I'm stumped about why humanize seems to get missed in the
+# binary produced by PyInstaller but don't have time to debug more.
+
 data_files += copy_metadata('humanize')
 
 configuration = Analysis([r'foliage\__main__.py'],
@@ -66,13 +74,20 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
+splash             = Splash(r'dev\icon\foliage-icon.png',
+                            binaries = configuration.binaries,
+                            datas = configuration.datas)
+
 executable         = EXE(application_pyz,
                          configuration.scripts,
                          configuration.binaries,
                          configuration.zipfiles,
                          configuration.datas,
+                         splash,
+                         splash.binaries,
                          name = 'Foliage',
-                         icon = r'dev\icon\foliage-icon.ico',
+                         icon = r'dev/icon/foliage-icon.ico',
+                         version = r'dev/windows/version.py',
                          debug = True,
                          strip = False,
                          upx = True,
