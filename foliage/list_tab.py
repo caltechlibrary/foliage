@@ -163,7 +163,7 @@ def show_record(title, id, record_type):
         put_scrollable(put_code(pformat(data, indent = 2)), height = 400),
         put_buttons([{'label': 'Close', 'value': 1}], onclick = clk).style('float: right'),
     ]
-    popup(title = title, content = pins, closable = False, size = 'large')
+    popup(title = title, content = pins, size = 'large')
 
     event.wait()
     close_popup()

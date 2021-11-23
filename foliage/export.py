@@ -59,8 +59,7 @@ def export(records, kind):
             {'label': 'OK', 'value': True},
         ], onclick = clk).style('float: right; vertical-align: center')
     ]
-    popup(title = 'Select the file format for the exported records:',
-          content = pins, closable = False)
+    popup(title = 'Select the format for the exported records:', content = pins)
 
     event.wait()
     close_popup()
