@@ -150,15 +150,23 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
     '''Look up the user's credentials.
     If partial_ok is False, return None if the keyring value is incomplete.'''
     if sys.platform.startswith('win'):
+        log('using windows keyring vault')
         keyring.set_keyring(WinVaultKeyring())
     if sys.platform.startswith('darwin'):
+        log('using macos keyring')
         keyring.set_keyring(Keyring())
-    value = keyring.get_password(ring, getpass.getuser())
-    if __debug__: log(f'got credentials from keyring {_KEYRING}')
+    log(f'trying to read value from {ring}')
+    try:
+        value = keyring.get_password(ring, getpass.getuser())
+    except Exception as ex:
+        log('exception trying to get password from keyring: ' + str(ex))
+        return None
     if value:
+        if __debug__: log(f'got credentials from keyring {ring}')
         parts = _decoded(value)
         if all(parts) or partial_ok:
             return Credentials(url = parts[0], tenant_id = parts[1], token = parts[2])
+    log(f'did not find a value in keyring {ring}')
     return None
 
 
