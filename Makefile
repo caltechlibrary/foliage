@@ -17,16 +17,17 @@ PROGRAMS_NEEDED = curl gh git jq sed
 TEST := $(foreach p,$(PROGRAMS_NEEDED),\
 	  $(if $(shell which $(p)),_,$(error Cannot find program "$(p)")))
 
-# Set some basic variables.  These are quick to set; we set additional
-# variables using "set-vars" but only when the others are needed.
+# Set some basic variables. These are quick to set or need to be defined b/c
+# their values are used in rule names. Others vars are set when needed.
 
-name	:= $(strip $(shell awk -F "=" '/^name/ {print $$2}' setup.cfg))
-version	:= $(strip $(shell awk -F "=" '/^version/ {print $$2}' setup.cfg))
-url	:= $(strip $(shell awk -F "=" '/^url/ {print $$2}' setup.cfg))
-desc	:= $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
-author	:= $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
-email	:= $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
-license	:= $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
+name	 := $(strip $(shell awk -F "=" '/^name/ {print $$2}' setup.cfg))
+version	 := $(strip $(shell awk -F "=" '/^version/ {print $$2}' setup.cfg))
+url	 := $(strip $(shell awk -F "=" '/^url/ {print $$2}' setup.cfg))
+desc	 := $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
+author	 := $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
+email	 := $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
+license	 := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
+platform := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
 
 
 # Print help if no command given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,6 +99,7 @@ report: set-vars
 	@echo doi_tail	= $(doi_tail)
 	@echo init_file = $(init_file)
 	@echo tmp_file	= $(tmp_file)
+	@echo platform	= $(platform)
 
 
 # make release ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,7 +111,7 @@ ifneq ($(branch),main)
 	$(error Current git branch != main. Merge changes into main first!)
 endif
 
-update-init:;
+update-init: set-vars
 	@sed -i .bak -e "s|^\(__version__ *=\).*|\1 '$(version)'|"  $(init_file)
 	@sed -i .bak -e "s|^\(__description__ *=\).*|\1 '$(desc)'|" $(init_file)
 	@sed -i .bak -e "s|^\(__url__ *=\).*|\1 '$(url)'|"	    $(init_file)
@@ -117,12 +119,12 @@ update-init:;
 	@sed -i .bak -e "s|^\(__email__ *=\).*|\1 '$(email)'|"	    $(init_file)
 	@sed -i .bak -e "s|^\(__license__ *=\).*|\1 '$(license)'|"  $(init_file)
 
-update-codemeta:;
+update-codemeta: set-vars
 	@sed -i .bak -e "/version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" codemeta.json
 
 edited := codemeta.json $(init_file)
 
-check-in-updated-files: set-vars
+check-in-updates: set-vars
 	git add $(edited)
 	git diff-index --quiet HEAD $(edited) || \
 	    git commit -m"Update stored version number" $(edited)
@@ -169,6 +171,28 @@ test-pypi: create-dist
 
 pypi: create-dist
 	python3 -m twine upload dist/$(name)-$(version)*.{gz,whl}
+
+
+# Binaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+build: | set-vars build-$(platform)
+
+# Platform-specific instructions.
+
+build-darwin: dist/Foliage.app # $(about-file) $(help-file) # NEWS.html
+#	packagesbuild dev/installer-builders/macos/packages-config/Foliage.pkgproj
+#	mv dist/Foliage-mac.pkg dist/Foliage-$(release)-macos-$(macos_vers).pkg 
+
+dist/Foliage.app:
+	pyinstaller --clean pyinstaller-$(platform).spec
+	# sed -i '' -e 's/0.0.0/$(release)/' dist/Foliage.app/Contents/Info.plist
+	# rm -f dist/Foliage.app/Contents/Info.plist.bak
+	# rm -f dist/foliage
+
+dist/foliage dist/Foliage.exe:
+	pyinstaller --clean pyinstaller-$(platform).spec
+
 
 
 # Cleanup and miscellaneous directives ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
