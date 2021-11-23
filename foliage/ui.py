@@ -239,7 +239,7 @@ def quit_app(ask_confirm = True):
         log(f'running JS function close_window()')
         run_js('close_window()')
         wait(0.5)
-        os._exit(0)
+        raise SystemExit('foo')
 
 
 def reload_page():
