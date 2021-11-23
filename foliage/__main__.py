@@ -205,6 +205,7 @@ the credentials again.
 # .............................................................................
 
 def foliage():
+    close_splash_screen()
     log('generating main Foliage page')
     put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
     put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
@@ -331,6 +332,7 @@ def config_backup_dir(backup_dir):
     if not writable(backup_dir):
         note_error(f'Cannot write in backup directory: {antiformat(backup_dir)}', False)
         exit(1)
+    log('backup dir is ' + backup_dir)
     os.environ['BACKUP_DIR'] = backup_dir
 
 
@@ -340,6 +342,7 @@ def config_credentials(creds_file, use_keyring):
 
     creds = None
     if creds_file:
+        log('creds file supplied on command line')
         if not exists(creds_file):
             note_error(f'Credentials file does not exist: {creds_file}', False)
             exit(1)
@@ -355,14 +358,19 @@ def config_credentials(creds_file, use_keyring):
             note_error(f'Incomplete credentials in {creds_file}', False)
             exit(1)
     if not creds:
+        log('no creds supplied on command line; looking in env')
         creds = credentials_from_env()
     keyring_creds = None
     if (not creds or not credentials_complete(creds)) and use_keyring:
+        log('no creds found in env; looking in keyring')
         keyring_creds = credentials_from_keyring(partial_ok = True)
         if credentials_complete(keyring_creds):
             creds = keyring_creds
     if creds:
+        log('found creds and using them')
         use_credentials(creds)
+    else:
+        log('no creds found')
 
 
 def config_demo_mode(demo_mode):
@@ -385,6 +393,17 @@ def log_config():
     log(f'use_keyring = {config("USE_KEYRING")}')
     log(f'port        = {config("PORT")}')
     log(f'demo_mode   = {config("DEMO_MODE")}')
+
+
+def close_splash_screen():
+    # PyInstaller does not currently support splash screens on macOS.
+    if not sys.platform.startswith('darwin'):
+        log('closing splash screen')
+        try:
+            import pyi_splash
+            pyi_splash.close()
+        except Exception as ex:
+            log('exception trying to close splash screen: ' + str(ex))
 
 
 # Main entry point.
