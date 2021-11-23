@@ -115,7 +115,7 @@ footer {
 }
 button {
     margin-bottom: 0 !important;
-    filter: drop-shadow(1px 1px 2px #ddd);
+    filter: drop-shadow(1px 1px 2px #eee);
 }
 .btn {
     margin-bottom: 1px !important;
@@ -157,6 +157,9 @@ textarea.form-control[readonly] {
     position: absolute;
     left: calc(50% - 1em);
     top: 7em;
+}
+.modal-lg {
+    max-width: 90%;
 }
 '''
 
