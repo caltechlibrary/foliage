@@ -10,9 +10,10 @@ file "LICENSE" for more information.
 '''
 
 from   commonpy.data_utils import unique, pluralized, flattened
-from   commonpy.file_utils import exists, readable
+from   commonpy.file_utils import exists, readable, open_file
 from   commonpy.interrupt import wait
 from   decouple import config
+from   os.path import dirname
 from   pywebio.input import input, select, checkbox, radio
 from   pywebio.input import NUMBER, TEXT, input_update, input_group
 from   pywebio.output import put_text, put_markdown, put_row, put_html
@@ -101,21 +102,33 @@ def show_backup_dir():
 
 
 def show_log_file():
-    log(f'user invoked Show log file')
     log_file = config('LOG_FILE')
     if log_file == '-':
         note_warn('No log file -- log output is being directed to the terminal.')
         return
-    elif log_file and exists(log_file):
-        if readable(log_file):
-            tmp_file = NamedTemporaryFile(delete = False).name + '.html'
-            log(f'created temporary file {tmp_file}')
-            with open(log_file, 'r') as f_txt:
-                with open(tmp_file, 'w') as f_html:
-                    f_html.write('<html><body><pre>')
-                    f_html.write(f_txt.read())
-                    f_html.write('</pre></body></html>')
-            log(f'asking browser to open {tmp_file}')
-            webbrowser.open_new("file://" + tmp_file)
-        else:
-            note_error(f'Log file is unreadable -- please report this error.')
+
+    def close_window():
+        event.set()
+
+    def open_log_folder():
+        open_file(dirname(log_file))
+
+    folio = Folio()
+    event = threading.Event()
+    log_contents = ''
+    log('reading log file ' + log_file)
+    with open(log_file, 'r') as f:
+        log_contents = f.read()
+    pins  = [
+        put_scrollable(put_code(log_contents).style('font-size: smaller'),
+                       height = 400, horizontal_scroll = True),
+        put_grid([[
+            put_button('Open log folder', outline = True,
+                       onclick = lambda: open_log_folder()),
+            put_button('Close', onclick = close_window).style('text-align: right')
+        ]])
+    ]
+    popup(title = log_file, content = pins, implicit_close = True, size = 'large')
+
+    event.wait()
+    close_popup()
