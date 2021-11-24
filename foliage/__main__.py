@@ -148,8 +148,10 @@ the credentials again.
 
     # Do the real work --------------------------------------------------------
 
-    exception = exception_info = None
+    exception = exception_info = widget = None
     try:
+        widget = taskbar_widget()
+
         log('configuring PyWebIO server')
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
 
@@ -168,8 +170,11 @@ the credentials again.
                      port = os.environ['PORT'], debug = os.environ['DEBUG'])
     except KeyboardInterrupt as ex:
         # Catch it, but don't treat it as an error; just stop execution.
-        log(f'keyboard interrupt received')
+        log('keyboard interrupt received')
         pass
+    except SystemExit as ex:
+        # Thrown by quit_app() during a normal exit.
+        log('exit requested')
     except Exception as ex:
         exception = ex
         exception_info = sys.exc_info()
@@ -198,6 +203,8 @@ the credentials again.
     # And exit ----------------------------------------------------------------
 
     log('exiting normally')
+    if widget:
+        widget['app'].quit()
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
 
 
@@ -205,7 +212,6 @@ the credentials again.
 # .............................................................................
 
 def foliage():
-    close_splash_screen()
     log('generating main Foliage page')
     put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
     put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
@@ -219,12 +225,8 @@ def foliage():
     put_button('Quit Foliage', color = 'warning', onclick = lambda: quit_app()
                ).style('position: absolute; bottom: 20px;'
                        + 'left: calc(50% - 3.5em); z-index: 2')
-    if config('DEMO_MODE', cast = bool):
-        put_warning('Demo mode in effect').style(
-            'position: absolute; left: calc(50% - 5.5em); width: 11em;'
-            + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
-    else:
-        log('Demo mode not in effect')
+    advise_demo_mode()
+    close_splash_screen()
 
     # Make sure we have a network before trying to test Folio creds.
     if not network_available:
@@ -395,15 +397,64 @@ def log_config():
     log(f'demo_mode   = {config("DEMO_MODE")}')
 
 
+def advise_demo_mode():
+    if config('DEMO_MODE', cast = bool):
+        put_warning('Demo mode in effect').style(
+            'position: absolute; left: calc(50% - 5.5em); width: 11em;'
+            + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
+    else:
+        log('Demo mode not in effect')
+
+
 def close_splash_screen():
     # PyInstaller does not currently support splash screens on macOS.
-    if not sys.platform.startswith('darwin'):
-        log('closing splash screen')
-        try:
-            import pyi_splash
-            pyi_splash.close()
-        except Exception as ex:
+    if sys.platform.startswith('darwin'):
+        return
+
+    log('closing splash screen')
+    try:
+        # pyi_splash only exists inside the PyInstaller-produced executable.
+        import pyi_splash
+        pyi_splash.close()
+    except Exception as ex:
+        # Only log an error if running the PyInstaller-produced app.
+        if getattr(sys, 'frozen', False):
             log('exception trying to close splash screen: ' + str(ex))
+
+
+def taskbar_widget():
+    # Taskbar code is not currently relevant on macOS.
+    if sys.platform.startswith('darwin'):
+        return None
+
+    # Need to use a structured type, because the value needs to be set inside
+    # a thread but we need to have a handle on it from the outside.
+    widget_info = {'app': None}
+
+    def show_tray():
+        from PyQt5 import QtGui, QtWidgets, QtCore
+
+        log('creating Qt app for producing taskbar icon')
+        app = QtWidgets.QApplication([])
+        icon = QtGui.QIcon()
+        data_dir = join(dirname(__file__), 'foliage', 'data')
+        icon.addFile(join(data_dir, 'foliage-icon-256x256.png'), QtCore.QSize(256,256))
+        app.setWindowIcon(icon)
+        mainwindow = QtWidgets.QMainWindow()
+        mainwindow.setWindowIcon(icon)
+        mainwindow.setWindowTitle('Foliage')
+        mainwindow.showMinimized()
+        nonlocal widget_info
+        widget_info['app'] = app
+        log('exec\'ing Qt app')
+        app.exec_()
+
+    log(f'starting thread for creating taskbar icon widget')
+    from threading import Thread
+    thread = Thread(target = show_tray, args = ())
+    thread.start()
+
+    return widget_info
 
 
 # Main entry point.
