@@ -142,6 +142,7 @@ def do_list():
         contents = [[put_markdown('**Name**'), put_markdown('**Id**'), put_text('')]]
         contents += sorted(rows, key = lambda x: x[0])
         put_grid(contents, cell_widths = 'auto auto 106px')
+        stop_processbar()
 
 
 def show_record(title, id, record_type):
