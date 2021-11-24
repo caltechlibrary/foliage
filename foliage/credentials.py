@@ -31,7 +31,7 @@ if sys.platform.startswith('darwin'):
     from keyring.backends.OS_X import Keyring
 
 from foliage.folio import Folio
-from foliage.ui import confirm, note_info
+from foliage.ui import confirm, note_info, notify
 
 
 # Private constants.
@@ -116,6 +116,9 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     if not clicked_ok:
         log(f'user cancelled out of credentials dialog')
         return initial_creds
+
+    if pin.url:                         # Remove '/' if the user included it.
+        pin.url = pin.url.rstrip('/')
 
     if not all([pin.url, pin.tenant_id, pin.user, pin.password]) and warn_empty:
         log(f'user provided incomplete credentials')
