@@ -31,7 +31,7 @@ import threading
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export
 from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
-from   foliage.ui import confirm, notify
+from   foliage.ui import confirm, notify, stop_processbar
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
@@ -137,7 +137,7 @@ def do_list():
             action = lambda: show_record(title, id, requested)
             rows.append([name,
                          link(id, action).style('margin-top: 0.25em; margin-bottom: 0.5em'),
-                         copy_button(id).style('padding: 0')])
+                         copy_button(id).style('padding: 0; margin-right: 13px')])
 
         contents = [[put_markdown('**Name**'), put_markdown('**Id**'), put_text('')]]
         contents += sorted(rows, key = lambda x: x[0])
