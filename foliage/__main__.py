@@ -438,7 +438,6 @@ def taskbar_widget():
         app = QtWidgets.QApplication([])
         icon = QtGui.QIcon()
         data_dir = join(dirname(__file__), 'foliage', 'data')
-        icon.addFile(join(data_dir, 'foliage-icon.png'),         QtCore.QSize(512,512))
         icon.addFile(join(data_dir, 'foliage-icon-256x256.png'), QtCore.QSize(256,256))
         icon.addFile(join(data_dir, 'foliage-icon-128x128.png'), QtCore.QSize(128,128))
         icon.addFile(join(data_dir, 'foliage-icon-64x64.png'),   QtCore.QSize(64,64))
@@ -447,6 +446,19 @@ def taskbar_widget():
         mainwindow.setWindowIcon(icon)
         mainwindow.setWindowTitle('Foliage')
         mainwindow.showMinimized()
+
+        # mainmenu = mainwindow.menuBar()
+        # filemenu = mainmenu.addMenu('File')
+
+        # exitButton = QtWidgets.QAction('Exit', mainwindow)
+        # exitButton.setShortcut('Ctrl+Q')
+        # exitButton.setStatusTip('Exit application')
+        # # Problem: this will be running in a separate thread from the PyWebIO
+        # # code, and thus can't use PyWebIO features (not even eval_js). So,
+        # # we can't ask the user to confirm quitting.
+        # exitButton.triggered.connect(partial(quit_foliage, app))
+        # filemenu.addAction(exitButton)
+
         nonlocal widget_info
         widget_info['app'] = app
         log('exec\'ing Qt app')
