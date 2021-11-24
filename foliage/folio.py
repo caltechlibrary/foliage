@@ -166,7 +166,7 @@ class Folio():
         '''Ask FOLIO to create a token for the given url, tenant & user.'''
         if not all([url, tenant_id, user, password]):
             log(f'given incomplete set of parameters -- can\'t proceed.')
-            return None
+            return None, 'Incomplete parameters for credentials'
         try:
             log(f'asking FOLIO for new API token')
             headers = {
@@ -183,16 +183,19 @@ class Folio():
             if resp.status_code == 201:
                 token = resp.headers['x-okapi-token']
                 log(f'got new token from FOLIO: {token}')
-                return token
+                return token, None
+            elif resp.status_code == 422:
+                return None, 'FOLIO rejected the information given'
             elif error:
-                log(f'FOLIO returned error: ' + str(error))
+                return None, 'FOLIO returned an error: ' + str(error)
             else:
-                log(f'FOLIO returned unrecognized code {str(resp.status_code)}')
+                return None, f'FOLIO returned unknown code {str(resp.status_code)}'
         except Interrupted as ex:
             log(f'interrupted')
+            return None, 'Operation was interrupted before a new token was obtained'
         except Exception as ex:
-            log(f'FOLIO rejected request for creating API token: ' + str(ex))
-        return None
+            log('exception trying to get new FOLIO token: ' + str(ex))
+            return None, 'Encountered error trying to get token – please report this'
 
 
     @staticmethod
