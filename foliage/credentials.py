@@ -120,17 +120,21 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     if pin.url:                         # Remove '/' if the user included it.
         pin.url = pin.url.rstrip('/')
 
-    if not all([pin.url, pin.tenant_id, pin.user, pin.password]) and warn_empty:
-        log(f'user provided incomplete credentials')
-        if confirm('Cannot proceed without all credentials. Try again?'):
-            tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
-            return credentials_from_user(initial_creds = tmp)
+    if not all([pin.url, pin.tenant_id, pin.user, pin.password]):
+        if warn_empty:
+            log(f'user provided incomplete credentials')
+            if confirm('Cannot proceed without all credentials. Try again?'):
+                tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
+                return credentials_from_user(initial_creds = tmp)
+        else:
+            return None
 
     with put_loading():
-        token = Folio.new_token(url = pin.url, tenant_id = pin.tenant_id,
-                                user = pin.user, password = pin.password)
-    if not token:
-        notify('Failed to get a token from FOLIO.')
+        token, error = Folio.new_token(url = pin.url, tenant_id = pin.tenant_id,
+                                       user = pin.user, password = pin.password)
+
+    if error:
+        notify('Failed to get a token: ' + error + '.')
         return None
     else:
         note_info('New FOLIO API token obtained.')
