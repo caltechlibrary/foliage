@@ -86,14 +86,14 @@ def tab_contents():
 # .............................................................................
 
 def edit_credentials():
-    log(f'user invoked Edit credentials')
+    log('user invoked Edit credentials')
     current = current_credentials()
     creds = credentials_from_user(warn_empty = False, initial_creds = current)
-    if creds != current:
-        log(f'user has provided updated credentials')
+    if creds and creds != current:
+        log('user has provided updated credentials')
         use_credentials(creds)
     else:
-        log(f'credentials unchanged')
+        note_warn('Credentials unchanged')
 
 
 def show_backup_dir():
