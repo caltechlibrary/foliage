@@ -30,6 +30,8 @@ license	 := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
 app_name := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
 platform := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
 os       := $(subst $(platform),darwin,macos)
+zip_file := dist/$(os)/$(name)-$(version)-$(os).zip
+
 
 # Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,6 +92,7 @@ vars:
 	$(eval doi	 := $(subst https://doi.org/,,$(doi_url)))
 	$(eval doi_tail  := $(lastword $(subst ., ,$(doi))))
 	$(eval init_file := $(name)/__init__.py)
+	$(info Gathering data -- this takes a few moments ... Done.)
 
 report: vars
 	@echo name	= $(name)
@@ -108,6 +111,7 @@ report: vars
 	@echo doi_tail	= $(doi_tail)
 	@echo init_file = $(init_file)
 	@echo app_name	= $(app_name)
+	@echo zip_file	= $(zip_file)
 	@echo os	= $(os)
 
 
@@ -118,14 +122,15 @@ binaries: | vars dist/$(os)/$(app_name)
 dependencies:;
 	pip3 install -r requirements.txt
 
-pyinstaller dist/$(os)/$(app_name): | vars dependencies run-pyinstaller
+pyinstaller dist/$(os)/$(app_name): | vars dependencies run-pyinstaller make-zip
 
-run-pyinstaller: vars dependencies
+run-pyinstaller: vars
 	@mkdir -p dist/$(os)
-	$(eval comments_file := $(shell mktemp /tmp/comments-$(name).XXXXXX))
 	pyinstaller --distpath dist/$(os) --clean --noconfirm pyinstaller-$(os).spec
-	sed -i '' -e 's/0.0.0/$(version)/' dist/$(os)/$(app_name)/Contents/Info.plist
-	cat <<- EOF > $(comments_file)
+
+make-zip: run-pyinstaller
+	$(eval tmp_file := $(shell mktemp /tmp/comments-$(name).XXXX))
+	cat <<- EOF > $(tmp_file)
 	┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 	┃ This Zip archive file includes a self-contained, runnable ┃
 	┃ version of the program Foliage for macOS. To learn        ┃
@@ -135,13 +140,13 @@ run-pyinstaller: vars dependencies
 	┃                                                           ┃
 	┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 	EOF
-	zip dist/$(os)/$(name).zip dist/$(os)/$(name)
-	zip -z dist/$(os)/$(name).zip < $(comments_file)
-	-rm -f $(comments_file)
+	zip $(zip_file) dist/$(os)/$(name)
+	zip -z $(zip_file) < $(tmp_file)
+	-rm -f $(tmp_file)
 
 shiv zipapps: | run-shiv
 
-run-shiv:
+run-shiv:;
 	@mkdir -p dist
 	dev/scripts/create-pyz dist 3.8.2
 	dev/scripts/create-pyz dist 3.9.5
@@ -180,7 +185,7 @@ check-in-updates: vars
 	    git commit -m"Update stored version number" $(edited)
 
 release-on-github: | vars update-init update-codemeta check-in-updated-files
-	$(eval tmp_file  := $(shell mktemp /tmp/release-notes-$(name).XXXXXX))
+	$(eval tmp_file  := $(shell mktemp /tmp/release-notes-$(name).XXXX))
 	git push -v --all
 	git push -v --tags
 	$(info ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓)
@@ -228,9 +233,14 @@ pypi: create-dist
 
 clean: clean-dist clean-build clean-release clean-other
 
-clean-dist:;
-	-rm -fr dist/$(os)/$(name) dist/$(os)/$(name)-$(version).tar.gz \
+really-clean: clean really-clean-dist
+
+clean-dist: vars
+	-rm -fr dist/$(os)/$(name) dist/$(os)/$(app_name) $(zip_file) \
 	    dist/$(name)-$(version)-py3-none-any.whl
+
+really-clean-dist:;
+	-rm -fr dist/$(os)
 
 clean-build:;
 	-rm -rf build/$(os)

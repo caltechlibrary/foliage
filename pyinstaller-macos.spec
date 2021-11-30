@@ -5,14 +5,40 @@
 # @author  Michael Hucka
 # @license Please see the file named LICENSE in the project directory
 # @website https://github.com/caltechlibrary/foliage
+#
+# Note: despite the .spec file name extension, this file is Python code run by
+# PyInstaller, which means you can do more than just set variables.
 # =============================================================================
 
-import imp
-import os
-import sys
+from   os import getcwd
+from   os.path import join, exists
 from   PyInstaller.building.datastruct import Tree
 import PyInstaller.config
 from   PyInstaller.utils.hooks import copy_metadata
+
+
+# Sanity-check the run-time environment before attempting anything else.
+# .............................................................................
+
+here = getcwd()
+setup_file = join(here, 'setup.cfg')
+if not exists(setup_file):
+    raise RuntimeError(f'Must run PyInstaller from the same directory as the '
+                       + f'setup.cfg file. Could not find it here ({here}).')
+
+
+# Gather information.
+# .............................................................................
+
+# Get the current software version number from setup.cfg
+
+with open('setup.cfg', 'r') as config_file:
+    for line in config_file.readlines():
+        if line.startswith('version'):
+            version = line.split('=')[1].strip()
+            break
+    else:
+        raise RuntimeError('Could not read version number from setup.cfg')
 
 # Format of the following list: ('source file', 'destination in package').
 
@@ -44,6 +70,10 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
 # binary produced by PyInstaller but don't have time to debug more.
 
 data_files += copy_metadata('humanize')
+
+
+# Create the PyInstaller configuration.
+# .............................................................................
 
 configuration = Analysis(['foliage/__main__.py'],
                          pathex = ['.'],
@@ -80,17 +110,18 @@ executable         = EXE(application_pyz,
                          configuration.datas,
                          name = 'foliage',
                          icon = r'dev/icon/foliage-icon.icns',
-                         debug = True,
+                         debug = False,
                          strip = False,
                          upx = True,
                          runtime_tmpdir = None,
-                         console = False,
+                         console = True,
                         )
 
 app             = BUNDLE(executable,
                          name = 'Foliage.app',
                          icon = 'dev/icon/foliage-icon.icns',
-                         bundle_identifier = None,
+                         version = version,
+                         bundle_identifier = 'edu.caltech.library.foliage',
                          info_plist = {'NSHighResolutionCapable': 'True',
                                        'NSAppleScriptEnabled': False},
                         )
