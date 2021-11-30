@@ -5,18 +5,40 @@
 # @author  Michael Hucka
 # @license Please see the file named LICENSE in the project directory
 # @website https://github.com/caltechlibrary/foliage
+#
+# Note: despite the .spec file name extension, this file is Python code run by
+# PyInstaller, which means you can do more than just set variables.
 # =============================================================================
 
-import imp
-import os
-import sys
+from   os import getcwd
+from   os.path import join, exists
 from   PyInstaller.building.datastruct import Tree
 import PyInstaller.config
 from   PyInstaller.utils.hooks import copy_metadata
 
-# Configure the output directories.
+
+# Sanity-check the run-time environment before attempting anything else.
+# .............................................................................
 
-PyInstaller.config.CONF['distpath'] = "./dist/win"
+here = getcwd()
+setup_file = join(here, 'setup.cfg')
+if not exists(setup_file):
+    raise RuntimeError(f'Must run PyInstaller from the same directory as the '
+                       + f'setup.cfg file. Could not find it here ({here}).')
+
+
+# Gather information.
+# .............................................................................
+
+# Get the current software version number from setup.cfg
+
+with open('setup.cfg', 'r') as setup_file:
+    for line in setup_file.readlines():
+        if line.startswith('version'):
+            version = line.split('=')[1].strip()
+            break
+    else:
+        raise RuntimeError('Could not read version number from setup.cfg')
 
 # Format of the following list: ('source file', 'destination in package').
 
@@ -25,6 +47,11 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
                # destination and just 'data' like the one above.
                ('foliage/data/foliage-icon-r.png', 'foliage/data'),
                ('foliage/data/foliage-icon.png', 'foliage/data'),
+               ('foliage/data/foliage-icon-32x32.png', 'foliage/data'),
+               ('foliage/data/foliage-icon-64x64.png', 'foliage/data'),
+               ('foliage/data/foliage-icon-128x128.png', 'foliage/data'),
+               ('foliage/data/foliage-icon-256x256.png', 'foliage/data'),
+               ('foliage/data/foliage-icon.ico', 'foliage/data'),
                # Local hacked copy of PyWebIO.
                ('../PyWebIO/pywebio/platform/tpl', 'pywebio/platform/tpl'),
                ('../PyWebIO/pywebio/html', 'pywebio/html'),
@@ -49,6 +76,12 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
 
 data_files += copy_metadata('humanize')
 
+
+# Create the PyInstaller configuration.
+# .............................................................................
+
+# Define application to PyInstaller.
+
 configuration = Analysis([r'foliage\__main__.py'],
                          pathex = ['.'],
                          binaries = [],
@@ -62,8 +95,7 @@ configuration = Analysis([r'foliage\__main__.py'],
                          # For reasons I can't figure out, PyInstaller tries
                          # to load these even though they're never imported
                          # by the Martian code.  Have to exclude them manually.
-                         excludes = ['PyQt4', 'PyQt5', 'gtk', 'matplotlib',
-                                     'numpy'],
+                         excludes = ['PyQt4', 'gtk', 'matplotlib', 'numpy'],
                          win_no_prefer_redirects = False,
                          win_private_assemblies = False,
                          cipher = None,
@@ -88,16 +120,16 @@ executable         = EXE(application_pyz,
                          name = 'Foliage',
                          icon = r'dev/icon/foliage-icon.ico',
                          version = r'dev/windows/version.py',
-                         debug = True,
+                         debug = False,
                          strip = False,
-                         upx = True,
+                         upx = False,
                          runtime_tmpdir = None,
                          console = False,
                         )
 
 app             = BUNDLE(executable,
                          name = 'Foliage.exe',
-                         icon = r'dev\icon\foliage-icon.ico',
+                         icon = r'foliage/data/foliage-icon.ico',
                          bundle_identifier = None,
                          info_plist = {'NSHighResolutionCapable': 'True'},
                         )
