@@ -13,12 +13,12 @@
 # The following is based on the approach posted by Jonathan Ben-Avraham to
 # Stack Overflow in 2014 at https://stackoverflow.com/a/25668869
 
-PROGRAMS_NEEDED = curl gh git jq sed
+PROGRAMS_NEEDED = curl gh git jq sed pyinstaller
 TEST := $(foreach p,$(PROGRAMS_NEEDED),\
 	  $(if $(shell which $(p)),_,$(error Cannot find program "$(p)")))
 
-# Set some basic variables. These are quick to set or need to be defined b/c
-# their values are used in rule names. Others vars are set when needed.
+# Set some basic variables.  These are quick to set; we set additional
+# variables using "set-vars" but only when the others are needed.
 
 name	 := $(strip $(shell awk -F "=" '/^name/ {print $$2}' setup.cfg))
 version	 := $(strip $(shell awk -F "=" '/^version/ {print $$2}' setup.cfg))
@@ -27,10 +27,11 @@ desc	 := $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
 author	 := $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
 email	 := $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
 license	 := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
+app_name := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
 platform := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
+os       := $(subst $(platform),darwin,macos)
 
-
-# Print help if no command given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 help:
 	@echo 'Available commands:'
@@ -44,16 +45,25 @@ help:
 	@echo '  This is useful to verify the values that have been parsed.'
 	@echo ''
 	@echo 'make release'
-	@echo '  Do a release on GitHub.'
+	@echo '  Do a release on GitHub. This will push changes to GitHub,'
+	@echo '  open an editor to let you edit release notes, and run'
+	@echo '  "gh release create" followed by "gh release upload".'
+	@echo '  Note: this will NOT upload to PyPI, nor create binaries.'
 	@echo ''
 	@echo 'make update-doi'
 	@echo '  Update the DOI inside the README.md file.'
 	@echo '  This is only to be done after doing a "make release".'
 	@echo ''
-	@echo 'make create-dist'
+	@echo 'make binaries'
+	@echo '  Create binaries (both pyinstaller and zipapps).'
+	@echo ''
+	@echo 'make upload-binaries'
+	@echo '  Upload binaries to GitHub.'
+	@echo ''
+	@echo 'make packages'
 	@echo '  Create the distribution files for PyPI.'
 	@echo '  Do this manually to check that everything looks okay before.'
-	@echo '  try to do a "make test-pypi".'
+	@echo '  After doing this, do a "make test-pypi".'
 	@echo ''
 	@echo 'make test-pypi'
 	@echo '  Upload distribution to test.pypi.org.'
@@ -68,21 +78,20 @@ help:
 
 # Gather values that we need ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.SILENT: set-vars
-set-vars:
+.SILENT: vars
+vars:
 	$(info Gathering data -- this takes a few moments ...)
 	$(eval branch    := $(shell git rev-parse --abbrev-ref HEAD))
 	$(eval repo	 := $(strip $(shell gh repo view | head -1 | cut -f2 -d':')))
-	$(eval api_url   := https://api.github.com/)
-	$(eval id	 := $(shell curl -s $(github_api)/repos/$(repo) | jq '.id'))
+	$(eval api_url   := https://api.github.com)
+	$(eval id	 := $(shell curl -s $(api_url)/repos/$(repo) | jq '.id'))
 	$(eval id_url	 := https://data.caltech.edu/badge/latestdoi/$(id))
 	$(eval doi_url	 := $(shell curl -sILk $(id_url) | grep Locat | cut -f2 -d' '))
 	$(eval doi	 := $(subst https://doi.org/,,$(doi_url)))
 	$(eval doi_tail  := $(lastword $(subst ., ,$(doi))))
 	$(eval init_file := $(name)/__init__.py)
-	$(eval tmp_file  := $(shell mktemp /tmp/release-notes-$(name).XXXXXX))
 
-report: set-vars
+report: vars
 	@echo name	= $(name)
 	@echo version	= $(version)
 	@echo url	= $(url)
@@ -98,20 +107,61 @@ report: set-vars
 	@echo doi	= $(doi)
 	@echo doi_tail	= $(doi_tail)
 	@echo init_file = $(init_file)
-	@echo tmp_file	= $(tmp_file)
-	@echo platform	= $(platform)
+	@echo app_name	= $(app_name)
+	@echo os	= $(os)
+
+
+# make binaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+binaries: | vars dist/$(os)/$(app_name)
+
+dependencies:;
+	pip3 install -r requirements.txt
+
+pyinstaller dist/$(os)/$(app_name): | vars dependencies run-pyinstaller
+
+run-pyinstaller: vars dependencies
+	@mkdir -p dist/$(os)
+	$(eval comments_file := $(shell mktemp /tmp/comments-$(name).XXXXXX))
+	pyinstaller --distpath dist/$(os) --clean --noconfirm pyinstaller-$(os).spec
+	sed -i '' -e 's/0.0.0/$(version)/' dist/$(os)/$(app_name)/Contents/Info.plist
+	cat <<- EOF > $(comments_file)
+	┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+	┃ This Zip archive file includes a self-contained, runnable ┃
+	┃ version of the program Foliage for macOS. To learn        ┃
+	┃ more about Foliage, please visit the following site:      ┃
+	┃                                                           ┃
+	┃         https://github.com/$(repo)         ┃
+	┃                                                           ┃
+	┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+	EOF
+	zip dist/$(os)/$(name).zip dist/$(os)/$(name)
+	zip -z dist/$(os)/$(name).zip < $(comments_file)
+	-rm -f $(comments_file)
+
+shiv zipapps: | run-shiv
+
+run-shiv:
+	@mkdir -p dist
+	dev/scripts/create-pyz dist 3.8.2
+	dev/scripts/create-pyz dist 3.9.5
+	dev/scripts/create-pyz dist 3.10.0
+
+build-darwin: dist/$(os)/$(app_name) # $(about-file) $(help-file) # NEWS.html
+#	packagesbuild dev/installer-builders/macos/packages-config/Foliage.pkgproj
+#	mv dist/Foliage-mac.pkg dist/Foliage-$(release)-macos-$(macos_vers).pkg 
 
 
 # make release ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 release: | test-branch release-on-github print-instructions
 
-test-branch: set-vars
+test-branch: vars
 ifneq ($(branch),main)
 	$(error Current git branch != main. Merge changes into main first!)
 endif
 
-update-init: set-vars
+update-init: vars
 	@sed -i .bak -e "s|^\(__version__ *=\).*|\1 '$(version)'|"  $(init_file)
 	@sed -i .bak -e "s|^\(__description__ *=\).*|\1 '$(desc)'|" $(init_file)
 	@sed -i .bak -e "s|^\(__url__ *=\).*|\1 '$(url)'|"	    $(init_file)
@@ -119,17 +169,18 @@ update-init: set-vars
 	@sed -i .bak -e "s|^\(__email__ *=\).*|\1 '$(email)'|"	    $(init_file)
 	@sed -i .bak -e "s|^\(__license__ *=\).*|\1 '$(license)'|"  $(init_file)
 
-update-codemeta: set-vars
+update-codemeta: vars
 	@sed -i .bak -e "/version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" codemeta.json
 
 edited := codemeta.json $(init_file)
 
-check-in-updates: set-vars
+check-in-updates: vars
 	git add $(edited)
 	git diff-index --quiet HEAD $(edited) || \
 	    git commit -m"Update stored version number" $(edited)
 
-release-on-github: | set-vars update-init update-codemeta check-in-updated-files
+release-on-github: | vars update-init update-codemeta check-in-updated-files
+	$(eval tmp_file  := $(shell mktemp /tmp/release-notes-$(name).XXXXXX))
 	git push -v --all
 	git push -v --tags
 	$(info ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓)
@@ -163,36 +214,14 @@ update-doi:
 
 create-dist: clean
 	python3 setup.py sdist bdist_wheel
-	python3 -m twine check dist/$(name)-$(version).tar.gz
-	python3 -m twine check dist/$(name)-$(version)-py3-none-any.whl
+	python3 -m twine check dist/$(os)/$(name)-$(version).tar.gz
+	python3 -m twine check dist/$(os)/$(name)-$(version)-py3-none-any.whl
 
 test-pypi: create-dist
-	python3 -m twine upload --repository testpypi dist/$(name)-$(version)*.{whl,gz}
+	python3 -m twine upload --repository testpypi dist/$(os)/$(name)-$(version)*.{whl,gz}
 
 pypi: create-dist
-	python3 -m twine upload dist/$(name)-$(version)*.{gz,whl}
-
-
-# Binaries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-build: | set-vars build-$(platform)
-
-# Platform-specific instructions.
-
-build-darwin: dist/Foliage.app # $(about-file) $(help-file) # NEWS.html
-#	packagesbuild dev/installer-builders/macos/packages-config/Foliage.pkgproj
-#	mv dist/Foliage-mac.pkg dist/Foliage-$(release)-macos-$(macos_vers).pkg 
-
-dist/Foliage.app:
-	pyinstaller --clean pyinstaller-$(platform).spec
-	# sed -i '' -e 's/0.0.0/$(release)/' dist/Foliage.app/Contents/Info.plist
-	# rm -f dist/Foliage.app/Contents/Info.plist.bak
-	# rm -f dist/foliage
-
-dist/foliage dist/Foliage.exe:
-	pyinstaller --clean pyinstaller-$(platform).spec
-
+	python3 -m twine upload dist/$(os)/$(name)-$(version)*.{gz,whl}
 
 
 # Cleanup and miscellaneous directives ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,11 +229,11 @@ dist/foliage dist/Foliage.exe:
 clean: clean-dist clean-build clean-release clean-other
 
 clean-dist:;
-	-rm -fr dist/$(name) dist/$(name)-$(version).tar.gz \
-	    dist/$(name)-$(version)-py3-none-any.whl dist/binary
+	-rm -fr dist/$(os)/$(name) dist/$(os)/$(name)-$(version).tar.gz \
+	    dist/$(name)-$(version)-py3-none-any.whl
 
 clean-build:;
-	-rm -rf build
+	-rm -rf build/$(os)
 
 clean-release:;
 	-rm -rf $(name).egg-info codemeta.json.bak $(init_file).bak README.md.bak
