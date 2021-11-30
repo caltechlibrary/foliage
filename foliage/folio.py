@@ -745,7 +745,7 @@ class Folio():
             log(f'successfully wrote record to {request_url}')
             return True, ''
         else:
-            log(f'failed to write record to {request_url}: ' + error)
+            log(f'failed to write record to {request_url}: ' + str(error))
             return False, error
 
 
