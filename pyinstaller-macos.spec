@@ -32,8 +32,8 @@ if not exists(setup_file):
 
 # Get the current software version number from setup.cfg
 
-with open('setup.cfg', 'r') as config_file:
-    for line in config_file.readlines():
+with open('setup.cfg', 'r') as setup_file:
+    for line in setup_file.readlines():
         if line.startswith('version'):
             version = line.split('=')[1].strip()
             break
