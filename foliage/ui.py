@@ -233,7 +233,7 @@ def stop_processbar():
 
 
 def quit_app(ask_confirm = True):
-    log(f'quitting (ask = {antiformat(ask_confirm)})')
+    log(f'quitting (ask = {ask_confirm})')
     wait(0.25)
     if not ask_confirm or confirm('This will exit Foliage. Proceed?'):
         log(f'running JS function close_window()')
