@@ -96,3 +96,4 @@ __pycache__/
 dev/experiments/settings.ini
 build
 dist
+dev/windows/version.py
