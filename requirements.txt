@@ -24,3 +24,4 @@ sidetrack       == 2.0.0
 tornado         == 6.1
 python-slugify  == 4.0.1
 validators      == 0.18.2
+wand            == 0.6.7

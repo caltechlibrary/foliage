@@ -106,7 +106,7 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
-splash             = Splash(r'dev\icon\foliage-icon.png',
+splash             = Splash(r'dev\splash-screen\foliage-splash-screen.png',
                             binaries = configuration.binaries,
                             datas = configuration.datas)
 

@@ -18,7 +18,11 @@ RD /S /Q dist/win build/win
 
 ECHO Generating version.py ...
 
-python dev/windows/create_version.py
+python dev/windows/create-version.py
+
+ECHO Generating splash screen file ...
+
+python dev/splash-screen/create-splash-screen.py
 
 ECHO Running PyInstaller ...
 
