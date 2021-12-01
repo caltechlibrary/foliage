@@ -13,7 +13,7 @@ from   collections import namedtuple
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait, reset, interrupt, interrupted
+from   commonpy.interrupt import wait, reset_interrupts, interrupt, interrupted
 from   decouple import config
 from   pywebio.input import input, select, checkbox, radio
 from   pywebio.input import NUMBER, TEXT, input_update, input_group
@@ -226,15 +226,15 @@ def do_change():
                    + ' permanently. Proceed?', danger = True):
         log(f'user declined to proceed')
         return
-    reset()
+    reset_interrupts()
     with use_scope('output', clear = True):
         steps = len(identifiers) + 1
         put_grid([[
-            put_processbar('bar', init = 1/steps).style('margin-top: 11px; margin-left: 17px'),
+            put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()
-                       ).style('text-align: right; margin-right: 17px')
-            ]], cell_widths = '85% 15%')
+                       ).style('text-align: right')
+            ]], cell_widths = '85% 15%').style('margin: auto 17px auto 17px')
         folio = Folio()
         for count, id in enumerate(identifiers, start = 2):
             put_html('<br>')

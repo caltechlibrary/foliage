@@ -11,7 +11,7 @@ file "LICENSE" for more information.
 
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait, interrupt, interrupted, reset
+from   commonpy.interrupt import wait, interrupt, interrupted, reset_interrupts
 from   pprint import pformat
 import pyperclip
 from   pywebio.input import input, select, checkbox, radio
@@ -107,7 +107,7 @@ def clear_tab():
 
 def do_list():
     folio = Folio()
-    reset()
+    reset_interrupts()
     with use_scope('output', clear = True):
         put_processbar('bar', init = 1/2)
         requested = pin.list_type

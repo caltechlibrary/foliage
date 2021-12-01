@@ -12,7 +12,7 @@ file "LICENSE" for more information.
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait, interrupt, interrupted, reset
+from   commonpy.interrupt import wait, interrupt, interrupted, reset_interrupts
 import json
 from   pprint import pformat
 from   pywebio.input import input, select, checkbox, radio
@@ -153,7 +153,7 @@ def do_find():
     _last_textbox = pin.textbox_find
     _last_kind = pin.select_kind
     _last_inventory_api = pin.inventory_api
-    reset()
+    reset_interrupts()
     with use_scope('output', clear = True):
         put_markdown(f'_Certain lookups can take a very long time. Please be'
                      + ' patient._').style('color: DarkOrange; margin-left: 17px')

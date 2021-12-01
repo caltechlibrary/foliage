@@ -11,7 +11,7 @@ file "LICENSE" for more information.
 
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait, reset
+from   commonpy.interrupt import wait, reset_interrupts
 import json
 from   pywebio.input import input, select, checkbox, radio
 from   pywebio.input import NUMBER, TEXT, input_update, input_group
@@ -90,7 +90,7 @@ def load_file():
 def do_delete():
     log(f'do_delete invoked')
     folio = Folio()
-    reset()
+    reset_interrupts()
     if not pin.textbox_delete:
         note_error('Please input at least one barcode or other type of id.')
         return
