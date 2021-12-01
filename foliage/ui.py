@@ -48,19 +48,20 @@ function reload_page() { location.reload() }
    then click "submit", you still get a file!  Very undesirable behavior.
    There's no good way to fix it short of rewriting file.ts in the PyWebIO
    code, so the following is an egregious hack: muck with the variable that
-   the code uses to store the file from the file input dialog, specifically to
-   set it to a known fake name when ESC is pressed.
+   the code uses to store the file from the file input dialog, specifically by
+   setting the variable to a known fake name when ESC is pressed.
 
    The solution to setting the .files property (which is a read-only FileList
    object) came from a 2019-06-04 posting by "superluminary" to Stack Overflow
    at https://stackoverflow.com/a/56447852/743730
 */
 $(document).keyup(function(e) {
+    /* Ignore this key press if it's not the escape key. */
     if (e.keyCode != 27) return;
 
     /* Case of PyWebIO modal dialogs with a cancel button. */
-    if ($('.modal-content button.btn-danger').length) {
-        $('.modal-content button.btn-danger').click();
+    if ($('.modal-content button.btn-secondary').length) {
+        $('.modal-content button.btn-secondary').click();
     }
 
     /* Case of PyWebIO file_upload() dialog, which lacks a cancel button. */
@@ -263,6 +264,7 @@ def confirm(question, danger = False):
     close_popup()
     wait(0.25)                           # Give time for popup to go away.
 
+    log(f'user clicked {"OK" if clicked_ok else "Cancel"}')
     return clicked_ok
 
 
@@ -275,14 +277,14 @@ def notify(msg):
         event.set()
 
     pins = [
-        put_buttons([
-            {'label': 'OK',     'value': True},
-        ], onclick = clk).style('float: right')
+        put_buttons([{'label': 'OK', 'value': True}],
+                    onclick = clk).style('float: right')
     ]
-    popup(title = '✋ ' + msg, content = pins, closable = True, implicit_close = True)
+    popup(title = '✋ ' + msg, content = pins, closable = True)
     event.wait()
     close_popup()
     wait(0.25)                           # Give time for popup to go away.
+    log(f'notification popup closed explicitly')
 
 
 def stop_processbar():
