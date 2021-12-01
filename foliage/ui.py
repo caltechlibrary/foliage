@@ -253,13 +253,12 @@ def confirm(question, danger = False):
 
     ok_color = 'danger' if danger else 'primary'
     pins = [
-        put_markdown(question).style('margin-bottom: 1em'),
         put_buttons([
             {'label': 'Cancel', 'value': False, 'color': 'secondary'},
             {'label': 'OK',     'value': True, 'color': ok_color},
         ], onclick = clk).style('float: right')
     ]
-    popup(title = 'Confirmation', content = pins, closable = False)
+    popup(title = '⚠️ ' + question, content = pins, closable = False)
     event.wait()
     close_popup()
     wait(0.25)                           # Give time for popup to go away.
@@ -268,7 +267,22 @@ def confirm(question, danger = False):
 
 
 def notify(msg):
-    eval_js(f'alert("{msg}")')
+    log(f'notifying user with message "{antiformat(msg)}"')
+
+    event = threading.Event()
+
+    def clk(val):
+        event.set()
+
+    pins = [
+        put_buttons([
+            {'label': 'OK',     'value': True},
+        ], onclick = clk).style('float: right')
+    ]
+    popup(title = '✋ ' + msg, content = pins, closable = True, implicit_close = True)
+    event.wait()
+    close_popup()
+    wait(0.25)                           # Give time for popup to go away.
 
 
 def stop_processbar():

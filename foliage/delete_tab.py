@@ -94,7 +94,7 @@ def do_delete():
     if not pin.textbox_delete:
         note_error('Please input at least one barcode or other type of id.')
         return
-    if not confirm('**Warning**: you are about to delete records from FOLIO'
+    if not confirm('Warning: you are about to delete records from FOLIO'
                    + ' permanently. Proceed?', danger = True):
         return
     with use_scope('output', clear = True):

@@ -184,13 +184,15 @@ def list_selection(title, values):
         put_select('list_selection', options = values),
         put_buttons([
             {'label': 'Submit', 'value': True},
-            {'label': 'Cancel', 'value': False, 'color': 'danger'},
+            {'label': 'Cancel', 'value': False, 'color': 'secondary'},
         ], onclick = clk).style('float: right')
     ]
     popup(title = title, content = pins, closable = False)
     event.wait()
     close_popup()
     wait(0.5)                           # Give time for popup to go away.
+
+    log(f'user {"made a selection" if clicked_ok else "cancelled"}')
     return pin.list_selection if clicked_ok else None
 
 
@@ -222,7 +224,7 @@ def do_change():
     if not all_selections_made():
         note_error('Missing selections – cannot proceed until form is filled out.')
         return
-    if not confirm('**Warning**: you are about to change records in FOLIO'
+    if not confirm('Warning: you are about to change records in FOLIO'
                    + ' permanently. Proceed?', danger = True):
         log(f'user declined to proceed')
         return
@@ -232,8 +234,7 @@ def do_change():
         put_grid([[
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
-                       onclick = lambda: stop()
-                       ).style('text-align: right')
+                       onclick = lambda: stop()).style('text-align: right')
             ]], cell_widths = '85% 15%').style('margin: auto 17px auto 17px')
         folio = Folio()
         for count, id in enumerate(identifiers, start = 2):
