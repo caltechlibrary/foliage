@@ -93,14 +93,17 @@ CSS_CODE = '''
 html {
     position: relative;
 }
+
 body {
     padding-bottom: 66px;
 }
+
 .pywebio {
     min-height: calc(100vh - 70px);
     padding-top: 10px;
     padding-bottom: 1px; /* if set 0, safari has min-height issue */
 }
+
 footer {
     position: absolute;
     width: 100%;
@@ -108,34 +111,48 @@ footer {
     height: 58px !important;
     background-color: white !important;
 }
+
 .markdown-body table {
     display: inline-table;
 }
+
 .alert p {
     margin-bottom: 0
 }
+
 button {
     margin-bottom: 0 !important;
     filter: drop-shadow(1px 1px 2px #eee);
 }
+
 .btn {
     margin-bottom: 1px !important;
     min-width: 85px;
 }
+
 .btn-link {
     padding: 0
 }
-.btn-primary {
-    /* Weird 1px vertical misalignment. Don't know why I have to do this. */
-    margin-bottom: 1px
+
+/* Weird 1px vertical misalignment. Don't know why I have to do this. */
+.btn-danger, .btn-secondary {
+    margin-bottom: 1pt !important;
 }
+
+/* Special case for danger buttons, to adjust due to effects of red color. */
+.btn-danger {
+    filter: drop-shadow(1px 1px 2px #dadada);
+}
+
 /* Special case for the quit button, to solve clipping and color perception. */
 button.btn-warning {
     margin: 5px !important;
 }
+
 .webio-tabs-content {
     padding-bottom: 0 !important;
 }
+
 #input-container {
     border-radius: .25rem;
     box-shadow: 10px 10px 20px #aaa;
@@ -146,19 +163,23 @@ button.btn-warning {
     width: 500px;
     left: calc(50% - 250px);
 }
+
 #input-cards.container {
     padding-left: 0 !important;
     padding-right: 0 !important;
     border-radius: .25rem;
 }
+
 textarea.form-control[readonly] {
     background: repeating-linear-gradient(-45deg, #fff, #f6f6f6 8px);
 }
+
 .spinner-border {
     position: absolute;
     left: calc(50% - 1em);
     top: 7em;
 }
+
 .modal-lg {
     max-width: 90%;
 }
@@ -234,7 +255,7 @@ def confirm(question, danger = False):
     pins = [
         put_markdown(question).style('margin-bottom: 1em'),
         put_buttons([
-            {'label': 'Cancel', 'value': False},
+            {'label': 'Cancel', 'value': False, 'color': 'secondary'},
             {'label': 'OK',     'value': True, 'color': ok_color},
         ], onclick = clk).style('float: right')
     ]
