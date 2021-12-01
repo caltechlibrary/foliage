@@ -11,7 +11,7 @@ file "LICENSE" for more information.
 
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait
+from   commonpy.interrupt import wait, reset
 import json
 from   pywebio.input import input, select, checkbox, radio
 from   pywebio.input import NUMBER, TEXT, input_update, input_group
@@ -94,8 +94,8 @@ def do_delete():
     if not pin.textbox_delete:
         note_error('Please input at least one barcode or other type of id.')
         return
-    if not confirm('WARNING: you are about to delete records in FOLIO'
-                   + ' permanently. This cannot be undone.\\n\\nProceed?'):
+    if not confirm('**Warning**: you are about to delete records from FOLIO'
+                   + ' permanently. Proceed?', danger = True):
         return
     with use_scope('output', clear = True):
         identifiers = unique_identifiers(pin.textbox_delete)

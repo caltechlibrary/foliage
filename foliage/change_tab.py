@@ -222,8 +222,8 @@ def do_change():
     if not all_selections_made():
         note_error('Missing selections – cannot proceed until form is filled out.')
         return
-    if not confirm('WARNING: you are about to change records in FOLIO'
-                   + ' permanently. This cannot be undone.\\n\\nProceed?'):
+    if not confirm('**Warning**: you are about to change records in FOLIO'
+                   + ' permanently. Proceed?', danger = True):
         log(f'user declined to proceed')
         return
     reset()
