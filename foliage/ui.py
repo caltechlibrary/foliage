@@ -26,6 +26,7 @@ from   pywebio.session import run_js, eval_js
 from   rich import print
 from   rich.panel import Panel
 from   rich.style import Style
+import threading
 
 if __debug__:
     from sidetrack import set_debug, log
@@ -218,9 +219,31 @@ def note_error(text, popup = True):
         print(Panel(text, style = Style.parse('red'), width = width))
 
 
-def confirm(question):
-    log(f'running JS function to confirm: {antiformat(question)}')
-    return eval_js(f'confirm("{question}")')
+def confirm(question, danger = False):
+    log(f'asking user to confirm: {antiformat(question)}')
+
+    event = threading.Event()
+    clicked_ok = False
+
+    def clk(val):
+        nonlocal clicked_ok
+        clicked_ok = val
+        event.set()
+
+    ok_color = 'danger' if danger else 'primary'
+    pins = [
+        put_markdown(question).style('margin-bottom: 1em'),
+        put_buttons([
+            {'label': 'Cancel', 'value': False},
+            {'label': 'OK',     'value': True, 'color': ok_color},
+        ], onclick = clk).style('float: right')
+    ]
+    popup(title = 'Confirmation', content = pins, closable = False)
+    event.wait()
+    close_popup()
+    wait(0.25)                           # Give time for popup to go away.
+
+    return clicked_ok
 
 
 def notify(msg):
@@ -235,7 +258,7 @@ def stop_processbar():
 def quit_app(ask_confirm = True):
     log(f'quitting (ask = {ask_confirm})')
     wait(0.25)
-    if not ask_confirm or confirm('This will exit Foliage. Proceed?'):
+    if not ask_confirm or confirm('This will exit Foliage. Proceed?', danger = True):
         log(f'running JS function close_window()')
         run_js('close_window()')
         wait(0.5)
