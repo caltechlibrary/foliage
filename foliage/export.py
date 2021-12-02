@@ -93,11 +93,9 @@ def export_csv(records, kind):
     # are lists, but with different numbers of elements. So we can't just
     # look at one record to figure out all the columns we need: we have to
     # look at _all_ records and create a maximal set before we write the CSV.
-    columns = set()
-    for item_dict in records:
-        columns.update(item_dict.keys())
+    columns = set(flattened(record.keys() for record in records))
 
-    # Resort the column names to move the name & id fields to the front.
+    # Sort the column names to move the name & id fields to the front.
     name_key = NAME_KEYS[kind] if kind in NAME_KEYS else 'name'
     def name_id_key(column_name):
         return (column_name != name_key, column_name != 'id', column_name)
