@@ -136,7 +136,8 @@ button {
 }
 
 /* Weird 1px vertical misalignment. Don't know why I have to do this. */
-.btn-danger, .btn-secondary {
+
+.btn-danger, .btn-primary, .btn-secondary {
     margin-bottom: 1pt !important;
 }
 
