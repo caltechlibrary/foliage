@@ -18,7 +18,7 @@ file "LICENSE" for more information.
 #  ╰────────────────────── Notice ── Notice ── Notice ─────────────────────╯
 
 __version__     = '0.0.4'
-__description__ = 'Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API'
+__description__ = 'Foliage: a tool to do bulk changes in FOLIO using the OKAPI API'
 __url__         = 'https://github.com/caltechlibrary/foliage'
 __author__      = 'Mike Hucka'
 __email__       = 'helpdesk@library.caltech.edu'

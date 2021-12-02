@@ -1,7 +1,7 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "description": "Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API",
+  "description": "Foliage: a tool to do bulk changes in FOLIO using the OKAPI API",
   "name": "foliage",
   "codeRepository": "https://github.com/caltechlibrary/foliage",
   "issueTracker": "https://github.com/caltechlibrary/foliage/issues",
