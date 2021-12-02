@@ -26,6 +26,7 @@ from   pywebio.session import run_js, eval_js
 from   rich import print
 from   rich.panel import Panel
 from   rich.style import Style
+import sys
 import threading
 
 if __debug__:
@@ -225,6 +226,9 @@ def note_info(text, popup = True):
 def note_warn(text, popup = True):
     '''Show a warning toast message.'''
     log(antiformat(text))
+    if getattr(sys, 'frozen', False):
+        # Can't print if running from the PyInstaller-built application.
+        return
     if popup:
         toast(text, color = 'warn')
     else:
@@ -235,6 +239,9 @@ def note_warn(text, popup = True):
 def note_error(text, popup = True):
     '''Show an error toast message.'''
     log(antiformat(text))
+    if getattr(sys, 'frozen', False):
+        # Can't print if running from the PyInstaller-built application.
+        return
     if popup:
         toast(text, color = 'error')
     else:
