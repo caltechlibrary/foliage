@@ -31,6 +31,7 @@ app_name := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
 platform := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
 os       := $(subst $(platform),darwin,macos)
 zip_file := dist/$(os)/$(name)-$(version)-$(os).zip
+branch   := $(shell git rev-parse --abbrev-ref HEAD)
 
 
 # Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +84,6 @@ help:
 .SILENT: vars
 vars:
 	$(info Gathering data -- this takes a few moments ...)
-	$(eval branch    := $(shell git rev-parse --abbrev-ref HEAD))
 	$(eval repo	 := $(strip $(shell gh repo view | head -1 | cut -f2 -d':')))
 	$(eval api_url   := https://api.github.com)
 	$(eval id	 := $(shell curl -s $(api_url)/repos/$(repo) | jq '.id'))
