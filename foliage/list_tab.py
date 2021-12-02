@@ -29,7 +29,7 @@ from   sidetrack import set_debug, log
 import threading
 
 from   foliage.base_tab import FoliageTab
-from   foliage.export import export
+from   foliage.export import export_records
 from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   foliage.ui import confirm, notify, stop_processbar
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
@@ -126,7 +126,7 @@ def do_list():
             put_markdown(f'Found {len(types)} values for {cleaned_name}:'
                          ).style('margin-left: 17px; margin-top: 6px'),
             put_button('Export', outline = True,
-                       onclick = lambda: export(types, requested),
+                       onclick = lambda: export_records(types, requested),
                        ).style('text-align: right; margin-right: 17px'),
         ]).style('margin-top: 15px; margin-bottom: 14px')
         key = NAME_KEYS[requested] if requested in NAME_KEYS else 'name'

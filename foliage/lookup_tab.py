@@ -31,7 +31,7 @@ from   sidetrack import set_debug, log
 import threading
 
 from   foliage.base_tab import FoliageTab
-from   foliage.export import export
+from   foliage.export import export_records
 from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   foliage.folio import unique_identifiers
 from   foliage.ui import confirm, notify, user_file, stop_processbar
@@ -319,4 +319,4 @@ def do_export(results, record_kind):
     log(f'exporting {record_kind} {pluralized("record", results, True)}')
     # Results is a dictionary; each value is a list of records. Unwind it.
     all_records = [item for value in results.values() for item in value]
-    export(all_records, record_kind)
+    export_records(all_records, record_kind)
