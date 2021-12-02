@@ -65,7 +65,7 @@ def tab_contents():
                          + ' select a field to change; choose the action (add,'
                          + ' change, delete); and fill in the current '
                          + ' and/or new value. All items will'
-                         + ' be changed the same way.').style('margin-bottom: 1em'),
+                         + ' be changed the same way.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -73,7 +73,7 @@ def tab_contents():
             put_grid([
                 [put_markdown('Identifiers of items to be changed:')],
                 [put_textarea('textbox_ids', rows = textarea_rows)],
-                ]),
+            ]),
             put_grid([
                 [put_text('Field to be changed:')],
                 [put_row([
@@ -82,9 +82,9 @@ def tab_contents():
                     put_textarea('chg_field', rows = 1, readonly = True),
                 ], size = '95px auto').style('text-align: right')],
                 [put_radio('chg_op', inline = True,
-                          options = [ ('Add value', 'add', True),
-                                      ('Change value', 'change'),
-                                      ('Delete value', 'delete')]
+                           options = [ ('Add value', 'add', True),
+                                       ('Change value', 'change'),
+                                       ('Delete value', 'delete')]
                            ).style(f'margin-bottom: 0.3em; {margin_adjust}')],
                 [put_text('Current field value:').style('opacity: 0.3')],
                 [put_row([
@@ -97,11 +97,13 @@ def tab_contents():
                     put_textarea('new_value', rows = 1, readonly = True),
                 ], size = '95px auto').style('z-index: 9')],
                 ]).style('margin-left: 12px'),
-            ]], cell_widths = '50% 50%'),
-        put_button('Clear', outline = True,
-                   onclick = lambda: clear_tab()).style('float: right; margin-left: 17px'),
-        put_button('Change records', color = 'danger',
-                   onclick = lambda: do_change()).style('float: left'),
+        ]], cell_widths = '50% 50%').style('margin-top: 1em'),
+        put_row([
+            put_button('Change records', color = 'danger',
+                       onclick = lambda: do_change()),
+            put_button('Clear', outline = True,
+                       onclick = lambda: clear_tab()).style('text-align: right'),
+        ])
     ]
 
 
@@ -145,6 +147,8 @@ def select_field_name():
         # Show the selected value.
         pin.chg_field = answer
         log(f'user selected field {answer}')
+    else:
+        log(f'user canceled field selection')
 
 
 def select_field_value(old_new):
@@ -170,9 +174,12 @@ def select_field_value(old_new):
         field = old_new + '_value'
         setattr(pin, field, val)
         log(f'user selected {old_new} field value {val}')
+    else:
+        log(f'user canceled value selection')
 
 
 def list_selection(title, values):
+    log(f'showing list selection popup')
     event = threading.Event()
     clicked_ok = False
 

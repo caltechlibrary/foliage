@@ -66,16 +66,15 @@ def tab_contents():
         ]], cell_widths = 'auto 100px'),
         put_textarea('textbox_delete', rows = 4),
         put_row([
-            put_button('Delete FOLIO records', color = 'danger',
+            put_button('Delete records', color = 'danger',
                        onclick = lambda: do_delete()),
-            put_text(''),    # Adds a column, pushing next item to the right.
             put_button('Clear', outline = True,
                        onclick = lambda: clear_tab()).style('text-align: right')
         ])
     ]
 
 
-# Miscellaneous helper functions.
+# Implementation of tab functionality.
 # .............................................................................
 
 def clear_tab():
@@ -219,17 +218,13 @@ def delete_instance(folio, record, for_id = None):
 
     # Starting at the bottom, delete the item records.
     items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM)
-    tell_warning(f'Deleting {pluralized("item record", items, True)} due to'
-                 + f' the deletion of instance record {inst_id}.')
     for item in items:
-        delete_item(folio, item, for_id)
+        delete_item(folio, item, inst_id)
 
     # Now delete the holdings records.
     holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS)
-    tell_warning(f'Deleting {pluralized("holdings record", holdings, True)} due to'
-                 + f' the deletion of instance record {inst_id}.')
     for hr in holdings:
-        delete_holdings(folio, hr, for_id)
+        delete_holdings(folio, hr, inst_id)
 
     # Finally, the instance record. There are two parts to this.
     (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}/source-record')
