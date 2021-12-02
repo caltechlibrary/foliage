@@ -184,7 +184,7 @@ check-in-updates: vars
 	git diff-index --quiet HEAD $(edited) || \
 	    git commit -m"Update stored version number" $(edited)
 
-release-on-github: | vars update-init update-codemeta check-in-updated-files
+release-on-github: | vars update-init update-codemeta check-in-updates
 	$(eval tmp_file  := $(shell mktemp /tmp/release-notes-$(name).XXXX))
 	git push -v --all
 	git push -v --tags
