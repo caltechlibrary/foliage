@@ -5,14 +5,16 @@ authors:
     affiliation: "Caltech Library"
     given-names: Mike
     family-names: Hucka
-    orcid: "YOUR ORCID"
+    orcid: "0000-0001-9105-5960"
 cff-version: "1.1.0"
-date-released: RELEASE-DATE
-doi: DOI-VALUE
+date-released: 2021-12-02
+doi: 10.22002/D1.2201
 keywords: 
-  - KEYWORDS
+  - FOLIO
+  - batch operations
+  - desktop software
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/caltechlibrary/foliage"
-title: "Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API"
-version: "0.0.0"
+title: "Foliage: a tool to do bulk changes in FOLIO using the OKAPI API"
+version: "0.0.4"
 ...
