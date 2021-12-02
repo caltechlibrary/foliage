@@ -32,6 +32,7 @@ import sys
 import threading
 
 from   foliage.base_tab import FoliageTab
+from   foliage.export import export_data
 from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file
@@ -215,8 +216,29 @@ def stop():
     stop_processbar()
 
 
+results = []
+
+def succeeded(id, msg):
+    global results
+    results.append({'id': id, 'success': True, 'notes': msg})
+    tell_success(f'Successfully changed **{id}**: ' + msg + '.')
+
+
+def failed(id, msg):
+    global results
+    results.append({'id': id, 'success': False, 'notes': msg})
+    tell_failure(f'Failed to change **{id}**: ' + msg + '.')
+
+
+def skipped(id, msg):
+    global results
+    results.append({'id': id, 'success': False, 'notes': msg})
+    tell_warning(f'Skipped **{id}**: ' + msg + '.')
+
+
 def do_change():
     log(f'do_change invoked')
+    global results
     identifiers = unique_identifiers(pin.textbox_ids)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
@@ -229,6 +251,7 @@ def do_change():
         log(f'user declined to proceed')
         return
     reset_interrupts()
+    results = []
     with use_scope('output', clear = True):
         steps = len(identifiers) + 1
         put_grid([[
@@ -242,22 +265,23 @@ def do_change():
             try:
                 id_kind = folio.record_id_kind(id)
                 if id_kind == RecordIdKind.UNKNOWN:
-                    tell_failure(f'Could not recognize the type of id {id}.')
+                    failed(id, f'could not recognize this type of id')
                     continue
                 # FIXME update this when we support other record types.
                 elif id_kind not in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_HRID,
                                      RecordIdKind.ITEM_BARCODE]:
-                    tell_failure(f'{id} is not an item – skipping.')
+                    skipped(id, f'not an item record')
                     continue
                 records = folio.records(id, id_kind, RecordKind.ITEM)
                 if interrupted():
                     break
                 if not records or len(records) == 0:
-                    tell_failure(f'No item record(s) found for {id_kind} {id}.')
+                    failed(id, f'no item record(s) found for {id_kind} {id}.')
                     continue
                 # FIXME update this when support other record types.
                 known_fields[pin.chg_field].change(records[0])
             except Interrupted as ex:
+                log('stopping due to interruption')
                 break
             except Exception as ex:
                 tell_failure(f'Error: ' + str(ex))
@@ -271,7 +295,12 @@ def do_change():
             tell_warning('**Stopped**.')
         else:
             what = pluralized('item record', identifiers, True)
-            put_markdown(f'Finished changing {what}.').style('text-align: center')
+            put_grid([[
+                put_markdown(f'Finished changing {what}.').style('margin-top: 6px'),
+                put_button('Export summary', outline = True,
+                           onclick = lambda: export_data(results, 'change-results.csv'),
+                           ).style('text-align: right')
+            ]]).style('margin: auto 17px auto 17px')
 
 
 def change_location(record):
@@ -286,13 +315,11 @@ def change_location(record):
     field_key = known_fields[pin.chg_field].key
     if (current_value := record.get(field_key, None)):
         if pin.chg_op == 'add':
-            tell_warning(f'Item **{id}** has an existing value for field'
-                         + f' _{field_key}_ – skipping.')
+            skipped(id, f'item has an existing value for _{field_key}_')
             return
         # We're doing change or delete. Existing value must match expected one.
         if current_value != types[pin.old_value]['id']:
-            tell_warning(f'Item **{id}**\'s value for _{field_key}_ is not'
-                         + f' "{pin.old_value}" – leaving this record unchanged.')
+            skipped(id, f'value of field _{field_key}_ is not "{pin.old_value}"')
             return
         back_up_record(record)
         if pin.chg_op == 'change':
@@ -307,7 +334,7 @@ def change_location(record):
         record[field_key] = types[pin.new_value]['id']
     else:
         # It doesn't have a value, and we're not doing an add.
-        tell_warning(f'Item **{id}** has no field _{field_key}_ – skipping.')
+        skipped(id, f'item **{id}** has no field _{field_key}_')
         return
 
     if pin.chg_field == 'Permanent location':
@@ -320,8 +347,8 @@ def change_location(record):
         if (holdings := folio.records(holdings_id, RecordIdKind.HOLDINGS_ID)):
             holdings_record = holdings[0]
         else:
-            tell_failure(f'Cannot update permanent location of record **{id}**:'
-                         + f' unable to retrieve holdings record {holdings_id}.')
+            failed(id, f'cannot update permanent its location because its'
+                   + f' holdings record {holdings_id} could not be retrieved')
             return
 
         new_location_id = record['permanentLocation']['id']
@@ -340,11 +367,10 @@ def change_location(record):
             else:
                 # No holdings records found with the new location. Currently not
                 # handled. FIXME: support creating new holdings record.
-                tell_failure(f'Cannot change record **{id}**: parent instance'
-                             + f' record {inst_id} has no holdings record with'
-                             + f' a permanent location of {new_location_name}.'
-                             + f' One will need to be created before item {id}\'s'
-                             + f' permanent location can be set there.')
+                failed(id, f'the parent instance {inst_id} has no holdings record'
+                       + f' with a permanent location of {new_location_name}.'
+                       + f' One will need to be created before item {id}\'s'
+                       + f' permanent location can be set there.')
                 return
 
     # If we made it this far, send the updated record to Folio.
@@ -355,14 +381,12 @@ def change_location(record):
         success, error = folio.write(record, f'/item-storage/items/{id}')
 
     # Report the outcome to the user.
-    name = pin.chg_field.lower()
     text = {'add': 'added to', 'change': 'changed in', 'delete': 'deleted from'}
     act  = text[pin.chg_op]
     if success:
-        tell_success(f'Field _{name}_ {act} item record **{id}**.')
+        succeeded(id, f'field _{field_key}_ {act} item record')
     else:
-        tell_failure(f'Field _{name}_ could not be {act} item record **{id}**: '
-                     + str(error))
+        failed(id, str(error))
 
 
 Field = namedtuple('Field', 'type key change')

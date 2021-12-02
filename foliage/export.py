@@ -37,7 +37,7 @@ from   foliage.ui import quit_app, reload_page, confirm, notify
 # Main functions.
 # .............................................................................
 
-def export(records, kind):
+def export_records(records, kind):
     log(f'exporting {pluralized(kind + " record", records, True)}')
     if not records:
         note_error('Nothing to export')
@@ -71,16 +71,41 @@ def export(records, kind):
 
     if pin.file_fmt == 'csv':
         log('user selected CSV format')
-        export_csv(records, kind)
+        export_records_csv(records, kind)
     else:
         log('user selected JSON format')
-        export_json(records, kind)
+        export_records_json(records, kind)
+
+
+def export_data(data_list, filename):
+    if not data_list:
+        return
+
+    # Assume all the items have the same structure and it is flat.
+    columns = [name.lower() for name in data_list[0].keys()]
+    # Try to find a good sort key, else default to 1st key found.
+    if 'id' in columns:
+        sort_key = 'id'
+    elif 'name' in columns:
+        sort_key = 'name'
+    else:
+        sort_key = data_list[0].keys()[0]
+
+    # Write into an in-memory, file-like object & tell PyWebIO to download it.
+    with StringIO() as tmp:
+        writer = csv.DictWriter(tmp, fieldnames = columns)
+        writer.writeheader()
+        for item_dict in sorted(data_list, key = lambda d: d[sort_key]):
+            writer.writerow(item_dict)
+        tmp.seek(0)
+        bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
+        download(filename, bytes)
 
 
 # Miscellaneous helper functions.
 # .............................................................................
 
-def export_csv(records, kind):
+def export_records_csv(records, kind):
     log(f'exporting {pluralized("record", records, True)} to CSV')
     # We have nested dictionaries, which can't be stored directly in CSV, so
     # first we have to flatten the dictionaries inside the list.
@@ -112,7 +137,7 @@ def export_csv(records, kind):
         download(f'{slugify(kind)}-records.csv', bytes)
 
 
-def export_json(records, kind):
+def export_records_json(records, kind):
     log(f'exporting {pluralized("record", records, True)} to JSON')
     with StringIO() as tmp:
         json.dump(records, tmp)
