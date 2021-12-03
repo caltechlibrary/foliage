@@ -445,6 +445,7 @@ def taskbar_widget():
         mainwindow = QtWidgets.QMainWindow()
         mainwindow.setWindowIcon(icon)
         mainwindow.setWindowTitle('Foliage')
+        mainwindow.setWindowFlags(QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowMinimizeButtonHint)
         mainwindow.showMinimized()
 
         # mainmenu = mainwindow.menuBar()
