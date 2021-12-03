@@ -174,17 +174,21 @@ update-init: vars
 	@sed -i .bak -e "s|^\(__email__ *=\).*|\1 '$(email)'|"	    $(init_file)
 	@sed -i .bak -e "s|^\(__license__ *=\).*|\1 '$(license)'|"  $(init_file)
 
-update-codemeta: vars
+update-meta: vars
 	@sed -i .bak -e "/version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" codemeta.json
+
+update-citation: vars
+	@sed -i .bak -e "/^version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" CITATION.cff
+
 
 edited := codemeta.json $(init_file)
 
-check-in-updates: vars
+commit-updates: vars
 	git add $(edited)
 	git diff-index --quiet HEAD $(edited) || \
 	    git commit -m"Update stored version number" $(edited)
 
-release-on-github: | vars update-init update-codemeta check-in-updates
+release-on-github: | vars update-init update-meta update-citation commit-updates
 	$(eval tmp_file  := $(shell mktemp /tmp/release-notes-$(name).XXXX))
 	git push -v --all
 	git push -v --tags
@@ -210,12 +214,15 @@ print-instructions:;
 	$(info ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛)
 	@echo ""
 
-update-doi: 
+update-doi: vars
 	sed -i .bak -e 's|/api/record/[0-9]\{1,\}|/api/record/$(doi_tail)|' README.md
 	sed -i .bak -e 's|edu/records/[0-9]\{1,\}|edu/records/$(doi_tail)|' README.md
-	git add README.md
+	sed -i .bak -e '/doi:/ s|10.22002/[0-9]\{1,\}|10.22002/$(doi_tail)|' CITATION.cff
+	git add README.md CITATION.cff
 	git diff-index --quiet HEAD README.md || \
-	    (git commit -m"Update DOI" README.md && git push -v --all)
+	     (git commit -m"Update DOI" README.md && git push -v --all)
+	git diff-index --quiet HEAD CITATION.cff || \
+	     (git commit -m"Update DOI" CITATION.cff && git push -v --all)
 
 create-dist: clean
 	python3 setup.py sdist bdist_wheel
@@ -254,5 +261,5 @@ clean-other:;
 	-find ./ -name 'Thumbs.db' -exec rm -f {} \;
 	-rm -rf .cache
 
-.PHONY: release release-on-github update-init update-codemeta \
+.PHONY: release release-on-github update-init update-meta update-citation \
 	print-instructions create-dist clean test-pypi pypi
