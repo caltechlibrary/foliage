@@ -28,5 +28,9 @@ ECHO Running PyInstaller ...
 
 python -m PyInstaller --distpath dist/win --clean --noconfirm pyinstaller-win32.spec
 
+ECHO Creating ZIP file
+
+python dev/windows/create-zip.py -o -d dist/win dist/win/Foliage.exe
+
 ECHO "make.bat" finished.
 ECHO The .exe will be in the "dist" subdirectory.
