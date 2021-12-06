@@ -449,6 +449,23 @@ def close_splash_screen():
 
 
 def taskbar_widget():
+    # The use of a PyQt widget is the simplest way I found to create a
+    # taskbar widget.  Our widget is minimal and only has a single
+    # right-click action, for "exit".  Still, the most frustrating part of
+    # this scheme is that the PyQt widget must run in a thread because the
+    # app.exec_() is a blocking call.  That leads to a problem about how to
+    # exit Foliage if the user quits the taskbar widget.  The PyQt thread
+    # cannot issue PyWebIO calls because those can only be issued from the
+    # PyWebIO thread, so the widget itself can't call our quit_app().  The
+    # widget function also can't throw SystemExit because it won't end up in
+    # the main thread.  After considerable time and many rabbit holes, I hit
+    # on the approach of (1) making the quit button in the UI use a PyWebIO
+    # pin object, so that testing for quit is part of the main event loop;
+    # (2) making the widget function set a value in a substructured object
+    # when the user exits the widget, so that the caller can test it; and (3)
+    # using a timeout on the PyWebIO wait in the main foliage() "while True"
+    # loop, so it can periodically test the value of the structured object.
+
     # We return a structured type, because the value needs to be set inside a
     # thread but we need to have a handle on it from the outside.
     widget_info = {'running': True}
@@ -479,10 +496,12 @@ def taskbar_widget():
 
         nonlocal widget_info
         log('exec\'ing Qt app')
+        # The following call will block until the widget is exited (by the user
+        # right-clicking on the widget and selecting "exit").
         app.exec_()
-        # If the user quits the taskbar widget, exit Foliage.  This widget is
-        # running in a separate thread, so throwing SystemExit won't end up
-        # being caught in the main try-except. You can't call PyWebIO either.
+
+        # If the user right-clicks on the widget in the taskbar and chooses
+        # exit, we end up here. Set a flag to tell the main loop what happened.
         log('taskbar widget returned from exec_()')
         widget_info['running'] = False
 
@@ -490,7 +509,8 @@ def taskbar_widget():
     log(f'starting thread for creating taskbar icon widget')
     thread = Thread(target = show_widget, args = ())
     thread.start()
-
+    # Note that we never join() the thread, because that would block.  We start
+    # the widget thread & return so the caller can proceed to its own event loop.
     return widget_info
 
 
