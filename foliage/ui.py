@@ -147,11 +147,6 @@ button {
     filter: drop-shadow(1px 1px 2px #dadada);
 }
 
-/* Special case for the quit button, to solve clipping and color perception. */
-button.btn-warning {
-    margin: 5px !important;
-}
-
 .webio-tabs-content {
     padding-bottom: 0 !important;
 }

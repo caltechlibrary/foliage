@@ -222,9 +222,10 @@ def foliage():
              ' the network. This web page is its user interface.'
              '</div>').style('width: 85%')
     put_tabs([tab.contents() for tab in _TABS]).style('padding-bottom: 16px')
-    put_button('Quit Foliage', color = 'warning', onclick = lambda: quit_app()
-               ).style('position: absolute; bottom: 20px;'
-                       + 'left: calc(50% - 3.5em); z-index: 2')
+    put_actions('quit',
+                buttons = [{'label': 'Quit', 'value': True, 'color': 'warning'}]
+                ).style('position: absolute; bottom: 0px;'
+                        + 'left: calc(50% - 3em); z-index: 2')
     advise_demo_mode()
     close_splash_screen()
 
@@ -245,11 +246,14 @@ def foliage():
 
     # Create a single dict from all the separate pin_watchers dicts.
     watchers  = dict(ChainMap(*[tab.pin_watchers() for tab in _TABS]))
-    pin_names = list(watchers.keys())
+    pin_names = ['quit'] + list(watchers.keys())
     log(f'entering pin handler loop for pins {pin_names}')
     while True:
         # Block, waiting for a change event on any of the pins being watched.
         changed = pin_wait_change(pin_names)
+        if changed['name'] == 'quit':
+            quit_app()
+            continue
         # Find handler associated w/ pin name & call it with value from event.
         name = changed["name"]
         log(f'invoking pin callback for {name}')
@@ -431,7 +435,7 @@ def taskbar_widget():
     # a thread but we need to have a handle on it from the outside.
     widget_info = {'app': None}
 
-    def show_tray():
+    def show_widget():
         from PyQt5 import QtGui, QtWidgets, QtCore
 
         log('creating Qt app for producing taskbar icon')
@@ -452,10 +456,15 @@ def taskbar_widget():
         widget_info['app'] = app
         log('exec\'ing Qt app')
         app.exec_()
+        # If the user quits the taskbar widget, exit Foliage.  This widget is
+        # running in a separate thread, so throwing SystemExit won't end up
+        # being caught in the main try-except. You can't call PyWebIO either.
+        log('taskbar widget returned from exec_()')
+
 
     log(f'starting thread for creating taskbar icon widget')
     from threading import Thread
-    thread = Thread(target = show_tray, args = ())
+    thread = Thread(target = show_widget, args = ())
     thread.start()
 
     return widget_info
