@@ -131,12 +131,10 @@ def do_list():
         ]).style('margin-top: 15px; margin-bottom: 14px')
         key = NAME_KEYS[requested] if requested in NAME_KEYS else 'name'
         rows = []
-        type_list = [(item[key], item['id']) for item in types]
-        for name, id in type_list:
+        for item in types:
+            name, id = item[key], item['id']
             title = f'Data for {cleaned_name} value "{name.title()}"'
-            action = lambda: show_record(title, id, requested)
-            rows.append([name,
-                         link(id, action).style('margin-top: 0.25em; margin-bottom: 0.5em'),
+            rows.append([name, link_button(name, id, title, requested),
                          copy_button(id).style('padding: 0; margin-right: 13px')])
 
         contents = [[put_markdown('**Name**'), put_markdown('**Id**'), put_text('')]]
@@ -170,8 +168,10 @@ def show_record(title, id, record_type):
     close_popup()
 
 
-def link(name, action):
-    return put_button(name, onclick = action, link_style = True).style('margin-left: 0')
+def link_button(name, id, title, record_type):
+    return put_button(id, link_style = True,
+                      onclick = lambda: show_record(title, id, record_type),
+                      ).style('margin-left: 0; margin-top: 0.25em; margin-bottom: 0.5em')
 
 
 def copy_button(text):
