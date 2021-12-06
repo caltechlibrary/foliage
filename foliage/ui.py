@@ -221,7 +221,7 @@ def note_info(text, popup = True):
 def note_warn(text, popup = True):
     '''Show a warning toast message.'''
     log(antiformat(text))
-    if getattr(sys, 'frozen', False):
+    if pyinstaller_app():
         # Can't print if running from the PyInstaller-built application.
         return
     if popup:
@@ -234,7 +234,7 @@ def note_warn(text, popup = True):
 def note_error(text, popup = True):
     '''Show an error toast message.'''
     log(antiformat(text))
-    if getattr(sys, 'frozen', False):
+    if pyinstaller_app():
         # Can't print if running from the PyInstaller-built application.
         return
     if popup:
@@ -326,3 +326,10 @@ def user_file(msg):
     if result and result['filename'] != UPLOAD_CANCEL_MARKER:
         return result['content'].decode()
     return None
+
+
+def pyinstaller_app():
+    '''Return True if we are running as an app created using PyInstaller.'''
+    # This function is for the sake of making code more readable, because
+    # the purpose of testing the following condition is not at all obvious.
+    return getattr(sys, 'frozen', False)
