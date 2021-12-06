@@ -66,7 +66,7 @@ from   foliage.folio import Folio
 from   foliage.list_tab import ListTab
 from   foliage.lookup_tab import LookupTab
 from   foliage.other_tab import OtherTab
-from   foliage.ui import quit_app, reload_page, confirm, notify
+from   foliage.ui import quit_app, reload_page, confirm, notify, pyinstaller_app
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
 
@@ -139,7 +139,7 @@ the credentials again.
     log('='*8 + f' started {timestamp()} ' + '='*8)
 
     config_debug(debug)                # Set up debugging before anything else.
-    config_interrupt(raise_exception = Interrupted)
+    config_signals()
     config_backup_dir(None if backup_dir == 'B' else backup_dir)
     config_credentials(None if creds_file == 'C' else creds_file, not no_keyring)
     config_port(8080 if port == 'P' else port)
@@ -150,8 +150,6 @@ the credentials again.
 
     exception = exception_info = widget = None
     try:
-        widget = taskbar_widget()
-
         log('configuring PyWebIO server')
         pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
 
@@ -228,6 +226,7 @@ def foliage():
                         + 'left: calc(50% - 3em); z-index: 2')
     advise_demo_mode()
     close_splash_screen()
+    widget = taskbar_widget()
 
     # Make sure we have a network before trying to test Folio creds.
     if not network_available:
@@ -250,10 +249,14 @@ def foliage():
     log(f'entering pin handler loop for pins {pin_names}')
     while True:
         # Block, waiting for a change event on any of the pins being watched.
-        changed = pin_wait_change(pin_names)
-        if changed['name'] == 'quit':
-            quit_app()
+        # The timeout is so we can check if the user quit the taskbar widget.
+        changed = pin_wait_change(pin_names, timeout = 1)
+        if not changed and widget['running']:
             continue
+        if not widget['running'] or changed['name'] == 'quit':
+            log('detected quit action')
+            quit_app(ask_confirm = widget['running'])
+            continue                    # In case the user cancels the exit.
         # Find handler associated w/ pin name & call it with value from event.
         name = changed["name"]
         log(f'invoking pin callback for {name}')
@@ -290,7 +293,7 @@ def config_debug(debug_arg):
                     note_error(f'Can\'t write debug ouput in {log_dir}', False)
                     exit()
             faulthandler.enable()
-            if not sys.platform.startswith('win'): # Can't use next part on Win
+            if not os.name == 'nt':     # Can't use next part on Windows.
                 import signal
                 from boltons.debugutils import pdb_on_signal
                 pdb_on_signal(signal.SIGUSR1)
@@ -312,13 +315,32 @@ def config_debug(debug_arg):
     except KeyboardInterrupt:
         # Need to catch this separately or else it will end up ignored by
         # virtue of the next clause catching all Exceptions.
-        exit()
+        os._exit()
     except Exception as ex:
         note_warn(f'Unable to create log file {antiformat(log_file)}', False)
 
     # Make settings accessible in other parts of the program.
     os.environ['DEBUG'] = str(debug_arg != 'OUT')
     os.environ['LOG_FILE'] = (log_file or '-')
+
+
+def config_signals():
+    if os.name == 'nt' and pyinstaller_app():
+        # Our PyQt taskbar widget is problematic because PyQt uses signals
+        # and when you exit the widget, the signal it sends causes the
+        # main thread to terminate.  I couldn't solve this by catching
+        # signals, maybe because I just don't know how to do that properly
+        # on Windows.  Instead, this causes them to be ignored.  IMHO tha's
+        # OK when running as a GUI app b/c it's hard for the user to ^C it.
+        import signal
+        import win32api
+        import ctypes
+        log('configuring signals to be ignored')
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        win32api.SetConsoleCtrlHandler(None, True)
+        ctypes.windll.kernel32.SetConsoleCtrlHandler(None, True)
+    else:
+        config_interrupt(raise_exception = Interrupted)
 
 
 def config_backup_dir(backup_dir):
@@ -427,16 +449,19 @@ def close_splash_screen():
 
 
 def taskbar_widget():
-    # Taskbar code is not currently relevant on macOS.
+    # We return a structured type, because the value needs to be set inside a
+    # thread but we need to have a handle on it from the outside.
+    widget_info = {'running': True}
+
+    # The taskbar is not currently relevant on macOS.  The caller only cares
+    # about when the widget exits, so on macOS, pretend it's always running.
     if sys.platform.startswith('darwin'):
-        return None
+        return widget_info
 
-    # Need to use a structured type, because the value needs to be set inside
-    # a thread but we need to have a handle on it from the outside.
-    widget_info = {'app': None}
-
+    # The taskbar widget is implemented using PyQt and runs in a subthread.
     def show_widget():
         from PyQt5 import QtGui, QtWidgets, QtCore
+        from PyQt5.QtCore import Qt
 
         log('creating Qt app for producing taskbar icon')
         app = QtWidgets.QApplication([])
@@ -446,24 +471,23 @@ def taskbar_widget():
         icon.addFile(join(data_dir, 'foliage-icon-128x128.png'), QtCore.QSize(128,128))
         icon.addFile(join(data_dir, 'foliage-icon-64x64.png'),   QtCore.QSize(64,64))
         app.setWindowIcon(icon)
-        mainwindow = QtWidgets.QMainWindow()
-        mainwindow.setWindowIcon(icon)
-        mainwindow.setWindowTitle('Foliage')
-        mainwindow.setWindowFlags(QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowMinimizeButtonHint)
-        mainwindow.showMinimized()
+        mw = QtWidgets.QMainWindow()
+        mw.setWindowIcon(icon)
+        mw.setWindowTitle('Foliage')
+        mw.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint)
+        mw.showMinimized()
 
         nonlocal widget_info
-        widget_info['app'] = app
         log('exec\'ing Qt app')
         app.exec_()
         # If the user quits the taskbar widget, exit Foliage.  This widget is
         # running in a separate thread, so throwing SystemExit won't end up
         # being caught in the main try-except. You can't call PyWebIO either.
         log('taskbar widget returned from exec_()')
+        widget_info['running'] = False
 
-
-    log(f'starting thread for creating taskbar icon widget')
     from threading import Thread
+    log(f'starting thread for creating taskbar icon widget')
     thread = Thread(target = show_widget, args = ())
     thread.start()
 
