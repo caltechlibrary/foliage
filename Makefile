@@ -20,18 +20,19 @@ TEST := $(foreach p,$(PROGRAMS_NEEDED),\
 # Set some basic variables.  These are quick to set; we set additional
 # variables using "set-vars" but only when the others are needed.
 
-name	 := $(strip $(shell awk -F "=" '/^name/ {print $$2}' setup.cfg))
-version	 := $(strip $(shell awk -F "=" '/^version/ {print $$2}' setup.cfg))
-url	 := $(strip $(shell awk -F "=" '/^url/ {print $$2}' setup.cfg))
-desc	 := $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
-author	 := $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
-email	 := $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
-license	 := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
-app_name := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
-platform := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
-os       := $(subst $(platform),darwin,macos)
-zip_file := dist/$(os)/$(name)-$(version)-$(os).zip
-branch   := $(shell git rev-parse --abbrev-ref HEAD)
+name	  := $(strip $(shell awk -F "=" '/^name/ {print $$2}' setup.cfg))
+version	  := $(strip $(shell awk -F "=" '/^version/ {print $$2}' setup.cfg))
+url	  := $(strip $(shell awk -F "=" '/^url/ {print $$2}' setup.cfg))
+desc	  := $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
+author	  := $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
+email	  := $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
+license	  := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
+app_name  := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
+platform  := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
+os	  := $(subst $(platform),darwin,macos)
+init_file := $(name)/__init__.py
+zip_file  := dist/$(os)/$(name)-$(version)-$(os).zip
+branch	  := $(shell git rev-parse --abbrev-ref HEAD)
 
 
 # Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,7 +92,6 @@ vars:
 	$(eval doi_url	 := $(shell curl -sILk $(id_url) | grep Locat | cut -f2 -d' '))
 	$(eval doi	 := $(subst https://doi.org/,,$(doi_url)))
 	$(eval doi_tail  := $(lastword $(subst ., ,$(doi))))
-	$(eval init_file := $(name)/__init__.py)
 	$(info Gathering data -- this takes a few moments ... Done.)
 
 report: vars
@@ -181,7 +181,7 @@ update-citation: vars
 	@sed -i .bak -e "/^version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" CITATION.cff
 
 
-edited := codemeta.json $(init_file)
+edited := codemeta.json $(init_file) CITATION.cff
 
 commit-updates: vars
 	git add $(edited)
