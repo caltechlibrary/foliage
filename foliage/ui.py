@@ -15,6 +15,7 @@ from   contextlib import contextmanager
 from   decouple import config
 import os
 from   os.path import exists, dirname, join, basename, abspath
+from   PyQt5.QtWidgets import QApplication, QMessageBox
 import pywebio
 from   pywebio.input import input, file_upload
 from   pywebio.output import put_text, put_markdown, put_row, put_html
@@ -187,82 +188,29 @@ textarea.form-control[readonly] {
 # Exported functions
 # .............................................................................
 
-# Summary of the scheme below:
-#   - "tell" functions print a message in the output area
-#   - "note" functions print a "toast" message shown temporarily across the top.
-# Warning & error note functions print to the console if popup == False.
-# The info note function just doesn't print anything if popup == False.
-#
-# Since note_* functions may be called before the PyWebIO GUI system has
-# started, we need alternative approaches for different cases.
-#
-#                 Has the PyWebIO GUI started?
-#                          /           \
-#                       yes            no
-#                       /               \
-#    Use PyWebIO functions     Are we in the PyInstaller-built app?
-#                                        /        \
-#                                      yes        no
-#                                      /           \
-#                             Use PyMsgBox      Print to command line
-
-def tell_success(text):
-    '''Wrapper around put_success(...) that also formats markdown.'''
-    log(antiformat(text))
-    put_success(put_markdown(text))
+def pyinstaller_app():
+    '''Return True if we are running as an app created using PyInstaller.'''
+    # This function is for the sake of making code more readable, because
+    # the purpose of testing the following condition is not at all obvious.
+    return getattr(sys, 'frozen', False)
 
 
-def tell_warning(text):
-    '''Wrapper around put_warning(...) that also formats markdown.'''
-    log(antiformat(text))
-    put_warning(put_markdown(text))
-
-
-def tell_failure(text):
-    '''Wrapper around put_failure(...) that also formats markdown.'''
-    log(antiformat(text))
-    put_error(put_markdown(text))
-
-
-def note_info(text):
-    '''Show an informational toast message.'''
-    log(antiformat(text))
-    if config('FOLIAGE_GUI_STARTED', cast = bool):
-        toast(text, color = 'green')
-    elif pyinstaller_app():
-        # We don't print info-level msgs in this case.
-        pass
-    else:
-        from rich import print
-        print('[green]' + text + '[/]')
-
-
-def note_warn(text):
-    '''Show a warning toast message.'''
-    log(antiformat(text))
-    if config('FOLIAGE_GUI_STARTED', cast = bool):
-        toast(text, color = 'warn')
-    elif pyinstaller_app():
-        import pymsgbox
-        pymsgbox.alert(text = text, title = 'Warning', timeout = 5000)
-    else:
-        from rich import print
-        width = 79 if len(text) > 75 else (len(text) + 4)
-        print(Panel(text, style = Style.parse('yellow'), width = width))
-
-
-def note_error(text):
-    '''Show an error toast message.'''
-    log(antiformat(text))
-    if config('FOLIAGE_GUI_STARTED', cast = bool):
-        toast(text, color = 'error')
-    elif pyinstaller_app():
-        import pymsgbox
-        pymsgbox.alert(text = text, title = 'Error', timeout = 5000)
-    else:
-        from rich import print
-        width = 79 if len(text) > 75 else (len(text) + 4)
-        print(Panel(text, style = Style.parse('red'), width = width))
+def close_splash_screen():
+    '''Close the PyInstaller-based splash screen shown during startup.'''
+    if not pyinstaller_app():
+        return
+    if sys.platform.startswith('darwin'):
+        # PyInstaller does not currently support splash screens on macOS.
+        return
+    log('closing splash screen')
+    try:
+        # pyi_splash only exists inside the PyInstaller-produced executable.
+        import pyi_splash
+        pyi_splash.close()
+    except Exception as ex:
+        # Only log an error if running the PyInstaller-produced app.
+        if pyinstaller_app():
+            log('exception trying to close splash screen: ' + str(ex))
 
 
 def confirm(question, danger = False):
@@ -349,8 +297,83 @@ def user_file(msg):
     return None
 
 
-def pyinstaller_app():
-    '''Return True if we are running as an app created using PyInstaller.'''
-    # This function is for the sake of making code more readable, because
-    # the purpose of testing the following condition is not at all obvious.
-    return getattr(sys, 'frozen', False)
+# Summary of the scheme below:
+#   - "tell" functions print a message in the output area
+#   - "note" functions print a "toast" message shown temporarily across the top.
+# Warning & error note functions print to the console if popup == False.
+# The info note function just doesn't print anything if popup == False.
+#
+# Since note_* functions may be called before the PyWebIO GUI system has
+# started, we need alternative approaches for different cases.
+#
+#                 Has the PyWebIO GUI started?
+#                          /           \
+#                       yes            no
+#                       /               \
+#    Use PyWebIO functions     Are we in the PyInstaller-built app?
+#                                        /        \
+#                                      yes        no
+#                                      /           \
+#                                 Use PyQt      Print to command line
+
+qtapp = QApplication([''])
+
+def tell_success(text):
+    '''Wrapper around put_success(...) that also formats markdown.'''
+    log(antiformat(text))
+    put_success(put_markdown(text))
+
+
+def tell_warning(text):
+    '''Wrapper around put_warning(...) that also formats markdown.'''
+    log(antiformat(text))
+    put_warning(put_markdown(text))
+
+
+def tell_failure(text):
+    '''Wrapper around put_failure(...) that also formats markdown.'''
+    log(antiformat(text))
+    put_error(put_markdown(text))
+
+
+def note_info(text):
+    '''Show an informational toast message.'''
+    log(antiformat(text))
+    if config('FOLIAGE_GUI_STARTED', cast = bool):
+        toast(text, color = 'green')
+    elif pyinstaller_app():
+        # We don't print info-level msgs in this case.
+        pass
+    else:
+        from rich import print
+        print('[green]' + text + '[/]')
+
+
+def note_warn(text):
+    '''Show a warning toast message.'''
+    log(antiformat(text))
+    if config('FOLIAGE_GUI_STARTED', cast = bool):
+        toast(text, color = 'warn')
+    elif pyinstaller_app():
+        # Close the PyInstaller app splash screen if it's still visible.
+        close_splash_screen()
+        QMessageBox.warning(None, "Foliage warning", 'Warning: ' + text)
+    else:
+        from rich import print
+        width = 79 if len(text) > 75 else (len(text) + 4)
+        print(Panel(text, style = Style.parse('yellow'), width = width))
+
+
+def note_error(text):
+    '''Show an error toast message.'''
+    log(antiformat(text))
+    if config('FOLIAGE_GUI_STARTED', cast = bool):
+        toast(text, color = 'error')
+    elif pyinstaller_app():
+        # Close the PyInstaller app splash screen if it's still visible.
+        close_splash_screen()
+        QMessageBox.critical(None, "Foliage error", 'Error: ' + text)
+    else:
+        from rich import print
+        width = 79 if len(text) > 75 else (len(text) + 4)
+        print(Panel(text, style = Style.parse('red'), width = width))
