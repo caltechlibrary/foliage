@@ -357,7 +357,8 @@ def note_warn(text):
     elif pyinstaller_app():
         # Close the PyInstaller app splash screen if it's still visible.
         close_splash_screen()
-        QMessageBox.warning(None, "Foliage warning", 'Warning: ' + text)
+        title = 'Foliage' if os.name == 'nt' else 'Foliage warning'
+        QMessageBox.warning(None, title, 'Warning: ' + text)
     else:
         from rich import print
         width = 79 if len(text) > 75 else (len(text) + 4)
@@ -372,7 +373,8 @@ def note_error(text):
     elif pyinstaller_app():
         # Close the PyInstaller app splash screen if it's still visible.
         close_splash_screen()
-        QMessageBox.critical(None, "Foliage error", 'Error: ' + text)
+        title = 'Foliage' if os.name == 'nt' else 'Foliage error'
+        QMessageBox.critical(None, title, 'Error: ' + text)
     else:
         from rich import print
         width = 79 if len(text) > 75 else (len(text) + 4)
