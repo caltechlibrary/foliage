@@ -12,6 +12,7 @@ file "LICENSE" for more information.
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
 from   contextlib import contextmanager
+from   decouple import config
 import os
 from   os.path import exists, dirname, join, basename, abspath
 import pywebio
@@ -23,7 +24,6 @@ from   pywebio.output import use_scope, set_scope, clear, remove
 from   pywebio.output import PopupSize, put_loading
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.session import run_js, eval_js
-from   rich import print
 from   rich.panel import Panel
 from   rich.style import Style
 import sys
@@ -192,6 +192,19 @@ textarea.form-control[readonly] {
 #   - "note" functions print a "toast" message shown temporarily across the top.
 # Warning & error note functions print to the console if popup == False.
 # The info note function just doesn't print anything if popup == False.
+#
+# Since note_* functions may be called before the PyWebIO GUI system has
+# started, we need alternative approaches for different cases.
+#
+#                 Has the PyWebIO GUI started?
+#                          /           \
+#                       yes            no
+#                       /               \
+#    Use PyWebIO functions     Are we in the PyInstaller-built app?
+#                                        /        \
+#                                      yes        no
+#                                      /           \
+#                             Use PyMsgBox      Print to command line
 
 def tell_success(text):
     '''Wrapper around put_success(...) that also formats markdown.'''
@@ -211,35 +224,43 @@ def tell_failure(text):
     put_error(put_markdown(text))
 
 
-def note_info(text, popup = True):
+def note_info(text):
     '''Show an informational toast message.'''
     log(antiformat(text))
-    if popup:
+    if config('FOLIAGE_GUI_STARTED', cast = bool):
         toast(text, color = 'green')
+    elif pyinstaller_app():
+        # We don't print info-level msgs in this case.
+        pass
+    else:
+        from rich import print
+        print('[green]' + text + '[/]')
 
 
-def note_warn(text, popup = True):
+def note_warn(text):
     '''Show a warning toast message.'''
     log(antiformat(text))
-    if pyinstaller_app():
-        # Can't print if running from the PyInstaller-built application.
-        return
-    if popup:
+    if config('FOLIAGE_GUI_STARTED', cast = bool):
         toast(text, color = 'warn')
+    elif pyinstaller_app():
+        import pymsgbox
+        pymsgbox.alert(text = text, title = 'Warning', timeout = 5000)
     else:
+        from rich import print
         width = 79 if len(text) > 75 else (len(text) + 4)
         print(Panel(text, style = Style.parse('yellow'), width = width))
 
 
-def note_error(text, popup = True):
+def note_error(text):
     '''Show an error toast message.'''
     log(antiformat(text))
-    if pyinstaller_app():
-        # Can't print if running from the PyInstaller-built application.
-        return
-    if popup:
+    if config('FOLIAGE_GUI_STARTED', cast = bool):
         toast(text, color = 'error')
+    elif pyinstaller_app():
+        import pymsgbox
+        pymsgbox.alert(text = text, title = 'Error', timeout = 5000)
     else:
+        from rich import print
         width = 79 if len(text) > 75 else (len(text) + 4)
         print(Panel(text, style = Style.parse('red'), width = width))
 
