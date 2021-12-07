@@ -151,10 +151,11 @@ the credentials again.
     exception = exception_info = widget = None
     try:
         log('configuring PyWebIO server')
-        pywebio.config(title = 'Foliage', js_code = JS_CODE, css_style = CSS_CODE)
+        pywebio.config(title = 'Foliage', description = 'FOLIo chAnGe Editor',
+                       js_code = JS_CODE, css_style = CSS_CODE)
 
-        # This uses a custom index page template created by copying the PyWebIO
-        # default and modifying it.
+        # This uses a custom index page template that was created by copying
+        # the PyWebIO default and modifying it.
         here = realpath(dirname(__file__))
         index_tpl = join(here, 'data', 'index.tpl')
         with open(index_tpl, encoding = 'utf-8') as index_tpl:
@@ -162,7 +163,7 @@ the credentials again.
             index_page_template = Template(index_tpl.read())
         pywebio.platform.utils._index_page_tpl = index_page_template
 
-        # cdn parameter makes it load PyWebIO JS code from our local copy.
+        # cdn = False makes it load PyWebIO JS code from our local copy.
         log('starting PyWebIO server')
         start_server(foliage, auto_open_webbrowser = True, cdn = False,
                      port = os.environ['PORT'], debug = os.environ['DEBUG'])
