@@ -313,15 +313,18 @@ def config_debug(debug_arg):
         # Turn on debug tracing to the destination we ended up deciding to use.
         set_debug(True, log_file or '-')
     except PermissionError:
-        note_warn(f'Permission denied creating log file {antiformat(log_file)}')
+        note_warn(f'Permission denied creating log file {antiformat(log_file)}'
+                  + ' -- debug log will not be written.')
     except FileNotFoundError:
-        note_warn(f'Cannot write log file {antiformat(log_file)}')
+        note_warn(f'Cannot write log file {antiformat(log_file)}'
+                  + ' -- debug log will not be written.')
     except KeyboardInterrupt:
         # Need to catch this separately or else it will end up ignored by
         # virtue of the next clause catching all Exceptions.
         os._exit()
     except Exception as ex:
-        note_warn(f'Unable to create log file {antiformat(log_file)}')
+        note_warn(f'Unable to create log file {antiformat(log_file)}'
+                  + ' -- debug log will not be written.')
 
     # Make settings accessible in other parts of the program.
     os.environ['DEBUG'] = str(debug_arg != 'OUT')
