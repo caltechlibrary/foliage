@@ -69,6 +69,7 @@ from   foliage.other_tab import OtherTab
 from   foliage.ui import quit_app, reload_page, confirm, notify, pyinstaller_app
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
+from   foliage.ui import close_splash_screen
 
 
 # Internal constants.
@@ -433,22 +434,6 @@ def advise_demo_mode():
             + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
     else:
         log('Demo mode not in effect')
-
-
-def close_splash_screen():
-    # PyInstaller does not currently support splash screens on macOS.
-    if sys.platform.startswith('darwin'):
-        return
-
-    log('closing splash screen')
-    try:
-        # pyi_splash only exists inside the PyInstaller-produced executable.
-        import pyi_splash
-        pyi_splash.close()
-    except Exception as ex:
-        # Only log an error if running the PyInstaller-produced app.
-        if getattr(sys, 'frozen', False):
-            log('exception trying to close splash screen: ' + str(ex))
 
 
 def taskbar_widget():
