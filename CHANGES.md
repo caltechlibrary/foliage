@@ -1,5 +1,14 @@
 # Change log for foliage
 
+## ★ Version 0.0.5 (2021-12-06) ★
+
+Changes relative to the previous release:
+
+* Fix bug in List UUIDs tab that caused the detailed records panel to always show the same record.
+* Fix problem that on Windows, errors occurring before the window was created would not be shown at all.
+* Make it so that exiting the taskbar widget will exit Foliage.
+
+
 ## ★ Version 0.0.4 (2021-12-02) ★
 
 Changes relative to the previous release:
