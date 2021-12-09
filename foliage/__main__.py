@@ -56,6 +56,7 @@ from   sidetrack import set_debug, log
 from   tornado.template import Template
 
 import foliage
+from   foliage import __version__
 from   foliage.change_tab import ChangeTab
 from   foliage.credentials import credentials_from_user, credentials_from_keyring
 from   foliage.credentials import use_credentials, credentials_complete
@@ -422,12 +423,19 @@ def config_port(port):
 
 
 def log_config():
-    log(f'backup_dir  = {config("BACKUP_DIR")}')
-    log(f'log_file    = {config("LOG_FILE")}')
-    log(f'creds_file  = {config("CREDS_FILE")}')
-    log(f'use_keyring = {config("USE_KEYRING")}')
-    log(f'port        = {config("PORT")}')
-    log(f'demo_mode   = {config("DEMO_MODE")}')
+    import platform
+    log(f'Foliage version = {__version__}')
+    log(f'system          = {platform.system()}')
+    if platform.system() == 'Darwin':
+        log(f'version         = {platform.mac_ver()[0]}')
+    else:
+        log(f'version         = {platform.version()}')
+    log(f'backup_dir      = {config("BACKUP_DIR")}')
+    log(f'log_file        = {config("LOG_FILE")}')
+    log(f'creds_file      = {config("CREDS_FILE")}')
+    log(f'use_keyring     = {config("USE_KEYRING")}')
+    log(f'port            = {config("PORT")}')
+    log(f'demo_mode       = {config("DEMO_MODE")}')
 
 
 def advise_demo_mode():
