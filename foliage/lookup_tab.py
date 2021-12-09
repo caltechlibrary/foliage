@@ -73,22 +73,25 @@ def tab_contents():
                                   ('Instance', RecordKind.INSTANCE),
                                   ('Loan', RecordKind.LOAN),
                                   ('User', RecordKind.USER)]),
-            put_markdown('_Note: loan records found using item, holdings,'
-                         + ' instance or user identifiers are **open** loans'
-                         + ' only. Likewise, user records found using'
-                         + ' item/holdings/instance/loan id\'s'
-                         + ' are based on **open** loans only._'),
-        ]], cell_widths = '39% 60%'),
+            put_checkbox("open_loans", inline = True,
+                         options = [('Search open loans only', True, True)],
+                         help_text = ('When searching for loans, selecting'
+                                      + ' this option limits searches to loans'
+                                      + ' marked "open".')),
+        ]], cell_widths = '55% 45%'),
         put_grid([[
-            put_radio('show_raw', inline = True,
-                      options = [('Summary format', 'summary', True),
-                                 ('Raw data format', 'json')],
-                      help_text = 'Controls the format of the output produced.'),
+            put_grid([[
+                put_text('Output format:'),
+            ],[
+                put_radio('show_raw', inline = True,
+                          options = [('Summary format', 'summary', True),
+                                     ('Raw data format', 'json')]),
+            ]]),
             put_checkbox("inventory_api", inline = True,
                          options = [('Use inventory API for items and instances',
                                      True, True)],
-                         help_text = 'When deselected, the storage API is used.'),
-        ]], cell_widths = '58% 42%'),
+                         help_text = 'When deselected, the FOLIO storage API is used.'),
+        ]], cell_widths = '55% 45%'),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
             put_text(''),    # Adds a column, pushing next item to the right.
@@ -180,7 +183,8 @@ def do_find():
                 if reuse_results:
                     records = _last_results.get(id)
                 else:
-                    records = folio.records(id, id_kind, record_kind, pin.inventory_api)
+                    records = folio.records(id, id_kind, record_kind,
+                                            pin.inventory_api, pin.open_loans)
                     _last_results[id] = records
                 if interrupted():
                     break

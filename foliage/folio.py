@@ -311,7 +311,8 @@ class Folio():
         return id_kind
 
 
-    def records(self, id, id_kind, requested = None, use_inventory = False):
+    def records(self, id, id_kind, requested = None, use_inventory = False,
+                open_loans_only = True):
         req = requested if requested else id_kind
         use_inv = 'using inventory API' if use_inventory else ''
         log(f'getting {req} record(s) for {id_kind} id {id} {use_inv}')
@@ -373,45 +374,53 @@ class Folio():
             elif id_kind == RecordIdKind.HOLDINGS_ID:
                 endpoint = f'/{module}/items?query=holdingsRecordId={id}&limit=10000'
             elif id_kind == RecordIdKind.HOLDINGS_HRID:
-                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings', False)
+                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings',
+                                        False, open_loans_only)
                 if not holdings:
                     return []
                 holdings_id = holdings[0]['id']
-                return self.records(holdings_id, RecordIdKind.HOLDINGS_ID, 'item', use_inventory)
+                return self.records(holdings_id, RecordIdKind.HOLDINGS_ID, 'item',
+                                    use_inventory, open_loans_only)
 
             # Given a user identifier.
             elif id_kind == RecordIdKind.USER_ID:
                 # Can't get items for a user directly.
                 log(f'need to find loans for user {id}')
-                loans = self.records(id, RecordIdKind.USER_ID, 'loan', use_inventory)
+                loans = self.records(id, RecordIdKind.USER_ID, 'loan',
+                                     use_inventory, open_loans_only)
                 if not loans:
                     return []
-                # Look for active loans only.
-                active = [loan for loan in loans if loan['status']['name'] == 'Open']
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
                 # The loans have item itemId's. Use that to retrieve item recs.
                 items = []
-                for loan in active:
+                for loan in loans:
                     if interrupted():
                         return []
                     item_id = loan['itemId']
-                    items += self.records(item_id, RecordIdKind.ITEM_ID, 'item', use_inventory)
+                    items += self.records(item_id, RecordIdKind.ITEM_ID, 'item',
+                                          use_inventory, open_loans_only)
                 return items
             elif id_kind == RecordIdKind.USER_BARCODE:
                 # Do the lookup using the user id.
-                records = self.records(id, RecordIdKind.USER_BARCODE, 'user', use_inventory)
+                records = self.records(id, RecordIdKind.USER_BARCODE, 'user',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 user_id = records[0]['id']
-                return self.records(user_id, RecordIdKind.USER_ID, 'item', use_inventory)
+                return self.records(user_id, RecordIdKind.USER_ID, 'item',
+                                    use_inventory, open_loans_only)
 
             # Given a loan identifier.
             elif id_kind == RecordIdKind.LOAN_ID:
                 # Have to use loan-storage and extract the item id.
-                records = self.records(id, id_kind, 'loan', use_inventory)
+                records = self.records(id, id_kind, 'loan',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 item_id = records[0]['itemId']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'item', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'item',
+                                    use_inventory, open_loans_only)
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
@@ -443,50 +452,62 @@ class Folio():
 
             # Given a holdings identifier.
             elif id_kind == RecordIdKind.HOLDINGS_ID:
-                holdings = self.records(id, RecordIdKind.HOLDINGS_ID, 'holdings', use_inventory)
+                holdings = self.records(id, RecordIdKind.HOLDINGS_ID, 'holdings',
+                                        use_inventory, open_loans_only)
                 if not holdings:
                     return []
                 instance_id = holdings[0]['instanceId']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'instance', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'instance',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.HOLDINGS_HRID:
-                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings', use_inventory)
+                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings',
+                                        use_inventory, open_loans_only)
                 if not holdings:
                     return []
                 instance_id = holdings[0]['instanceId']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'instance', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'instance',
+                                    use_inventory, open_loans_only)
 
             # Given a loan identifier.
             elif id_kind == RecordIdKind.LOAN_ID:
-                loans = self.records(id, RecordIdKind.LOAN_ID, 'loan', use_inventory)
+                loans = self.records(id, RecordIdKind.LOAN_ID, 'loan',
+                                     use_inventory, open_loans_only)
                 if not loans:
                     return []
                 item_id = loans[0]['itemId']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'instance', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'instance',
+                                    use_inventory, open_loans_only)
 
             # Given a user identifier.
             elif id_kind == RecordIdKind.USER_ID:
-                loans = self.records(id, RecordIdKind.USER_ID, 'loan', use_inventory)
+                loans = self.records(id, RecordIdKind.USER_ID, 'loan',
+                                     use_inventory, open_loans_only)
                 if not loans:
                     return []
-                active = [loan for loan in loans if loan['status']['name'] == 'Open']
-                item_ids = [loan['itemId'] for loan in active]
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
+                item_ids = [loan['itemId'] for loan in loans]
                 instances = []
                 for id in item_ids:
                     if interrupted():
                         return []
-                    instances += self.records(id, RecordIdKind.ITEM_ID, 'instance', use_inventory)
+                    instances += self.records(id, RecordIdKind.ITEM_ID, 'instance',
+                                              use_inventory, open_loans_only)
                 return instances
             elif id_kind == RecordIdKind.USER_BARCODE:
-                loans = self.records(id, RecordIdKind.USER_BARCODE, 'loan', use_inventory)
+                loans = self.records(id, RecordIdKind.USER_BARCODE, 'loan',
+                                     use_inventory, open_loans_only)
                 if not loans:
                     return []
-                active = [loan for loan in loans if loan['status']['name'] == 'Open']
-                item_ids = [loan['itemId'] for loan in active]
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
+                item_ids = [loan['itemId'] for loan in loans]
                 instances = []
                 for id in item_ids:
                     if interrupted():
                         return []
-                    instances += self.records(id, RecordIdKind.ITEM_ID, 'instance', use_inventory)
+                    instances += self.records(id, RecordIdKind.ITEM_ID, 'instance',
+                                              use_inventory, open_loans_only)
                 return instances
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
@@ -501,71 +522,93 @@ class Folio():
                 loans = self._folio('get', endpoint, data_extractor)
                 if not loans:
                     return []
-                return [loan for loan in loans if loan['status']['name'] == 'Open']
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
+                return loans
             elif id_kind == RecordIdKind.USER_BARCODE:
                 # Can't do this one directly, so get a user id.
-                user_records = self.records(id, RecordIdKind.USER_BARCODE, 'user', use_inventory)
+                user_records = self.records(id, RecordIdKind.USER_BARCODE, 'user',
+                                            use_inventory, open_loans_only)
                 if not user_records:
                     return []
                 user_id = user_records[0]['id']
-                return self.records(user_id, RecordIdKind.USER_ID, 'loan', use_inventory)
+                return self.records(user_id, RecordIdKind.USER_ID, 'loan',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.ITEM_ID:
                 endpoint = f'/loan-storage/loans?query=itemId=={id}&limit=10000'
                 data_extractor = partial(record_list, 'loans')
                 loans = self._folio('get', endpoint, data_extractor)
                 if not loans:
                     return []
-                return [loan for loan in loans if loan['status']['name'] == 'Open']
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
+                return loans
             elif id_kind == RecordIdKind.ITEM_BARCODE:
                 # Can't seem to use barcodes directly in loan-storage.
                 log(f'need to find item id for item barcode {id}')
-                records = self.records(id, RecordIdKind.ITEM_BARCODE, 'item', use_inventory)
+                records = self.records(id, RecordIdKind.ITEM_BARCODE, 'item',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 item_id = records[0]['id']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'loan', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'loan',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.ITEM_HRID:
                 log(f'need to find item id for item hrid {id}')
-                records = self.records(id, RecordIdKind.ITEM_HRID, 'item', use_inventory)
+                records = self.records(id, RecordIdKind.ITEM_HRID, 'item',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 item_id = records[0]['id']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'loan', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'loan',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.INSTANCE_ID:
                 # We have to get the item id's, and look up loans on each.
-                records = self.records(id, RecordIdKind.INSTANCE_ID, 'item', use_inventory)
+                records = self.records(id, RecordIdKind.INSTANCE_ID, 'item',
+                                       use_inventory, open_loans_only)
                 loans = []
                 for item in records:
-                    loans += self.records(item['id'], RecordIdKind.ITEM_ID, 'loan', use_inventory)
+                    loans += self.records(item['id'], RecordIdKind.ITEM_ID, 'loan',
+                                          use_inventory, open_loans_only)
                 if not loans:
                     return []
-                return [loan for loan in loans if loan['status']['name'] == 'Open']
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
+                return loans
             elif id_kind == RecordIdKind.INSTANCE_HRID:
                 # Get the instance record & do this again with the instance id.
-                records = self.records(id, RecordIdKind.INSTANCE_HRID, 'instance', use_inventory)
+                records = self.records(id, RecordIdKind.INSTANCE_HRID, 'instance',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 instance_id = records[0]['id']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.ACCESSION:
                 # Get the instance record & do this again with the instance id.
-                records = self.records(id, RecordIdKind.ACCESSION, 'instance', use_inventory)
+                records = self.records(id, RecordIdKind.ACCESSION, 'instance',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 instance_id = records[0]['id']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.HOLDINGS_ID:
-                holdings = self.records(id, RecordIdKind.HOLDINGS_ID, 'holdings', use_inventory)
+                holdings = self.records(id, RecordIdKind.HOLDINGS_ID, 'holdings',
+                                        use_inventory, open_loans_only)
                 if not holdings:
                     return []
                 instance_id = holdings[0]['instanceId']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.HOLDINGS_HRID:
-                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings', use_inventory)
+                holdings = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings',
+                                        use_inventory, open_loans_only)
                 if not holdings:
                     return []
                 instance_id = holdings[0]['instanceId']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'loan',
+                                    use_inventory, open_loans_only)
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
@@ -577,65 +620,84 @@ class Folio():
                 endpoint = f'/users?query=barcode={id}'
                 data_extractor = partial(record_list, 'users')
             elif id_kind == RecordIdKind.ITEM_ID:
-                records = self.records(id, RecordIdKind.ITEM_ID, 'loan', use_inventory)
+                records = self.records(id, RecordIdKind.ITEM_ID, 'loan',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 user_id = records[0]['userId']
-                return self.records(user_id, RecordIdKind.USER_ID, 'user', use_inventory)
+                return self.records(user_id, RecordIdKind.USER_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.ITEM_HRID:
-                records = self.records(id, RecordIdKind.ITEM_HRID, 'item', use_inventory)
+                records = self.records(id, RecordIdKind.ITEM_HRID, 'item',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 item_id = records[0]['id']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'user', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.ITEM_BARCODE:
-                records = self.records(id, RecordIdKind.ITEM_BARCODE, 'item', use_inventory)
+                records = self.records(id, RecordIdKind.ITEM_BARCODE, 'item',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 item_id = records[0]['id']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'user', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.INSTANCE_ID:
-                loans = self.records(id, RecordIdKind.INSTANCE_ID, 'loan', use_inventory)
+                loans = self.records(id, RecordIdKind.INSTANCE_ID, 'loan',
+                                     use_inventory, open_loans_only)
                 if not loans:
                     return []
-                active = [loan for loan in loans if loan['status']['name'] == 'Open']
-                user_ids = [loan['userId'] for loan in active]
+                if open_loans_only:
+                    loans = [ln for ln in loans if ln['status']['name'] == 'Open']
+                user_ids = [loan['userId'] for loan in loans]
                 user_records = []
                 for id in user_ids:
                     if interrupted():
                         return []
-                    user_records += self.records(id, RecordIdKind.USER_ID, 'user', use_inventory)
+                    user_records += self.records(id, RecordIdKind.USER_ID, 'user',
+                                                 use_inventory, open_loans_only)
                 return user_records
             elif id_kind == RecordIdKind.INSTANCE_HRID:
-                records = self.records(id, RecordIdKind.INSTANCE_HRID, 'instance', use_inventory)
+                records = self.records(id, RecordIdKind.INSTANCE_HRID, 'instance',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 record_id = records[0]['id']
-                return self.records(record_id, RecordIdKind.INSTANCE_ID, 'user', use_inventory)
+                return self.records(record_id, RecordIdKind.INSTANCE_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.ACCESSION:
-                records = self.records(id, RecordIdKind.ACCESSION, 'instance', use_inventory)
+                records = self.records(id, RecordIdKind.ACCESSION, 'instance',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 record_id = records[0]['id']
-                return self.records(record_id, RecordIdKind.INSTANCE_ID, 'user', use_inventory)
+                return self.records(record_id, RecordIdKind.INSTANCE_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.LOAN_ID:
-                records = self.records(id, RecordIdKind.LOAN_ID, 'loan', use_inventory)
+                records = self.records(id, RecordIdKind.LOAN_ID, 'loan',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 user_id = records[0]['userId']
-                return self.records(user_id, RecordIdKind.USER_ID, 'user', use_inventory)
+                return self.records(user_id, RecordIdKind.USER_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.HOLDINGS_ID:
-                records = self.records(id, RecordIdKind.HOLDINGS_ID, 'holdings', use_inventory)
+                records = self.records(id, RecordIdKind.HOLDINGS_ID, 'holdings',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 instance_id = records[0]['instanceId']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'user', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'user',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.HOLDINGS_HRID:
-                records = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings', use_inventory)
+                records = self.records(id, RecordIdKind.HOLDINGS_HRID, 'holdings',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 instance_id = records[0]['instanceId']
-                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'user', use_inventory)
+                return self.records(instance_id, RecordIdKind.INSTANCE_ID, 'user',
+                                    use_inventory, open_loans_only)
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
@@ -666,13 +728,16 @@ class Folio():
                 inst_id = instance_id_from_accession(id)
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={inst_id}&limit=10000'
             elif id_kind == RecordIdKind.LOAN_ID:
-                records = self.records(id, RecordIdKind.LOAN_ID, 'loan', use_inventory)
+                records = self.records(id, RecordIdKind.LOAN_ID, 'loan',
+                                       use_inventory, open_loans_only)
                 if not records:
                     return []
                 item_id = records[0]['itemId']
-                return self.records(item_id, RecordIdKind.ITEM_ID, 'holdings', use_inventory)
+                return self.records(item_id, RecordIdKind.ITEM_ID, 'holdings',
+                                    use_inventory, open_loans_only)
             elif id_kind == RecordIdKind.USER_ID:
-                loans = self.records(id, RecordIdKind.USER_ID, 'loan', use_inventory)
+                loans = self.records(id, RecordIdKind.USER_ID, 'loan',
+                                     use_inventory, open_loans_only)
                 if not loans:
                     return []
                 loan_ids = [loan['id'] for loan in loans]
@@ -680,13 +745,16 @@ class Folio():
                 for id in loan_ids:
                     if interrupted():
                         return []
-                    holdings_records += self.records(id, RecordIdKind.LOAN_ID, 'holdings', use_inventory)
+                    holdings_records += self.records(id, RecordIdKind.LOAN_ID, 'holdings',
+                                                     use_inventory, open_loans_only)
                 return holdings_records
             elif id_kind == RecordIdKind.USER_BARCODE:
-                user = self.records(id, RecordIdKind.USER_BARCODE, 'user', use_inventory)
+                user = self.records(id, RecordIdKind.USER_BARCODE, 'user',
+                                    use_inventory, open_loans_only)
                 if not user:
                     return []
-                return self.records(user['id'], RecordIdKind.USER_ID, 'holdings', use_inventory)
+                return self.records(user['id'], RecordIdKind.USER_ID, 'holdings',
+                                    use_inventory, open_loans_only)
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
