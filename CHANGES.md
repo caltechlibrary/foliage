@@ -1,5 +1,13 @@
 # Change log for foliage
 
+## ★ Version 0.0.6 () ★
+
+Changes relative to the previous release:
+
+* Changed the lookup tab to have a checkbox controlling whether only open loans are searched, or whether all loans are searched.
+* Revised the order of the tabs to put "lookup records" first, as this seems like a more useful default.
+
+
 ## ★ Version 0.0.5 (2021-12-06) ★
 
 Changes relative to the previous release:
