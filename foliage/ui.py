@@ -107,6 +107,10 @@ body {
     padding-bottom: 1px; /* if set 0, safari has min-height issue */
 }
 
+#output-container {
+    margin-bottom: 40px;
+}
+
 footer {
     position: absolute;
     width: 100%;
