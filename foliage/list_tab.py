@@ -65,7 +65,7 @@ def tab_contents():
                 {'label': 'Department types', 'value': TypeKind.DEPARTMENT},
                 {'label': 'Expense classes', 'value': TypeKind.EXPENSE_CLASS},
                 {'label': 'Fixed due date schedules', 'value': TypeKind.FIXED_DUE_DATE_SCHED},
-                {'label': 'Group types', 'value': TypeKind.GROUP},
+                {'label': 'Patron group types', 'value': TypeKind.GROUP},
                 {'label': 'Holdings types', 'value': TypeKind.HOLDINGS},
                 {'label': 'Holdings note types', 'value': TypeKind.HOLDINGS_NOTE},
                 {'label': 'Holdings source types', 'value': TypeKind.HOLDINGS_SOURCE},
