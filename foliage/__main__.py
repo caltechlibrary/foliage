@@ -79,7 +79,7 @@ from   foliage.ui import close_splash_screen
 _DIRS = AppDirs('Foliage', 'CaltechLibrary')
 '''Platform-specific directories for Foliage data.'''
 
-_TABS = [ListTab(), LookupTab(), ChangeTab(), DeleteTab(), OtherTab()]
+_TABS = [LookupTab(), ChangeTab(), DeleteTab(), ListTab(), OtherTab()]
 '''List of tabs making up the Foliage application.'''
 
 
