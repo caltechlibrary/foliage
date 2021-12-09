@@ -30,6 +30,7 @@ from   tempfile import NamedTemporaryFile
 import threading
 import webbrowser
 
+from   foliage import __version__
 from   foliage.base_tab import FoliageTab
 from   foliage.credentials import credentials_from_user, current_credentials
 from   foliage.credentials import use_credentials
@@ -79,6 +80,8 @@ def tab_contents():
             put_button('Show log file', onclick = lambda: show_log_file(),
                        ).style('margin-left: 20px; text-align: left'),
         ]], cell_widths = 'auto 170px', cell_heights = '29% 42% 29%'),
+        put_markdown(f'_You are running Foliage version {__version__}_.'
+                     ).style('margin-top: 1em; text-align: center')
     ]
 
 
