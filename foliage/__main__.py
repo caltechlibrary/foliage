@@ -468,6 +468,4 @@ def console_scripts_main():
 
 # The following allows users to invoke this using "python3 -m handprint".
 if __name__ == '__main__':
-    if pyinstaller_app():
-        print('main is in pyinstaller; sys.argv = ' + str(sys.argv))
     plac.call(main)
