@@ -343,7 +343,7 @@ def tell_failure(text):
 def note_info(text):
     '''Show an informational toast message.'''
     log(antiformat(text))
-    if config('FOLIAGE_GUI_STARTED', cast = bool):
+    if os.environ.get('FOLIAGE_GUI_STARTED', 'False') == 'True':
         toast(text, color = 'green')
     elif pyinstaller_app():
         # We don't print info-level msgs in this case.
@@ -356,7 +356,7 @@ def note_info(text):
 def note_warn(text):
     '''Show a warning toast message.'''
     log(antiformat(text))
-    if config('FOLIAGE_GUI_STARTED', cast = bool):
+    if os.environ.get('FOLIAGE_GUI_STARTED', 'False') == 'True':
         toast(text, color = 'warn')
     elif pyinstaller_app():
         # Close the PyInstaller app splash screen if it's still visible.
@@ -372,7 +372,7 @@ def note_warn(text):
 def note_error(text):
     '''Show an error toast message.'''
     log(antiformat(text))
-    if config('FOLIAGE_GUI_STARTED', cast = bool):
+    if os.environ.get('FOLIAGE_GUI_STARTED', 'False') == 'True':
         toast(text, color = 'error')
     elif pyinstaller_app():
         # Close the PyInstaller app splash screen if it's still visible.
