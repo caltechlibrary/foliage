@@ -40,8 +40,6 @@ import pywebio
 # aiohttp server does not.  Unfortunately, only tornado auto-reloads.
 # from   pywebio.platform.aiohttp import start_server
 from   pywebio import start_server
-from   pywebio.input import input, select, checkbox, radio
-from   pywebio.input import NUMBER, TEXT, input_update, input_group
 from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
 from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
@@ -139,15 +137,17 @@ the credentials again.
         print_version()
         exit()
 
+    config_debug(debug)                # Set up debugging before going further.
+
     log('='*8 + f' started {timestamp()} ' + '='*8)
     os.environ['FOLIAGE_GUI_STARTED'] = 'False'
 
-    config_debug(debug)                # Set up debugging before anything else.
     config_signals()
     config_backup_dir(None if backup_dir == 'B' else backup_dir)
     config_credentials(None if creds_file == 'C' else creds_file, not no_keyring)
     config_port(8080 if port == 'P' else port)
     config_demo_mode(demo_mode)
+
     log_config()
 
     # Do the real work --------------------------------------------------------
