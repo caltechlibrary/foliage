@@ -101,6 +101,13 @@ body {
     padding-bottom: 66px;
 }
 
+pre {
+    background-color: #f8f8f8;
+    padding: 5px;
+    border: 1px solid #eee;
+    border-radius: .25rem;
+}
+
 .pywebio {
     min-height: calc(100vh - 70px);
     padding-top: 10px;
