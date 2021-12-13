@@ -147,8 +147,6 @@ def select_field_name():
         # Show the selected value.
         pin.chg_field = answer
         log(f'user selected field {answer}')
-    else:
-        log(f'user canceled field selection')
 
 
 def select_field_value(old_new):
@@ -174,8 +172,6 @@ def select_field_value(old_new):
         field = old_new + '_value'
         setattr(pin, field, val)
         log(f'user selected {old_new} field value {val}')
-    else:
-        log(f'user canceled value selection')
 
 
 def list_selection(title, values):
