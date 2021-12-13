@@ -143,7 +143,7 @@ def clear_tab():
 def select_field_name():
     # Clear any previous value.
     pin.new_value = ''
-    if (answer := list_selection('Select field to change', known_fields)):
+    if (answer := selected('Select field to change', known_fields)):
         # Show the selected value.
         pin.chg_field = answer
         log(f'user selected field {answer}')
@@ -168,13 +168,13 @@ def select_field_value(old_new):
         note_error(f'Could not retrieve the list of possible {fname} values')
         return
     value_list = sorted(item['name'] for item in type_list)
-    if (val := list_selection(f'Select the {old_new} value for {fname}', value_list)):
+    if (val := selected(f'Select the {old_new} value for {fname}', value_list)):
         field = old_new + '_value'
         setattr(pin, field, val)
         log(f'user selected {old_new} field value {val}')
 
 
-def list_selection(title, values):
+def selected(title, values):
     log(f'showing list selection popup')
     event = threading.Event()
     clicked_ok = False
