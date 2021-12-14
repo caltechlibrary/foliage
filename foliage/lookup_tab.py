@@ -156,46 +156,43 @@ def do_find():
     _last_textbox = pin.textbox_find
     _last_kind = pin.select_kind
     _last_inventory_api = pin.inventory_api
+    record_kind = pin.select_kind
+    identifiers = unique_identifiers(pin.textbox_find)
+    steps = len(identifiers) + 1
+    folio = Folio()
     reset_interrupts()
     with use_scope('output', clear = True):
-        put_markdown(f'_Certain lookups can take a very long time. Please be'
-                     + ' patient._').style('color: DarkOrange; margin-left: 17px')
-        record_kind = pin.select_kind
-        identifiers = unique_identifiers(pin.textbox_find)
-        steps = len(identifiers) + 1
         put_grid([[
+            put_markdown(f'_Certain lookups can take a very long time. Please'
+                     + ' be patient._').style('color: DarkOrange')
+            ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style('margin: auto 17px auto 17px')
-        folio = Folio()
+            ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
         for count, id in enumerate(identifiers, start = 2):
-            put_html('<br>')
+            if interrupted():
+                break
             try:
                 # Figure out what kind of identifier we were given.
                 id_kind = folio.record_id_kind(id)
                 if id_kind == RecordIdKind.UNKNOWN:
                     tell_failure(f'Unrecognized identifier kind: {id}.')
                     continue
-
-                # Get the record.
                 if reuse_results:
                     records = _last_results.get(id)
                 else:
                     records = folio.records(id, id_kind, record_kind,
                                             pin.inventory_api, pin.open_loans)
                     _last_results[id] = records
-                if interrupted():
-                    break
                 if not records or len(records) == 0:
                     tell_failure(f'No {record_kind} record(s) found for {id_kind} "{id}".')
                     continue
 
                 # Report the results & how we got them.
+                source = 'storage'
                 if pin.inventory_api and record_kind in ['item', 'instance']:
                     source = 'inventory'
-                else:   # Most records kinds only have storage API endpoints.
-                    source = 'storage'
                 this = pluralized(record_kind + f' {source} record', records, True)
                 how = f'by searching for {id_kind} **{id}**.'
                 tell_success(f'Found {this} {how}')
@@ -203,17 +200,17 @@ def do_find():
                 for index, record in enumerate(records, start = 1):
                     print_record(record, record_kind, id, id_kind,
                                  index, show_index, pin.show_raw == 'json')
-                    if interrupted():
-                        break
             except Interrupted as ex:
+                log('stopping due to interruption')
                 break
             except Exception as ex:
                 tell_failure(f'Error: ' + str(ex))
+                stop_processbar()
                 return
             finally:
-                set_processbar('bar', count/steps)
+                if not interrupted():
+                    set_processbar('bar', count/steps)
         stop_processbar()
-        put_html('<br>')
         if interrupted():
             tell_warning('**Stopped**.')
         else:
@@ -246,7 +243,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['HRID'                      , record['hrid']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%')
+        ]).style('font-size: 90%; margin-bottom: 1em')
     elif record_kind == 'instance':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -257,7 +254,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['HRID'                      , record['hrid']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%')
+        ]).style('font-size: 90%; margin-bottom: 1em')
     elif record_kind == 'holdings':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -267,7 +264,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Instance id'               , record['instanceId']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%')
+        ]).style('font-size: 90%; margin-bottom: 1em')
     elif record_kind == 'user':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -277,7 +274,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Patron group'              , record['patronGroup']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%')
+        ]).style('font-size: 90%; margin-bottom: 1em')
     elif record_kind == 'loan':
         put_table([
             [f'{record_kind.title()} id' , record['id']],
@@ -287,7 +284,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Due date'                  , record['dueDate']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%')
+        ]).style('font-size: 90%; margin-bottom: 1em')
 
 
 def user_wants_reuse():
