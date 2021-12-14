@@ -164,11 +164,10 @@ def do_find():
         identifiers = unique_identifiers(pin.textbox_find)
         steps = len(identifiers) + 1
         put_grid([[
-            put_processbar('bar', init = 1/steps).style('margin-top: 11px; margin-left: 17px'),
+            put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
-                       onclick = lambda: stop()
-                       ).style('text-align: right; margin-left: 17px')
-            ]], cell_widths = '85% 15%').style('margin-right: 17px')
+                       onclick = lambda: stop()).style('text-align: right')
+            ]], cell_widths = '85% 15%').style('margin: auto 17px auto 17px')
         folio = Folio()
         for count, id in enumerate(identifiers, start = 2):
             put_html('<br>')
