@@ -92,11 +92,13 @@ _TABS = [LookupTab(), ChangeTab(), DeleteTab(), ListTab(), OtherTab()]
     no_keyring = ('don\'t use keyring for credentials',         'flag',   'K'),
     port       = ('open browser on port P (default: 8080)',     'option', 'p'),
     version    = ('print program version info and exit',        'flag',   'V'),
+    no_widget  = ('don\'t run the taskbar/system tray widget',  'flag',   'W'),
     debug      = ('log debug output to "OUT" ("-" is console)', 'option', '@'),
 )
 
 def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
-         no_keyring = False, port = 'P', version = False, debug = 'OUT'):
+         no_keyring = False, port = 'P', version = False, no_widget = False,
+         debug = 'OUT'):
     '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.
 
 Credentials for FOLIO OKAPI access can be provided in a number of ways. The
@@ -168,7 +170,7 @@ the credentials again.
         pywebio.platform.utils._index_page_tpl = index_page_template
 
         # Start the widget outside the PyWebIO app so we can stop it later.
-        widget = SystemWidget()
+        widget = SystemWidget() if not no_widget else None
 
         # cdn = False makes it load PyWebIO JS code from our local copy.
         log('starting PyWebIO server')
@@ -263,9 +265,9 @@ def foliage_page(widget):
         # Block, waiting for a change event on any of the pins being watched.
         # The timeout is so we can check if the user quit the taskbar widget.
         changed = pin_wait_change(pin_names, timeout = 1)
-        if widget.running() and not changed:
+        if (not widget or widget.running()) and not changed:
             continue
-        if not widget.running():
+        if (widget and not widget.running()):
             log('widget has exited')
             quit_app(ask_confirm = False)
         if changed and changed['name'] == 'quit':
@@ -346,7 +348,7 @@ def config_signals():
     if os.name == 'nt' and pyinstaller_app():
         # Our PyQt taskbar widget is problematic because PyQt uses signals
         # and when you exit the widget, the signal it sends causes the
-        # main thread to terminate.  I couldn't solve this by catching
+        # main thread to terminate.  I couldn't solve this by catching the
         # signals, maybe because I just don't know how to do that properly
         # on Windows.  Instead, this causes them to be ignored.  IMHO tha's
         # OK when running as a GUI app b/c it's hard for the user to ^C it.
