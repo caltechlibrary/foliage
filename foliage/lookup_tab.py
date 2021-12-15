@@ -226,24 +226,40 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
     if show_index:
         put_markdown(f'{record_kind.title()} record #{index}:')
 
+    # Caution: in what follows, left-hand strings contain nonbreaking spaces.
     if show_raw:
         put_code(pformat(record, indent = 2))
     elif record_kind == 'item':
-        # Caution: left-hand values contain nonbreaking spaces (invisible here).
-        put_table([
-            ['Title'                     , record['title']],
-            ['Barcode'                   , record['barcode']],
-            ['Call number'               , record['callNumber']],
-            [f'{record_kind.title()} id' , record['id']],
-            ['Effective location'        , record['effectiveLocation']['name']],
-            ['Permanent location'        , record['permanentLocation']['name']],
-            ['Status'                    , record['status']['name']],
-            ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
-            ['Notes'                     , '\n'.join(record['notes'])],
-            ['HRID'                      , record['hrid']],
-            ['Created'                   , record['metadata']['createdDate']],
-            ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin-bottom: 1em')
+        if 'title' in record:
+            # Inventory record version.
+            put_table([
+                ['Title'                     , record['title']],
+                ['Barcode'                   , record['barcode']],
+                ['Call number'               , record['callNumber']],
+                [f'{record_kind.title()} id' , record['id']],
+                ['Effective location'        , record['effectiveLocation']['name']],
+                ['Permanent location'        , record['permanentLocation']['name']],
+                ['Status'                    , record['status']['name']],
+                ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
+                ['Notes'                     , '\n'.join(record['notes'])],
+                ['HRID'                      , record['hrid']],
+                ['Created'                   , record['metadata']['createdDate']],
+                ['Updated'                   , record['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin-bottom: 1em')
+        else:
+            # Storage record version.
+            put_table([
+                ['Barcode'                   , record['barcode']],
+                ['Call number'               , record['itemLevelCallNumber']],
+                [f'{record_kind.title()} id' , record['id']],
+                ['Effective location'        , record['effectiveLocationId']],
+                ['Permanent location'        , record['permanentLocationId']],
+                ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
+                ['Notes'                     , '\n'.join(record['notes'])],
+                ['HRID'                      , record['hrid']],
+                ['Created'                   , record['metadata']['createdDate']],
+                ['Updated'                   , record['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin-bottom: 1em')
     elif record_kind == 'instance':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
