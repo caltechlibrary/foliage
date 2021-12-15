@@ -12,7 +12,7 @@ file "LICENSE" for more information.
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
 from   commonpy.exceptions import Interrupted
-from   commonpy.interrupt import wait, interrupted
+from   commonpy.interrupt import wait, interrupted, raise_for_interrupts
 from   commonpy.string_utils import antiformat
 from   commonpy.network_utils import net
 from   datetime import datetime as dt
@@ -186,6 +186,8 @@ class Folio():
                 return token, None
             elif resp.status_code == 422:
                 return None, 'FOLIO rejected the information given'
+            elif isinstance(error, Interrupted):
+                raise_for_interrupts()
             elif error:
                 return None, 'FOLIO returned an error: ' + str(error)
             else:
@@ -238,6 +240,8 @@ class Folio():
         if not error:
             log(f'got result from {request_url}')
             return convert(response) if convert is not None else response
+        elif isinstance(error, Interrupted):
+            log('request interrupted: ' + request_url)
         elif isinstance(error, NoContent):
             log(f'got empty content from {request_url}')
             return convert(response) if convert is not None else response
@@ -401,8 +405,7 @@ class Folio():
                 # The loans have item itemId's. Use that to retrieve item recs.
                 items = []
                 for loan in loans:
-                    if interrupted():
-                        return []
+                    raise_for_interrupts()
                     item_id = loan['itemId']
                     items += self.records(item_id, RecordIdKind.ITEM_ID, 'item',
                                           use_inventory, open_loans_only)
@@ -495,8 +498,7 @@ class Folio():
                 item_ids = [loan['itemId'] for loan in loans]
                 instances = []
                 for id in item_ids:
-                    if interrupted():
-                        return []
+                    raise_for_interrupts()
                     instances += self.records(id, RecordIdKind.ITEM_ID, 'instance',
                                               use_inventory, open_loans_only)
                 return instances
@@ -510,8 +512,7 @@ class Folio():
                 item_ids = [loan['itemId'] for loan in loans]
                 instances = []
                 for id in item_ids:
-                    if interrupted():
-                        return []
+                    raise_for_interrupts()
                     instances += self.records(id, RecordIdKind.ITEM_ID, 'instance',
                                               use_inventory, open_loans_only)
                 return instances
@@ -659,8 +660,7 @@ class Folio():
                 user_ids = [loan['userId'] for loan in loans]
                 user_records = []
                 for id in user_ids:
-                    if interrupted():
-                        return []
+                    raise_for_interrupts()
                     user_records += self.records(id, RecordIdKind.USER_ID, 'user',
                                                  use_inventory, open_loans_only)
                 return user_records
@@ -749,8 +749,7 @@ class Folio():
                 loan_ids = [loan['id'] for loan in loans]
                 holdings_records = []
                 for id in loan_ids:
-                    if interrupted():
-                        return []
+                    raise_for_interrupts()
                     holdings_records += self.records(id, RecordIdKind.LOAN_ID, 'holdings',
                                                      use_inventory, open_loans_only)
                 return holdings_records
