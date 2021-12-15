@@ -66,7 +66,7 @@ from   foliage.list_tab import ListTab
 from   foliage.lookup_tab import LookupTab
 from   foliage.other_tab import OtherTab
 from   foliage.system_widget import SystemWidget
-from   foliage.ui import quit_app, reload_page, confirm, notify, pyinstaller_app
+from   foliage.ui import quit_app, reload_page, confirm, notify, inside_pyinstaller_app
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
 from   foliage.ui import close_splash_screen
@@ -325,6 +325,7 @@ def config_debug(debug_arg):
 
         # Turn on debug tracing to the destination we ended up deciding to use.
         set_debug(True, log_file or '-')
+        log('debug_arg = ' + debug_arg)
     except PermissionError:
         note_warn(f'Permission denied creating log file {antiformat(log_file)}'
                   + ' -- debug log will not be written.')
@@ -345,7 +346,7 @@ def config_debug(debug_arg):
 
 
 def config_signals():
-    if os.name == 'nt' and pyinstaller_app():
+    if os.name == 'nt' and inside_pyinstaller_app():
         # Our PyQt taskbar widget is problematic because PyQt uses signals
         # and when you exit the widget, the signal it sends causes the
         # main thread to terminate.  I couldn't solve this by catching the
@@ -442,6 +443,7 @@ def log_config():
         log(f'version         = {platform.mac_ver()[0]}')
     else:
         log(f'version         = {platform.version()}')
+    log(f'debug           = {os.environ["DEBUG"]}')
     log(f'backup_dir      = {config("BACKUP_DIR")}')
     log(f'log_file        = {config("LOG_FILE")}')
     log(f'creds_file      = {config("CREDS_FILE")}')

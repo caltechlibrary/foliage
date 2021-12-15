@@ -204,7 +204,7 @@ textarea.form-control[readonly] {
 # Exported functions
 # .............................................................................
 
-def pyinstaller_app():
+def inside_pyinstaller_app():
     '''Return True if we are running as an app created using PyInstaller.'''
     # This function is for the sake of making code more readable, because
     # the purpose of testing the following condition is not at all obvious.
@@ -213,7 +213,7 @@ def pyinstaller_app():
 
 def close_splash_screen():
     '''Close the PyInstaller-based splash screen shown during startup.'''
-    if not pyinstaller_app():
+    if not inside_pyinstaller_app():
         return
     if sys.platform.startswith('darwin'):
         # PyInstaller does not currently support splash screens on macOS.
@@ -225,7 +225,7 @@ def close_splash_screen():
         pyi_splash.close()
     except Exception as ex:
         # Only log an error if running the PyInstaller-produced app.
-        if pyinstaller_app():
+        if inside_pyinstaller_app():
             log('exception trying to close splash screen: ' + str(ex))
 
 
@@ -357,7 +357,7 @@ def note_info(text):
     log(antiformat(text))
     if os.environ.get('FOLIAGE_GUI_STARTED', 'False') == 'True':
         toast(text, color = 'green')
-    elif pyinstaller_app():
+    elif inside_pyinstaller_app():
         # We don't print info-level msgs in this case.
         pass
     else:
@@ -370,7 +370,7 @@ def note_warn(text):
     log(antiformat(text))
     if os.environ.get('FOLIAGE_GUI_STARTED', 'False') == 'True':
         toast(text, color = 'warn')
-    elif pyinstaller_app():
+    elif inside_pyinstaller_app():
         # Close the PyInstaller app splash screen if it's still visible.
         close_splash_screen()
         title = 'Foliage' if os.name == 'nt' else 'Foliage warning'
@@ -386,7 +386,7 @@ def note_error(text):
     log(antiformat(text))
     if os.environ.get('FOLIAGE_GUI_STARTED', 'False') == 'True':
         toast(text, color = 'error')
-    elif pyinstaller_app():
+    elif inside_pyinstaller_app():
         # Close the PyInstaller app splash screen if it's still visible.
         close_splash_screen()
         title = 'Foliage' if os.name == 'nt' else 'Foliage error'

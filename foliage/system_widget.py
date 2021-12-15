@@ -91,7 +91,6 @@ from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 from   sidetrack import log
 import sys
 
-from   foliage.ui import pyinstaller_app
 
 class SystemWidget():
 
