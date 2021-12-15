@@ -245,7 +245,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
                 ['HRID'                      , record['hrid']],
                 ['Created'                   , record['metadata']['createdDate']],
                 ['Updated'                   , record['metadata']['updatedDate']],
-            ]).style('font-size: 90%; margin-bottom: 1em')
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
         else:
             # Storage record version.
             put_table([
@@ -259,7 +259,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
                 ['HRID'                      , record['hrid']],
                 ['Created'                   , record['metadata']['createdDate']],
                 ['Updated'                   , record['metadata']['updatedDate']],
-            ]).style('font-size: 90%; margin-bottom: 1em')
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record_kind == 'instance':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -270,7 +270,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['HRID'                      , record['hrid']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin-bottom: 1em')
+        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record_kind == 'holdings':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -280,7 +280,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Instance id'               , record['instanceId']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin-bottom: 1em')
+        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record_kind == 'user':
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
@@ -290,7 +290,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Patron group'              , record['patronGroup']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin-bottom: 1em')
+        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record_kind == 'loan':
         put_table([
             [f'{record_kind.title()} id' , record['id']],
@@ -300,7 +300,7 @@ def print_record(record, record_kind, identifier, id_kind, index, show_index, sh
             ['Due date'                  , record['dueDate']],
             ['Created'                   , record['metadata']['createdDate']],
             ['Updated'                   , record['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin-bottom: 1em')
+        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
 
 def user_wants_reuse():
