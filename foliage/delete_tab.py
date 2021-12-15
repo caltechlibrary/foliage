@@ -144,17 +144,17 @@ def do_delete():
                 if id_kind == RecordIdKind.UNKNOWN:
                     failed(id, f'could not recognize this type of id')
                     continue
+                elif id_kind not in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_HRID,
+                                     RecordIdKind.ITEM_BARCODE]:
+                    skipped(id, f'{id_kind} deletion is currently turned off.')
+                    continue
                 records = folio.records(id, id_kind)
                 if not records or len(records) == 0:
                     failed(id, f'no item record(s) found for {id_kind} {id}.')
                     continue
                 record = records[0]
-                if id_kind in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_BARCODE]:
-                    back_up_record(record)
-                    delete_item(folio, record, id)
-                else:
-                    skipped(id, f'{id_kind} deletion is currently turned off.')
-                    # delete_instance(folio, record, id)
+                back_up_record(record)
+                delete_item(folio, record, id)
             except Interrupted as ex:
                 log('stopping due to interruption')
                 break
@@ -175,7 +175,7 @@ def do_delete():
                 put_button('Export summary', outline = True,
                            onclick = lambda: export_data(results, 'deletion-results.csv'),
                            ).style('text-align: right')
-            ]]).style('margin: auto 17px auto 17px')
+            ]]).style('margin: 1.5em 17px auto 17px')
 
 
 def delete_item(folio, record, for_id = None):
