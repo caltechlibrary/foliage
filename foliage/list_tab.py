@@ -147,7 +147,7 @@ def show_record(title, id, record_type):
     folio = Folio()
     try:
         log(f'getting {record_type} record {id} from FOLIO')
-        data  = folio.records(id, RecordIdKind.TYPE_ID, record_type)
+        recs  = folio.related_records(id, RecordIdKind.TYPE_ID, record_type)
     except Exception as ex:
         note_error(str(ex))
         return
@@ -157,9 +157,9 @@ def show_record(title, id, record_type):
     def clk(val):
         event.set()
 
-    data  = data[0] if isinstance(data, list) and len(data) > 0 else data
+    record  = recs[0] if isinstance(recs, list) and len(recs) > 0 else recs
     pins  = [
-        put_scrollable(put_code(pformat(data, indent = 2)), height = 400),
+        put_scrollable(put_code(pformat(record.data, indent = 2)), height = 400),
         put_buttons([{'label': 'Close', 'value': 1}], onclick = clk).style('float: right'),
     ]
     popup(title = title, content = pins, size = 'large')

@@ -108,6 +108,7 @@ _last_textbox = ''
 _last_results = {}
 _last_kind = None
 _last_inventory_api = True
+_last_open_loans = True
 
 
 def clear_tab():
@@ -119,6 +120,7 @@ def clear_tab():
     pin.inventory_api = [True]
     _last_textbox = ''
     _last_inventory_api = [True]
+    _last_open_loans = [True]
 
 
 def stop():
@@ -140,6 +142,7 @@ def do_find():
     global _last_textbox
     global _last_kind
     global _last_inventory_api
+    global _last_open_loans
     log(f'do_find invoked')
     # Normally we'd want to find out if they input any identifiers, but I want
     # to detect *any* change to the input box, so this is a lower-level test.
@@ -148,7 +151,8 @@ def do_find():
         return
     reuse_results = False
     if (pin.textbox_find == _last_textbox and pin.select_kind == _last_kind
-        and pin.inventory_api == _last_inventory_api):
+        and pin.inventory_api == _last_inventory_api
+        and pin.open_loans == _last_open_loans):
         if user_wants_reuse():
             reuse_results = True
         else:
@@ -156,6 +160,7 @@ def do_find():
     _last_textbox = pin.textbox_find
     _last_kind = pin.select_kind
     _last_inventory_api = pin.inventory_api
+    _last_open_loans = pin.open_loans
     kind_wanted = pin.select_kind
     identifiers = unique_identifiers(pin.textbox_find)
     steps = len(identifiers) + 1
@@ -173,15 +178,15 @@ def do_find():
         for count, id in enumerate(identifiers, start = 2):
             try:
                 # Figure out what kind of identifier we were given.
-                id_kind = folio.record_id_kind(id)
+                id_kind = folio.id_kind(id)
                 if id_kind == RecordIdKind.UNKNOWN:
                     tell_failure(f'Unrecognized identifier kind: {id}.')
                     continue
                 if reuse_results:
                     records = _last_results.get(id)
                 else:
-                    records = folio.records(id, id_kind, kind_wanted,
-                                            pin.inventory_api, pin.open_loans)
+                    records = folio.related_records(id, id_kind, kind_wanted,
+                                                    pin.inventory_api, pin.open_loans)
                     _last_results[id] = records
                 if not records or len(records) == 0:
                     tell_failure(f'No {kind_wanted} record(s) found for {id_kind} "{id}".')
@@ -196,8 +201,7 @@ def do_find():
                 tell_success(f'Found {this} {how}')
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
-                    print_record(record, kind_wanted, id, id_kind,
-                                 index, show_index, pin.show_raw == 'json')
+                    print_record(record, id, index, show_index, pin.show_raw == 'json')
             except Interrupted as ex:
                 log('stopping due to interruption')
                 break
@@ -216,88 +220,88 @@ def do_find():
             put_markdown(f'Finished looking up {what}.').style('text-align: center')
             put_button('Export', outline = True,
                        onclick = lambda: do_export(_last_results, kind_wanted),
-                       ).style('margin-left: 10px; float: right; margin-right: 17px')
+                       ).style('float: right; margin: auto 17px auto 10px')
 
 
-def print_record(record, record_kind, identifier, id_kind, index, show_index, show_raw):
-    log(f'printing {record_kind} record {record["id"]}')
+def print_record(record, identifier, index, show_index, show_raw):
+    log(f'printing {record.kind} record {record.id}')
     if show_index:
-        put_markdown(f'{record_kind.title()} record #{index}:')
+        put_markdown(f'{record.kind.title()} record #{index}:')
 
-    # Caution: in what follows, left-hand strings contain nonbreaking spaces.
     if show_raw:
-        put_code(pformat(record, indent = 2))
-    elif record_kind == 'item':
-        if 'title' in record:
+        put_code(pformat(record.data, indent = 2))
+    elif record.kind == RecordKind.ITEM:
+        # Caution: left-hand values contain nonbreaking spaces (invisible here).
+        if 'title' in record.data:
             # Inventory record version.
             put_table([
-                ['Title'                     , record['title']],
-                ['Barcode'                   , record['barcode']],
-                ['Call number'               , record['callNumber']],
-                [f'{record_kind.title()} id' , record['id']],
-                ['Effective location'        , record['effectiveLocation']['name']],
-                ['Permanent location'        , record['permanentLocation']['name']],
-                ['Status'                    , record['status']['name']],
-                ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
-                ['Notes'                     , '\n'.join(record['notes'])],
-                ['HRID'                      , record['hrid']],
-                ['Created'                   , record['metadata']['createdDate']],
-                ['Updated'                   , record['metadata']['updatedDate']],
+                ['Title'                     , record.data['title']],
+                ['Barcode'                   , record.data['barcode']],
+                ['Call number'               , record.data['callNumber']],
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['Effective location'        , record.data['effectiveLocation']['name']],
+                ['Permanent location'        , record.data['permanentLocation']['name']],
+                ['Status'                    , record.data['status']['name']],
+                ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
+                ['Notes'                     , '\n'.join(record.data['notes'])],
+                ['HRID'                      , record.data['hrid']],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
         else:
             # Storage record version.
             put_table([
-                ['Barcode'                   , record['barcode']],
-                ['Call number'               , record['itemLevelCallNumber']],
-                [f'{record_kind.title()} id' , record['id']],
-                ['Effective location'        , record['effectiveLocationId']],
-                ['Permanent location'        , record['permanentLocationId']],
-                ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
-                ['Notes'                     , '\n'.join(record['notes'])],
-                ['HRID'                      , record['hrid']],
-                ['Created'                   , record['metadata']['createdDate']],
-                ['Updated'                   , record['metadata']['updatedDate']],
+                ['Barcode'                   , record.data['barcode']],
+                ['Call number'               , record.data['itemLevelCallNumber']],
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['Effective location'        , record.data['effectiveLocationId']],
+                ['Permanent location'        , record.data['permanentLocationId']],
+                ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
+                ['Notes'                     , '\n'.join(record.data['notes'])],
+                ['HRID'                      , record.data['hrid']],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record_kind == 'instance':
+    elif record.kind == RecordKind.INSTANCE:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
-            ['Title'                     , record['title']],
-            ['Call number'               , record['classifications'][0]['classificationNumber']],
-            [f'{record_kind.title()} id' , record['id']],
-            ['Tags'                      , ', '.join(t for t in record['tags']['tagList'])],
-            ['HRID'                      , record['hrid']],
-            ['Created'                   , record['metadata']['createdDate']],
-            ['Updated'                   , record['metadata']['updatedDate']],
+            ['Title'                     , record.data['title']],
+            ['Call number'               , record.data['classifications'][0]['classificationNumber']],
+            [f'{record.kind.title()} id' , record.data['id']],
+            ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
+            ['HRID'                      , record.data['hrid']],
+            ['Created'                   , record.data['metadata']['createdDate']],
+            ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record_kind == 'holdings':
+    elif record.kind == RecordKind.HOLDINGS:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
-            [f'{record_kind.title()} id' , record['id']],
-            ['HRID'                      , record['hrid']],
-            ['Holdings type id'          , record['holdingsTypeId']],
-            ['Instance id'               , record['instanceId']],
-            ['Created'                   , record['metadata']['createdDate']],
-            ['Updated'                   , record['metadata']['updatedDate']],
+            [f'{record.kind.title()} id' , record.data['id']],
+            ['HRID'                      , record.data['hrid']],
+            ['Holdings type id'          , record.data['holdingsTypeId']],
+            ['Instance id'               , record.data['instanceId']],
+            ['Created'                   , record.data['metadata']['createdDate']],
+            ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record_kind == 'user':
+    elif record.kind == RecordKind.USER:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
-            ['Username'                  , record['username']],
-            ['Barcode'                   , record['barcode']],
-            [f'{record_kind.title()} id' , record['id']],
-            ['Patron group'              , record['patronGroup']],
-            ['Created'                   , record['metadata']['createdDate']],
-            ['Updated'                   , record['metadata']['updatedDate']],
+            ['Username'                  , record.data['username']],
+            ['Barcode'                   , record.data['barcode']],
+            [f'{record.kind.title()} id' , record.data['id']],
+            ['Patron group'              , record.data['patronGroup']],
+            ['Created'                   , record.data['metadata']['createdDate']],
+            ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record_kind == 'loan':
+    elif record.kind == RecordKind.LOAN:
         put_table([
-            [f'{record_kind.title()} id' , record['id']],
-            ['User id'                   , record['userId']],
-            ['Item id'                   , record['itemId']],
-            ['Loan date'                 , record['loanDate']],
-            ['Due date'                  , record['dueDate']],
-            ['Created'                   , record['metadata']['createdDate']],
-            ['Updated'                   , record['metadata']['updatedDate']],
+            [f'{record.kind.title()} id' , record.data['id']],
+            ['User id'                   , record.data['userId']],
+            ['Item id'                   , record.data['itemId']],
+            ['Loan date'                 , record.data['loanDate']],
+            ['Due date'                  , record.data['dueDate']],
+            ['Created'                   , record.data['metadata']['createdDate']],
+            ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
 

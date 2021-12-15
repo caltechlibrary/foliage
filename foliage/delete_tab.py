@@ -138,19 +138,13 @@ def do_delete():
             ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
         for count, id in enumerate(identifiers, start = 2):
             try:
-                id_kind = folio.record_id_kind(id)
-                if id_kind == RecordIdKind.UNKNOWN:
-                    failed(id, f'could not recognize this type of id')
+                record = folio.record(id)
+                if not record:
+                    failed(id, f'no item record(s) found for {id}.')
                     continue
-                elif id_kind not in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_HRID,
-                                     RecordIdKind.ITEM_BARCODE]:
+                elif record.kind != RecordKind.ITEM:
                     skipped(id, f'{id_kind} deletion is currently turned off.')
                     continue
-                records = folio.records(id, id_kind)
-                if not records or len(records) == 0:
-                    failed(id, f'no item record(s) found for {id_kind} {id}.')
-                    continue
-                record = records[0]
                 back_up_record(record)
                 delete_item(folio, record, id)
             except Interrupted as ex:
@@ -177,64 +171,62 @@ def do_delete():
 
 
 def delete_item(folio, record, for_id = None):
-    id = record['id']
     if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to delete {id}')
+        log(f'demo mode in effect – pretending to delete {record.id}')
         success = True
     else:
-        (success, msg) = folio.operation('delete', f'/inventory/items/{id}')
+        (success, msg) = folio.operation('delete', f'/inventory/items/{record.id}')
     why = ('for request to delete ' + for_id) if for_id else ''
     if success:
-        succeeded(id, f'deleted item record {id}', why)
+        succeeded(record.id, f'deleted item record {record.id}', why)
     else:
-        failed(id, f'{msg}', why)
+        failed(record.id, f'{msg}', why)
 
 
 def delete_holdings(folio, record, for_id = None):
-    id = record['id']
     if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to delete {id}')
+        log(f'demo mode in effect – pretending to delete {record.id}')
         success = True
     else:
-        (success, msg) = folio.operation('delete', f'/holdings-storage/holdings/{id}')
+        (success, msg) = folio.operation('delete', f'/holdings-storage/holdings/{record.id}')
     if success:
         why = " for request to delete " + for_id
-        succeeded(id, f'deleted holdings record {id}', why)
+        succeeded(record.id, f'deleted holdings record {record.id}', why)
     else:
-        failed(id, f'error: {msg}')
+        failed(record.id, f'error: {msg}')
 
 
 # The following is based on
 # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
 
-def delete_instance(folio, record, for_id = None):
-    inst_id = record['id']
+# def delete_instance(folio, record, for_id = None):
+#     inst_id = record['id']
 
-    # Starting at the bottom, delete the item records.
-    items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM)
-    for item in items:
-        delete_item(folio, item, inst_id)
+#     # Starting at the bottom, delete the item records.
+#     items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM)
+#     for item in items:
+#         delete_item(folio, item, inst_id)
 
-    # Now delete the holdings records.
-    holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS)
-    for hr in holdings:
-        delete_holdings(folio, hr, inst_id)
+#     # Now delete the holdings records.
+#     holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS)
+#     for hr in holdings:
+#         delete_holdings(folio, hr, inst_id)
 
-    # Finally, the instance record. There are two parts to this.
-    (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}/source-record')
-    if success:
-        if config('DEMO_MODE', cast = bool):
-            log(f'demo mode in effect – pretending to delete {inst_id}')
-            success = True
-        else:
-            (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}')
-        if success:
-            why = " for request to delete " + for_id
-            succeeded(inst_id, f'deleted instance record {inst_id}', why)
-        else:
-            failed(inst_id, f'error: {msg}')
-    else:
-        failed(inst_id, f'error: {msg}')
+#     # Finally, the instance record. There are two parts to this.
+#     (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}/source-record')
+#     if success:
+#         if config('DEMO_MODE', cast = bool):
+#             log(f'demo mode in effect – pretending to delete {inst_id}')
+#             success = True
+#         else:
+#             (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}')
+#         if success:
+#             why = " for request to delete " + for_id
+#             succeeded(inst_id, f'deleted instance record {inst_id}', why)
+#         else:
+#             failed(inst_id, f'error: {msg}')
+#     else:
+#         failed(inst_id, f'error: {msg}')
 
     # FIXME
     # Need to deal with EDS update.
