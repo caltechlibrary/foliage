@@ -171,8 +171,6 @@ def do_find():
                        onclick = lambda: stop()).style('text-align: right')
             ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
         for count, id in enumerate(identifiers, start = 2):
-            if interrupted():
-                break
             try:
                 # Figure out what kind of identifier we were given.
                 id_kind = folio.record_id_kind(id)
