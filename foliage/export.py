@@ -30,7 +30,7 @@ from   sidetrack import set_debug, log
 from   slugify import slugify
 import threading
 
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind
 from   foliage.ui import quit_app, reload_page, confirm, notify
 
 
@@ -109,7 +109,7 @@ def export_records_csv(records, kind):
     log(f'exporting {pluralized("record", records, True)} to CSV')
     # We have nested dictionaries, which can't be stored directly in CSV, so
     # first we have to flatten the dictionaries inside the list.
-    records = [flattened(x) for x in records]
+    records = [flattened(r.data) for r in records]
 
     # Next, we need a list of column names to pass to the CSV function.  This
     # is complicated by the fact that JSON dictionaries can have fields that
@@ -121,7 +121,7 @@ def export_records_csv(records, kind):
     columns = set(flattened(record.keys() for record in records))
 
     # Sort the column names to move the name & id fields to the front.
-    name_key = NAME_KEYS[kind] if kind in NAME_KEYS else 'name'
+    name_key = RecordKind.name_key(kind)
     def name_id_key(column_name):
         return (column_name != name_key, column_name != 'id', column_name)
     columns = sorted(list(columns), key = lambda x: name_id_key(x))
@@ -139,8 +139,9 @@ def export_records_csv(records, kind):
 
 def export_records_json(records, kind):
     log(f'exporting {pluralized("record", records, True)} to JSON')
+    records_json = [r.data for r in records]
     with StringIO() as tmp:
-        json.dump(records, tmp)
+        json.dump(records_json, tmp)
         tmp.seek(0)
         bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
         download(f'{slugify(kind)}-records.json', bytes)
