@@ -130,6 +130,11 @@ footer {
     display: inline-table;
 }
 
+.markdown-body table td {
+    padding: 3px;
+    padding-right: 6px;
+}
+
 .alert p {
     margin-bottom: 0
 }
