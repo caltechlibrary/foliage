@@ -30,7 +30,7 @@ import threading
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_records
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind
 from   foliage.ui import confirm, notify, stop_processbar
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
@@ -129,10 +129,9 @@ def do_list():
                        onclick = lambda: export_records(types, requested),
                        ).style('text-align: right; margin-right: 17px'),
         ]).style('margin-top: 15px; margin-bottom: 14px')
-        key = NAME_KEYS[requested] if requested in NAME_KEYS else 'name'
         rows = []
         for item in types:
-            name, id = item[key], item['id']
+            name, id = item[TypeKind.name_key[requested]], item['id']
             title = f'Data for {cleaned_name} value "{name.title()}"'
             rows.append([name, link_button(name, id, title, requested),
                          copy_button(id).style('padding: 0; margin-right: 13px')])
