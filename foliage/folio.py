@@ -32,6 +32,16 @@ from   foliage.enum_utils import MetaEnum, ExtendedEnum
 from   foliage.exceptions import FolioError
 
 
+# Internal constants.
+# .............................................................................
+
+# Number of times we retry an api call that return an HTTP error.
+_MAX_RETRY = 3
+
+# Time between retries, multiplied by retry number.
+_RETRY_TIME_FACTOR = 2
+
+
 # Public data types.
 # .............................................................................
 
@@ -82,6 +92,17 @@ class RecordKind(ExtendedEnum):
         else:
             return RecordKind.UNKNOWN
 
+    @staticmethod
+    def name_key(kind):
+        if kind in [RecordKind.ITEM, RecordKind.INSTANCE]:
+            return 'title'
+        elif kind in [RecordKind.HOLDINGS, RecordKind.LOAN]:
+            return 'id'
+        elif kind == RecordKind.USER:
+            return 'username'
+        else:
+            return 'name'
+
 
 class TypeKind(ExtendedEnum):
     ACQUISITION_UNIT     = 'acquisitions-units/units'
@@ -120,6 +141,15 @@ class TypeKind(ExtendedEnum):
     SHELF_LOCATION       = 'shelf-locations'
     STATISTICAL_CODE     = 'statistical-code-types'
 
+    @staticmethod
+    def name_key(kind):
+        if kind == TypeKind.ADDRESS:
+            return 'addressType'
+        elif kind == TypeKind.GROUP:
+            return 'group'
+        else:
+            return 'name'
+
 
 # Class used by Foliage to store FOLIO records --------------------------------
 
@@ -129,31 +159,6 @@ class Record():
     id   : str                          # The UUID.
     kind : RecordKind                   # The kind of record it is.
     data : dict                         # The JSON data from FOLIO.
-
-
-# Mappings between various things ---------------------------------------------
-
-# The equivalent of the name field in record lists, when the field is not 'name'
-NAME_KEYS = {
-    TypeKind.ADDRESS    : 'addressType',
-    TypeKind.GROUP      : 'group',
-    RecordKind.ITEM     : 'title',
-    RecordKind.INSTANCE : 'title',
-    RecordKind.HOLDINGS : 'id',
-    RecordKind.USER     : 'username',
-    RecordKind.LOAN     : 'id',
-    RecordKind.TYPE     : 'name',
-}
-
-
-# Internal constants.
-# .............................................................................
-
-# Number of times we retry an api call that return an HTTP error.
-_MAX_RETRY = 3
-
-# Time between retries, multiplied by retry number.
-_RETRY_TIME_FACTOR = 2
 
 
 # Public class definitions.
@@ -918,12 +923,11 @@ def unique_identifiers(text):
 
 def back_up_record(record):
     if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect -- not backing up record')
+        log(f'demo mode in effect -- not backing up record {record.id}')
         return
     backup_dir = config('BACKUP_DIR')
     timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
-    id = record['id']
-    file = join(backup_dir, id + '.' + timestamp + '.json')
+    file = join(backup_dir, record.id + '.' + timestamp + '.json')
     with open(file, 'w') as f:
-        log(f'backing up record {id} to {file}')
-        json.dump(record, f, indent = 2)
+        log(f'backing up record {record.id} to {file}')
+        json.dump(record.data, f, indent = 2)
