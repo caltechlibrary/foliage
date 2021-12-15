@@ -55,12 +55,9 @@ def tab_contents():
     log(f'generating delete tab contents')
     return [
         put_grid([[
-            put_markdown('Input one or more barcodes, item id\'s, hrid\'s,'
-                         + ' or instance id\'s, then press the button'
-                         + ' to delete the associated FOLIO records. Note that'
-                         + ' **deleting instance records will cause multiple'
-                         + ' holdings and item records to be deleted**. Handle'
-                         + ' with extreme caution!'),
+            put_markdown('Input one or more item barcodes, id\'s, or hrid\'s,'
+                         + ' then press the button'
+                         + ' to delete the associated FOLIO records.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -129,26 +126,25 @@ def do_delete():
                    + ' permanently. Proceed?', danger = True):
         log(f'user declined to proceed')
         return
-    reset_interrupts()
+    steps = len(identifiers) + 1
+    folio = Folio()
     results = []
+    reset_interrupts()
     with use_scope('output', clear = True):
-        steps = len(identifiers) + 1
         put_grid([[
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style('margin: auto 17px auto 17px')
-        folio = Folio()
+            ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
         for count, id in enumerate(identifiers, start = 2):
-            put_html('<br>')
+            if interrupted():
+                break
             try:
                 id_kind = folio.record_id_kind(id)
                 if id_kind == RecordIdKind.UNKNOWN:
                     failed(id, f'could not recognize this type of id')
                     continue
                 records = folio.records(id, id_kind)
-                if interrupted():
-                    break
                 if not records or len(records) == 0:
                     failed(id, f'no item record(s) found for {id_kind} {id}.')
                     continue
@@ -167,9 +163,9 @@ def do_delete():
                 stop_processbar()
                 return
             finally:
-                set_processbar('bar', count/steps)
+                if not interrupted():
+                    set_processbar('bar', count/steps)
         stop_processbar()
-        put_html('<br>')
         if interrupted():
             tell_warning('**Stopped**.')
         else:
