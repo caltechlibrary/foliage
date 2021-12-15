@@ -337,19 +337,19 @@ qtapp = QApplication([''])
 def tell_success(text):
     '''Wrapper around put_success(...) that also formats markdown.'''
     log(antiformat(text))
-    put_success(put_markdown(text))
+    put_success(put_markdown(text).style('margin-left: -3px'))
 
 
 def tell_warning(text):
     '''Wrapper around put_warning(...) that also formats markdown.'''
     log(antiformat(text))
-    put_warning(put_markdown(text))
+    put_warning(put_markdown(text).style('margin-left: -3px'))
 
 
 def tell_failure(text):
     '''Wrapper around put_failure(...) that also formats markdown.'''
     log(antiformat(text))
-    put_error(put_markdown(text))
+    put_error(put_markdown(text).style('margin-left: -3px'))
 
 
 def note_info(text):
