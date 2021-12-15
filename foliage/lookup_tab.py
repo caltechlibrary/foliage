@@ -156,7 +156,7 @@ def do_find():
     _last_textbox = pin.textbox_find
     _last_kind = pin.select_kind
     _last_inventory_api = pin.inventory_api
-    record_kind = pin.select_kind
+    kind_wanted = pin.select_kind
     identifiers = unique_identifiers(pin.textbox_find)
     steps = len(identifiers) + 1
     folio = Folio()
@@ -180,23 +180,23 @@ def do_find():
                 if reuse_results:
                     records = _last_results.get(id)
                 else:
-                    records = folio.records(id, id_kind, record_kind,
+                    records = folio.records(id, id_kind, kind_wanted,
                                             pin.inventory_api, pin.open_loans)
                     _last_results[id] = records
                 if not records or len(records) == 0:
-                    tell_failure(f'No {record_kind} record(s) found for {id_kind} "{id}".')
+                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} "{id}".')
                     continue
 
                 # Report the results & how we got them.
                 source = 'storage'
-                if pin.inventory_api and record_kind in ['item', 'instance']:
+                if pin.inventory_api and kind_wanted in ['item', 'instance']:
                     source = 'inventory'
-                this = pluralized(record_kind + f' {source} record', records, True)
+                this = pluralized(kind_wanted + f' {source} record', records, True)
                 how = f'by searching for {id_kind} **{id}**.'
                 tell_success(f'Found {this} {how}')
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
-                    print_record(record, record_kind, id, id_kind,
+                    print_record(record, kind_wanted, id, id_kind,
                                  index, show_index, pin.show_raw == 'json')
             except Interrupted as ex:
                 log('stopping due to interruption')
@@ -212,10 +212,10 @@ def do_find():
         if interrupted():
             tell_warning('**Stopped**.')
         else:
-            what = pluralized(f'{record_kind} identifier', identifiers, True)
+            what = pluralized(f'{kind_wanted} identifier', identifiers, True)
             put_markdown(f'Finished looking up {what}.').style('text-align: center')
             put_button('Export', outline = True,
-                       onclick = lambda: do_export(_last_results, record_kind),
+                       onclick = lambda: do_export(_last_results, kind_wanted),
                        ).style('margin-left: 10px; float: right; margin-right: 17px')
 
 
