@@ -349,13 +349,15 @@ class Folio():
         return id_kind
 
 
-    def record(self, id):
-        '''Return the record corresponding to the given id.
+    def record(self, id, id_kind = None):
+        '''Return the record corresponding to the given id.  If the id kind
+        is known, setting parameter id_kind will save multiple API calls.
 
         This is currently limited to non-"type" records, i.e., items, holdings,
         instances, etc., and not the TypeKind kinds of records.
         '''
-        id_kind = self.id_kind(id)
+        if not id_kind:
+            id_kind = self.id_kind(id)
         log(f'id {id} has kind {id_kind}')
         if id_kind == RecordIdKind.UNKNOWN:
             return None
