@@ -179,7 +179,7 @@ def do_find():
             try:
                 # Figure out what kind of identifier we were given.
                 id_kind = folio.id_kind(id)
-                if id_kind == RecordIdKind.UNKNOWN:
+                if id_kind is RecordIdKind.UNKNOWN:
                     tell_failure(f'Unrecognized identifier kind: {id}.')
                     continue
                 if reuse_results:
@@ -230,7 +230,7 @@ def print_record(record, identifier, index, show_index, show_raw):
 
     if show_raw:
         put_code(pformat(record.data, indent = 2))
-    elif record.kind == RecordKind.ITEM:
+    elif record.kind is RecordKind.ITEM:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         if 'title' in record.data:
             # Inventory record version.
@@ -262,18 +262,22 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Created'                   , record.data['metadata']['createdDate']],
                 ['Updated'                   , record.data['metadata']['updatedDate']],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record.kind == RecordKind.INSTANCE:
+    elif record.kind is RecordKind.INSTANCE:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
+        if record.data['classifications']:
+            call_number = record.data['classifications'][0]['classificationNumber']
+        else:
+            call_number = ''
         put_table([
             ['Title'                     , record.data['title']],
-            ['Call number'               , record.data['classifications'][0]['classificationNumber']],
+            ['Call number'               , call_number],
             [f'{record.kind.title()} id' , record.data['id']],
             ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
             ['HRID'                      , record.data['hrid']],
             ['Created'                   , record.data['metadata']['createdDate']],
             ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record.kind == RecordKind.HOLDINGS:
+    elif record.kind is RecordKind.HOLDINGS:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
             [f'{record.kind.title()} id' , record.data['id']],
@@ -283,7 +287,7 @@ def print_record(record, identifier, index, show_index, show_raw):
             ['Created'                   , record.data['metadata']['createdDate']],
             ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record.kind == RecordKind.USER:
+    elif record.kind is RecordKind.USER:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
             ['Username'                  , record.data['username']],
@@ -293,7 +297,7 @@ def print_record(record, identifier, index, show_index, show_raw):
             ['Created'                   , record.data['metadata']['createdDate']],
             ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
-    elif record.kind == RecordKind.LOAN:
+    elif record.kind is RecordKind.LOAN:
         put_table([
             [f'{record.kind.title()} id' , record.data['id']],
             ['User id'                   , record.data['userId']],
