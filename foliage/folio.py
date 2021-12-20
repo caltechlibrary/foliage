@@ -45,6 +45,39 @@ _RETRY_TIME_FACTOR = 2
 # Public data types.
 # .............................................................................
 
+class RecordKind(ExtendedEnum):
+    UNKNOWN  = 'unknown'
+    ITEM     = 'item'
+    INSTANCE = 'instance'
+    HOLDINGS = 'holdings'
+    USER     = 'user'
+    LOAN     = 'loan'
+    TYPE     = 'type'
+
+    @staticmethod
+    def name_key(kind):
+        mapping = {
+            RecordKind.ITEM     : 'title',
+            RecordKind.INSTANCE : 'title',
+            RecordKind.HOLDINGS : 'id',
+            RecordKind.USER     : 'username',
+            RecordKind.LOAN     : 'id',
+        }
+        return mapping[kind] if kind in mapping else 'name'
+
+
+    @staticmethod
+    def storage_endpoint(kind):
+        mapping = {
+            RecordKind.ITEM     : '/item-storage/items',
+            RecordKind.INSTANCE : '/instance-storage/instances',
+            RecordKind.HOLDINGS : '/holdings-storage/holdings',
+            RecordKind.USER     : '/users',
+            RecordKind.LOAN     : '/loan-storage/loans',
+        }
+        return mapping[kind] if kind in mapping else None
+
+
 class RecordIdKind(ExtendedEnum):
     UNKNOWN       = 'unknown'
     ITEM_BARCODE  = 'item barcode'
@@ -60,48 +93,24 @@ class RecordIdKind(ExtendedEnum):
     LOAN_ID       = 'loan id'
     TYPE_ID       = 'type id'
 
-
-class RecordKind(ExtendedEnum):
-    UNKNOWN  = 'unknown'
-    ITEM     = 'item'
-    INSTANCE = 'instance'
-    HOLDINGS = 'holdings'
-    USER     = 'user'
-    LOAN     = 'loan'
-    TYPE     = 'type'
-
     @staticmethod
-    def for_id_kind(id_kind):
-        # Creating a dict for the mapping didn't work inside this enum class.
-        # Maybe enum redefines some basic object methods? I didn't have time
-        # for figuring out why defining an internal dict didn't work.  So:
-        if id_kind in [RecordIdKind.ITEM_BARCODE, RecordIdKind.ITEM_ID,
-                       RecordIdKind.ITEM_HRID]:
-            return RecordKind.ITEM
-        elif id_kind in [RecordIdKind.INSTANCE_ID, RecordIdKind.INSTANCE_HRID,
-                         RecordIdKind.ACCESSION]:
-            return RecordKind.INSTANCE
-        elif id_kind in [RecordIdKind.HOLDINGS_ID, RecordIdKind.HOLDINGS_HRID]:
-            return RecordKind.HOLDINGS
-        elif id_kind in [RecordIdKind.USER_ID, RecordIdKind.USER_BARCODE]:
-            return RecordKind.USER
-        elif id_kind == RecordIdKind.LOAN_ID:
-            return RecordKind.LOAN
-        elif id_kind == RecordIdKind.TYPE_ID:
-            return RecordKind.TYPE
-        else:
-            return RecordKind.UNKNOWN
-
-    @staticmethod
-    def name_key(kind):
-        if kind in [RecordKind.ITEM, RecordKind.INSTANCE]:
-            return 'title'
-        elif kind in [RecordKind.HOLDINGS, RecordKind.LOAN]:
-            return 'id'
-        elif kind == RecordKind.USER:
-            return 'username'
-        else:
-            return 'name'
+    def to_kind(id_kind):
+        mapping = {
+            RecordIdKind.UNKNOWN       : RecordKind.UNKNOWN,
+            RecordIdKind.ITEM_BARCODE  : RecordKind.ITEM,
+            RecordIdKind.ITEM_ID       : RecordKind.ITEM,
+            RecordIdKind.ITEM_HRID     : RecordKind.ITEM,
+            RecordIdKind.INSTANCE_ID   : RecordKind.INSTANCE,
+            RecordIdKind.INSTANCE_HRID : RecordKind.INSTANCE,
+            RecordIdKind.ACCESSION     : RecordKind.INSTANCE,
+            RecordIdKind.HOLDINGS_ID   : RecordKind.HOLDINGS,
+            RecordIdKind.HOLDINGS_HRID : RecordKind.HOLDINGS,
+            RecordIdKind.USER_ID       : RecordKind.USER,
+            RecordIdKind.USER_BARCODE  : RecordKind.USER,
+            RecordIdKind.LOAN_ID       : RecordKind.LOAN,
+            RecordIdKind.TYPE_ID       : RecordKind.TYPE,
+        }
+        return mapping[id_kind] if id_kind in mapping else RecordKind.UNKNOWN
 
 
 class TypeKind(ExtendedEnum):
@@ -361,7 +370,7 @@ class Folio():
         log(f'id {id} has kind {id_kind}')
         if id_kind == RecordIdKind.UNKNOWN:
             return None
-        record_kind = RecordKind.for_id_kind(id_kind)
+        record_kind = RecordIdKind.to_kind(id_kind)
         if (records_list := self.related_records(id, id_kind, record_kind)):
             if len(records_list) > 1:
                 raise RuntimeError(f'Expected 1 record for {id} but got'
@@ -375,9 +384,8 @@ class Folio():
         '''Returns a list of records found by searching for "id_kind" records
         associated with "id".
         '''
-        req = requested if requested else id_kind
         use_inv = 'using inventory API' if use_inventory else ''
-        log(f'getting {req} record(s) for {id_kind} id {id} {use_inv}')
+        log(f'getting {requested} record(s) for {id_kind} id {id} {use_inv}')
 
         def record_list(kind, key, response):
             if not response or not response.text:
@@ -400,17 +408,13 @@ class Folio():
                 log(f'got 1 record for {id}')
                 return [Record(id = data['id'], kind = kind, data = data)]
 
-        # If we not given an explicit record type to retrieve, return the same
-        # kind implied by the id type.
-        if not requested:
-            requested = RecordKind.for_id_kind(id_kind)
 
         # Figure out the appropriate API endpoint and return the value(s).
         if id_kind == RecordIdKind.TYPE_ID:
             data_extractor = partial(record_list, RecordKind.TYPE, None)
             endpoint = f'/{requested}/{id}'
 
-        elif requested == 'item':
+        elif requested == RecordKind.ITEM:
             # Default data extractor, but this gets overriden in some cases.
             data_extractor = partial(record_list, RecordKind.ITEM, 'items')
             module = 'inventory' if use_inventory else 'item-storage'
@@ -486,7 +490,7 @@ class Folio():
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
-        elif requested == 'instance':
+        elif requested == RecordKind.INSTANCE:
             # Default data extractor, but this gets overriden in some cases.
             data_extractor = partial(record_list, RecordKind.INSTANCE, 'instances')
             module = 'inventory' if use_inventory else 'instance-storage'
@@ -570,7 +574,7 @@ class Folio():
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
-        elif requested == 'loan':
+        elif requested == RecordKind.LOAN:
             if id_kind == RecordIdKind.LOAN_ID:
                 endpoint = f'/loan-storage/loans/{id}'
                 data_extractor = partial(record_list, RecordKind.LOAN, None)
@@ -670,7 +674,7 @@ class Folio():
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
-        elif requested == 'user':
+        elif requested == RecordKind.USER:
             if id_kind == RecordIdKind.USER_ID:
                 endpoint = f'/users/{id}'
                 data_extractor = partial(record_list, RecordKind.USER, None)
@@ -757,7 +761,7 @@ class Folio():
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
-        elif requested == 'holdings':
+        elif requested == RecordKind.HOLDINGS:
             if id_kind == RecordIdKind.HOLDINGS_ID:
                 data_extractor = partial(record_list, RecordKind.HOLDINGS, None)
                 endpoint = f'/holdings-storage/holdings/{id}'
