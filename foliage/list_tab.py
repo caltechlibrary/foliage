@@ -30,7 +30,7 @@ import threading
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_records
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.ui import confirm, notify, stop_processbar
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
@@ -146,7 +146,7 @@ def show_record(title, id, record_type):
     folio = Folio()
     try:
         log(f'getting {record_type} record {id} from FOLIO')
-        recs  = folio.related_records(id, RecordIdKind.TYPE_ID, record_type)
+        recs  = folio.related_records(id, IdKind.TYPE_ID, record_type)
     except Exception as ex:
         note_error(str(ex))
         return

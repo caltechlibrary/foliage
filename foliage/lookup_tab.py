@@ -32,7 +32,7 @@ import threading
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_records
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
@@ -179,7 +179,7 @@ def do_find():
             try:
                 # Figure out what kind of identifier we were given.
                 id_kind = folio.id_kind(id)
-                if id_kind is RecordIdKind.UNKNOWN:
+                if id_kind is IdKind.UNKNOWN:
                     tell_failure(f'Unrecognized identifier kind: {id}.')
                     continue
                 if reuse_results:

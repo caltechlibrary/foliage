@@ -30,7 +30,7 @@ from   sidetrack import set_debug, log
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_data
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
@@ -191,12 +191,12 @@ def delete(record, for_id = None):
 #     inst_id = record['id']
 
 #     # Starting at the bottom, delete the item records.
-#     items = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.ITEM)
+#     items = folio.records(inst_id, IdKind.INSTANCE_ID, RecordKind.ITEM)
 #     for item in items:
 #         delete_item(folio, item, inst_id)
 
 #     # Now delete the holdings records.
-#     holdings = folio.records(inst_id, RecordIdKind.INSTANCE_ID, RecordKind.HOLDINGS)
+#     holdings = folio.records(inst_id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
 #     for hr in holdings:
 #         delete_holdings(folio, hr, inst_id)
 

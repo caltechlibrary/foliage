@@ -30,7 +30,7 @@ from   sidetrack import set_debug, log
 from   slugify import slugify
 import threading
 
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.ui import quit_app, reload_page, confirm, notify
 
 
