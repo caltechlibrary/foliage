@@ -131,7 +131,7 @@ def do_list():
         ]).style('margin-top: 15px; margin-bottom: 14px')
         rows = []
         for item in types:
-            name, id = item[TypeKind.name_key[requested]], item['id']
+            name, id = item[TypeKind.name_key(requested)], item['id']
             title = f'Data for {cleaned_name} value "{name.title()}"'
             rows.append([name, link_button(name, id, title, requested),
                          copy_button(id).style('padding: 0; margin-right: 13px')])
