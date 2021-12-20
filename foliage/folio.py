@@ -50,8 +50,8 @@ class RecordKind(ExtendedEnum):
     ITEM     = 'item'
     INSTANCE = 'instance'
     HOLDINGS = 'holdings'
-    USER     = 'user'
     LOAN     = 'loan'
+    USER     = 'user'
     TYPE     = 'type'
 
     @staticmethod
@@ -60,8 +60,8 @@ class RecordKind(ExtendedEnum):
             RecordKind.ITEM     : 'title',
             RecordKind.INSTANCE : 'title',
             RecordKind.HOLDINGS : 'id',
-            RecordKind.USER     : 'username',
             RecordKind.LOAN     : 'id',
+            RecordKind.USER     : 'username',
         }
         return mapping[kind] if kind in mapping else 'name'
 
@@ -72,8 +72,20 @@ class RecordKind(ExtendedEnum):
             RecordKind.ITEM     : '/item-storage/items',
             RecordKind.INSTANCE : '/instance-storage/instances',
             RecordKind.HOLDINGS : '/holdings-storage/holdings',
-            RecordKind.USER     : '/users',
             RecordKind.LOAN     : '/loan-storage/loans',
+            RecordKind.USER     : '/users',
+        }
+        return mapping[kind] if kind in mapping else None
+
+
+    @staticmethod
+    def deletion_endpoint(kind):
+        mapping = {
+            RecordKind.ITEM     : '/inventory/items',
+            RecordKind.INSTANCE : '/inventory/instances',
+            RecordKind.HOLDINGS : '/holdings-storage/holdings',
+            RecordKind.LOAN     : '/loan-storage/loans',
+            RecordKind.USER     : '/users',
         }
         return mapping[kind] if kind in mapping else None
 
@@ -872,6 +884,27 @@ class Folio():
             return True, ''
         else:
             log(f'failed to write record to {request_url}: ' + str(error))
+            return False, error
+
+
+    def delete(self, record):
+        '''Delete a record.'''
+
+        headers = {
+            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
+            "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
+            "content-type":   "application/json",
+        }
+
+        # Some deletions are done via the inventory api & some via storage api.
+        endpoint = RecordKind.deletion_endpoint(record.kind)
+        request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
+        (response, error) = net('delete', request_url, headers = headers)
+        if response and response.status_code == 204:
+            log(f'successfully deleted record {record.id} from {request_url}')
+            return True, ''
+        else:
+            log(f'failed to delete record {record.id}: ' + str(error))
             return False, error
 
 
