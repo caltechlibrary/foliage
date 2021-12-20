@@ -142,11 +142,10 @@ def do_delete():
                 if not record:
                     failed(id, f'no item record(s) found for {id}.')
                     continue
-                elif record.kind != RecordKind.ITEM:
+                elif record.kind is not RecordKind.ITEM:
                     skipped(id, f'{id_kind} deletion is currently turned off.')
                     continue
-                back_up_record(record)
-                delete_item(folio, record, id)
+                delete(record)
             except Interrupted as ex:
                 log('stopping due to interruption')
                 break
@@ -170,30 +169,19 @@ def do_delete():
             ]]).style('margin: 1.5em 17px auto 17px')
 
 
-def delete_item(folio, record, for_id = None):
+def delete(record, for_id = None):
     if config('DEMO_MODE', cast = bool):
         log(f'demo mode in effect – pretending to delete {record.id}')
         success = True
     else:
-        (success, msg) = folio.operation('delete', f'/inventory/items/{record.id}')
+        back_up_record(record)
+        folio = Folio()
+        (success, msg) = folio.delete(record)
     why = ('for request to delete ' + for_id) if for_id else ''
     if success:
         succeeded(record.id, f'deleted item record {record.id}', why)
     else:
         failed(record.id, f'{msg}', why)
-
-
-def delete_holdings(folio, record, for_id = None):
-    if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to delete {record.id}')
-        success = True
-    else:
-        (success, msg) = folio.operation('delete', f'/holdings-storage/holdings/{record.id}')
-    if success:
-        why = " for request to delete " + for_id
-        succeeded(record.id, f'deleted holdings record {record.id}', why)
-    else:
-        failed(record.id, f'error: {msg}')
 
 
 # The following is based on
