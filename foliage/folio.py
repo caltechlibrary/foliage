@@ -106,7 +106,7 @@ class IdKind(ExtendedEnum):
     TYPE_ID       = 'type id'
 
     @staticmethod
-    def to_kind(id_kind):
+    def to_record_kind(id_kind):
         mapping = {
             IdKind.UNKNOWN       : RecordKind.UNKNOWN,
             IdKind.ITEM_BARCODE  : RecordKind.ITEM,
@@ -382,7 +382,7 @@ class Folio():
         log(f'id {id} has kind {id_kind}')
         if id_kind == IdKind.UNKNOWN:
             return None
-        record_kind = IdKind.to_kind(id_kind)
+        record_kind = IdKind.to_record_kind(id_kind)
         if (records_list := self.related_records(id, id_kind, record_kind)):
             if len(records_list) > 1:
                 raise RuntimeError(f'Expected 1 record for {id} but got'
@@ -877,7 +877,7 @@ class Folio():
         }
 
         request_url = config('FOLIO_OKAPI_URL') + endpoint
-        data = json.dumps(record)
+        data = json.dumps(record.data)
         (response, error) = net('put', request_url, headers = headers, data = data)
         if response and response.status_code == 204:
             log(f'successfully wrote record to {request_url}')
