@@ -12,6 +12,7 @@ file "LICENSE" for more information.
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
 from   commonpy.exceptions import Interrupted
+from   commonpy.file_utils import writable
 from   commonpy.interrupt import wait, interrupted, raise_for_interrupts
 from   commonpy.string_utils import antiformat
 from   commonpy.network_utils import net
@@ -23,7 +24,8 @@ from   enum import Enum, EnumMeta
 from   functools import partial
 from   fastnumbers import isint
 import json
-from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
+import os
+from   os.path import exists, dirname, join
 import re
 from   sidetrack import set_debug, log
 from   validators.url import url as valid_url
@@ -961,12 +963,31 @@ def unique_identifiers(text):
 
 
 def back_up_record(record):
+    '''Write the record in JSON format to the backup directory.
+
+    Backups are organized using a separate directory for every record uuid,
+    then in a time-stamped file for the json file within that directory.
+    '''
     if config('DEMO_MODE', cast = bool):
         log(f'demo mode in effect -- not backing up record {record.id}')
         return
-    backup_dir = config('BACKUP_DIR')
-    timestamp = dt.now(tz = tz.tzlocal()).strftime('%Y%m%d-%H%M%S%f')[:-3]
-    file = join(backup_dir, record.id + '.' + timestamp + '.json')
+
+    backup_dir = join(config('BACKUP_DIR'), record.id)
+    if not exists(backup_dir):
+        try:
+            os.makedirs(backup_dir)
+        except OSError as ex:
+            log('unable to create backup directory {backup_dir}: ' + str(ex))
+            raise
+    elif not writable(backup_dir):
+        log('backup directory is not writable: {backup_dir}')
+        raise RuntimeError(f'Unable to write to backup directory {backup_dir}')
+
+    timestamp = dt.now(tz = tz.tzlocal()).isoformat(timespec = 'seconds')
+    # Can't use colon characters in Windows file names. This next change makes
+    # the result not ISO 8601 or RFC 3339 compliant, but we don't need to be.
+    timestamp = timestamp.replace(':', '')
+    file = join(backup_dir, timestamp + '.json')
     with open(file, 'w') as f:
         log(f'backing up record {record.id} to {file}')
         json.dump(record.data, f, indent = 2)
