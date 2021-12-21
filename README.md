@@ -61,7 +61,7 @@ python3 -m pip install foliage
 
 As an alternative to getting it from [PyPI](https://pypi.org), you can use `pip` to install `foliage` directly from GitHub:
 ```sh
-python3 -m pip install git+https://github.com/mhucka/foliage.git
+python3 -m pip install git+https://github.com/calitechlibrary/foliage.git
 ```
 
 _If you already installed Foliage once before_, and want to update to the latest version, add `--upgrade` to the end of either command line above.
@@ -71,10 +71,10 @@ _If you already installed Foliage once before_, and want to update to the latest
 
 If  you prefer to install Foliage directly from the source code, you can do that too. To get a copy of the files, you can clone the GitHub repository:
 ```sh
-git clone https://github.com/mhucka/foliage
+git clone https://github.com/caltechlibrary/foliage
 ```
 
-Alternatively, you can download the files as a ZIP archive using this link directly from your browser using this link: <https://github.com/mhucka/foliage/archive/refs/heads/main.zip>
+Alternatively, you can download the files as a ZIP archive using this link directly from your browser using this link: <https://github.com/caltechlibrary/foliage/archive/refs/heads/main.zip>
 
 Next, after getting a copy of the files,  run `setup.py` inside the code directory:
 ```sh
