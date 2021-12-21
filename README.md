@@ -1,6 +1,6 @@
 # Foliage<img width="12%" align="right" src="https://github.com/caltechlibrary/foliage/raw/main/.graphics/foliage-icon.png">
 
-Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the network API.
+Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes and other operations in FOLIO using the network API.
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg?style=flat-square)](https://choosealicense.com/licenses/bsd-3-clause)
 [![Python](https://img.shields.io/badge/Python-3.8+-brightgreen.svg?style=flat-square)](https://www.python.org/downloads/release/python-380/)
@@ -13,68 +13,94 @@ Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO using the
 * [Introduction](#introduction)
 * [Installation](#installation)
 * [Usage](#usage)
-* [Known issues and limitations](#known-issues-and-limitations)
 * [Getting help](#getting-help)
 * [Contributing](#contributing)
 * [License](#license)
-* [Authors and history](#authors-and-history)
 * [Acknowledgments](#authors-and-acknowledgments)
 
 
 ## Introduction
 
-This README file is in Markdown format, and is meant to provide a template for README files as well an illustration of what the README file can be expected to look like.  For a software project, this [Introduction](#introduction) section &ndash; which you are presently reading &ndash; should provide background for the project, a brief explanation of what the project is about, and optionally, pointers to resources that can help orient readers.  Ideally, this section should be short.
+Foliage (_**Foli**o ch**a**n**g**e **E**ditor_) is a desktop computer application that can perform operations in [FOLIO](https://www.folio.org), a library services platform ([LSP](https://journals.ala.org/index.php/ltr/article/view/5686/7063)) used by Caltech and other institutions. Foliage allows a user to look up records of various kinds, perform bulk changes in the values of record fields, delete records, and more. It communicates with a FOLIO server using the [OKAPI network API](https://github.com/folio-org/okapi/blob/master/doc/guide.md). The program is cross-platform compatible and currently in use on Windows and macOS computers at the Caltech Library.
+
+<p align="center">
+<img width="700"  src="https://github.com/caltechlibrary/foliage/raw/main/.graphics/foliage-screenshot.png">
+</p>
+
+Although Foliage is a desktop application and not a web service, it uses a web page as its user interface &ndash; it opens a page in a browser on the user's computer, letting the user interact with the program through the familiar elements of a web page. This lets Foliage present an identical user interface no matter whether it is running on Window, macOS, or Linux.
 
 
 ## Installation
 
-Begin this section by mentioning any prerequisites that may be important for users to have before they can use your software.  Examples include hardware and operating system requirements.
+There are multiple ways of installing Urial, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
 
-Next, provide step-by-step instructions for installing the software, preferably with command examples that can be copy-pasted by readers into their software environments. For example:
 
-```bash
-a command-line command here
+### _Alternative 1: installing the ready-to-run executable programs_
+
+For the Caltech Library, we provide Foliage in a ready-to-run form for Windows computers. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.
+
+
+### _Alternative 2: installing Foliage using `pipx`_
+
+You can use [pipx](https://pypa.github.io/pipx/) to install Foliage. Pipx will install it into a separate Python environment that isolates the dependencies needed by Foliage from other Python programs on your system, and yet the resulting `foliage` command wil be executable from any shell &ndash; like any normal program on your computer. If you do not already have `pipx` on your system, it can be installed in a variety of easy ways and it is best to consult [Pipx's installation guide](https://pypa.github.io/pipx/installation/) for instructions. Once you have pipx on your system, you can install Foliage with the following command:
+```sh
+pipx install foliage
 ```
 
-Sometimes, subsections may be needed for different operating systems or particularly complicated installations.
+Pipx can also let you run Foliage directly using `pipx run foliage`, although in that case, you must always prefix every `foliage` command with `pipx run`.  Consult the [documentation for `pipx run`](https://github.com/pypa/pipx#walkthrough-running-an-application-in-a-temporary-virtual-environment) for more information.
+
+
+### _Alternative 3: installing Foliage using `pip`_
+
+The instructions below assume you have a Python 3 interpreter installed on your computer.  Note that the default on macOS at least through 10.14 (Mojave) is Python **2** &ndash; please first install Python version 3 and familiarize yourself with running Python programs on your system before proceeding further.
+
+You should be able to install `foliage` with [`pip`](https://pip.pypa.io/en/stable/installing/) for Python&nbsp;3.  To install `foliage` from the [Python package repository (PyPI)](https://pypi.org), run the following command:
+```sh
+python3 -m pip install foliage
+```
+
+As an alternative to getting it from [PyPI](https://pypi.org), you can use `pip` to install `foliage` directly from GitHub:
+```sh
+python3 -m pip install git+https://github.com/mhucka/foliage.git
+```
+
+_If you already installed Foliage once before_, and want to update to the latest version, add `--upgrade` to the end of either command line above.
+
+
+### _Alternative 4: installing Foliage from sources_
+
+If  you prefer to install Foliage directly from the source code, you can do that too. To get a copy of the files, you can clone the GitHub repository:
+```sh
+git clone https://github.com/mhucka/foliage
+```
+
+Alternatively, you can download the files as a ZIP archive using this link directly from your browser using this link: <https://github.com/mhucka/foliage/archive/refs/heads/main.zip>
+
+Next, after getting a copy of the files,  run `setup.py` inside the code directory:
+```sh
+cd foliage
+python3 setup.py install
+```
+
  
 
 ## Usage
 
-This [Usage](#usage) section would explain more about how to run the software, what kind of behavior to expect, and so on.
-
-### _Basic operation_
-
-Begin with the simplest possible example of how to use your software.  Provide example command lines and/or screen images, as appropriate, to help readers understand how the software is expected to be used.  Many readers are likely to look for command lines they can copy-paste directly from your explanations, so it's best to keep that in mind as you write examples.
-
-### _Additional options_
-
-Some projects need to communicate additional information to users and can benefit from additional sections in the README file.  It's difficult to give specific instructions &ndash; a lot depends on your software, your intended audience, etc.  Use your judgment and ask for feedback from users or colleagues to help figure out what else is worth explaining.
-
-
-## Known issues and limitations
-
-In this section, summarize any notable issues and/or limitations of your software.  If none are known yet, this section can be omitted (and don't forget to remove the corresponding entry in the [Table of Contents](#table-of-contents) too); alternatively, you can leave this section in and write something along the lines of "none are known at this time".
 
 
 ## Getting help
 
-Inform readers of how they can contact you, or at least how they can report problems they may encounter.  This may simply be a request to use the issue tracker on your repository, but many projects have associated chat or mailing lists, and this section is a good place to mention those.
+If you find an issue, please submit it in [the GitHub issue tracker](https://github.com/caltechlibrary/foliage/issues) for this repository.
 
 
 ## Contributing
 
-This section is optional; if your repository is for a project that accepts open-source contributions, then this section is where you can mention how people can offer contributions, and point them to your guidelines for contributing.  (If you delete this section, don't forget to remove the corresponding entry in the [Table of Contents](#table-of-contents) too.)
+Your help and participation in enhancing Foliage is welcome!  Please visit the [guidelines for contributing](CONTRIBUTING.md) for some tips on getting started.
 
 
 ## License
 
-Software produced by the Caltech Library is Copyright © 2021 California Institute of Technology.  This software is freely distributed under a BSD/MIT type license.  Please see the [LICENSE](LICENSE) file for more information.
-
-
-## Authors and history
-
-In this section, list the authors and contributors to your software project.  Adding additional notes here about the history of the project can make it more interesting and compelling.  This is also a place where you can acknowledge other contributions to the work and the use of other people's software or tools.
+Software produced by the Caltech Library is Copyright © 2021 California Institute of Technology.  This software is freely distributed under a BSD type license.  Please see the [LICENSE](LICENSE) file for more information.
 
 
 ## Acknowledgments
