@@ -9,7 +9,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
-from   collections import namedtuple
+from   collections import namedtuple, defaultdict
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import exists, readable
@@ -33,7 +33,7 @@ import threading
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_data
-from   foliage.folio import Folio, RecordKind, RecordIdKind, TypeKind, NAME_KEYS
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file
 from   foliage.ui import tell_success, tell_warning, tell_failure, stop_processbar
@@ -61,11 +61,13 @@ def tab_contents():
     margin_adjust = 'margin-top: -1em' if sys.platform.startswith('win') else ''
     return [
         put_grid([[
-            put_markdown('Input one or more **item** barcodes, id\'s, or hrid\'s;'
-                         + ' select a field to change; choose the action (add,'
-                         + ' change, delete); and fill in the current '
-                         + ' and/or new value. All items will'
-                         + ' be changed the same way.'),
+            put_markdown('Input item and/or holdings identifiers'
+                         + ' (i.e., barcodes, id\'s, or hrid\'s), select'
+                         + ' a field to change, set the action'
+                         + ' (add/change/delete value), and fill'
+                         + ' in the relevant current and/or new values. All'
+                         + ' records will be changed identically. Changing a'
+                         + ' holdings record will also change its items.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -221,27 +223,41 @@ def stop():
 
 results = []
 
-def succeeded(id, msg):
+def succeed(id, msg, context = ''):
     global results
-    results.append({'id': id, 'success': True, 'notes': msg})
-    tell_success(f'Successfully changed **{id}**: ' + msg + '.')
+    comment = (' (' + context + ')') if context else ''
+    results.append({'id': id, 'success': True, 'notes': msg + comment})
+    tell_success(f'Successfully changed **{id}**{comment}: ' + msg + '.')
 
 
-def failed(id, msg):
+def fail(id, msg, context = ''):
     global results
-    results.append({'id': id, 'success': False, 'notes': msg})
-    tell_failure(f'Failed to change **{id}**: ' + msg + '.')
+    comment = (' (' + context + ')') if context else ''
+    results.append({'id': id, 'success': False, 'notes': msg + comment})
+    tell_failure(f'Failed to change **{id}**{comment}: ' + msg + '.')
 
 
-def skipped(id, msg):
+def skip(id, msg, context = ''):
     global results
-    results.append({'id': id, 'success': False, 'notes': msg})
-    tell_warning(f'Skipped **{id}**: ' + msg + '.')
+    comment = (' (' + context + ')') if context else ''
+    results.append({'id': id, 'success': False, 'notes': msg + comment})
+    tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
 
+
+_UNSUPPORTED_KINDS = [
+    IdKind.INSTANCE_ID,
+    IdKind.INSTANCE_HRID,
+    IdKind.ACCESSION,
+    IdKind.USER_ID,
+    IdKind.USER_BARCODE,
+    IdKind.LOAN_ID,
+    IdKind.TYPE_ID,
+]
 
 def do_change():
     log(f'do_change invoked')
     global results
+    results = []
     identifiers = unique_identifiers(pin.textbox_ids)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
@@ -254,151 +270,253 @@ def do_change():
         log(f'user declined to proceed')
         return
     reset_interrupts()
-    results = []
-    with use_scope('output', clear = True):
-        steps = len(identifiers) + 1
-        put_grid([[
-            put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
-            put_button('Stop', outline = True, color = 'danger',
-                       onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style('margin: auto 17px auto 17px')
-        folio = Folio()
-        for count, id in enumerate(identifiers, start = 2):
-            put_html('<br>')
-            try:
-                id_kind = folio.record_id_kind(id)
-                if id_kind == RecordIdKind.UNKNOWN:
-                    failed(id, f'could not recognize this type of id')
-                    continue
-                # FIXME update this when we support other record types.
-                elif id_kind not in [RecordIdKind.ITEM_ID, RecordIdKind.ITEM_HRID,
-                                     RecordIdKind.ITEM_BARCODE]:
-                    skipped(id, f'not an item record')
-                    continue
-                records = folio.records(id, id_kind, RecordKind.ITEM)
-                if interrupted():
-                    break
-                if not records or len(records) == 0:
-                    failed(id, f'no item record(s) found for {id_kind} {id}.')
-                    continue
-                # FIXME update this when support other record types.
-                known_fields[pin.chg_field].change(records[0])
-            except Interrupted as ex:
-                log('stopping due to interruption')
-                break
-            except Exception as ex:
-                tell_failure(f'Error: ' + str(ex))
-                stop_processbar()
-                return
-            finally:
-                set_processbar('bar', count/steps)
-        stop_processbar()
-        put_html('<br>')
-        if interrupted():
-            tell_warning('**Stopped**.')
-        else:
-            what = pluralized('item record', identifiers, True)
-            put_grid([[
-                put_markdown(f'Finished changing {what}.').style('margin-top: 6px'),
-                put_button('Export summary', outline = True,
-                           onclick = lambda: export_data(results, 'change-results.csv'),
-                           ).style('text-align: right')
-            ]]).style('margin: auto 17px auto 17px')
-
-
-def change_location(record):
-    # Get the list of known types again (folio.py will have cached it) and
-    # create a mapping of value names to type objects.
+    steps = 2*len(identifiers)          # 2 passes => 2x number of items
     folio = Folio()
-    types = {}
-    for item in folio.types(known_fields[pin.chg_field].type):
-        types[item['name']] = item
+    with use_scope('output', clear = True):
+        try:
+            done = 0
+            with use_scope('progress'):
+                put_grid([[put_markdown(f'_Gathering records ..._')]]
+                         ).style('margin: auto 17px auto 17px')
+            put_grid([[
+                put_processbar('bar', init = done/steps).style('margin-top: 11px'),
+                put_button('Stop', outline = True, color = 'danger',
+                           onclick = lambda: stop()).style('text-align: right')
+            ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
 
-    id = record['id']
+            # Start by gathering all records & their types.
+            records = []
+            for id in identifiers:
+                record = folio.record(id)
+                done += 1
+                set_processbar('bar', done/steps)
+                if not record:
+                    fail(id, f'unrecognized identifier **{id}**.')
+                    continue
+                if record.kind in _UNSUPPORTED_KINDS:
+                    skip(id, 'changing this kind of record is not supported.')
+                    continue
+                records.append(record)
+
+            # 1st pass: apply changes to holdings records in the input (if any).
+            #  * temporary location: all ops allowed, & change holdings' items.
+            #
+            #  * permanent location: "add"/"delete" permanent loc. on holdings
+            #    is not allowed b/c they have only 1 perm. loc & always have a
+            #    loc. "Change" allowed; changes all items & the holdings rec.
+            with use_scope('progress', clear = True):
+                put_grid([[put_markdown(f'_Changing records ..._')]]
+                         ).style('margin: auto 17px auto 17px')
+            holdings_done = []
+            for record in filter(lambda r: r.kind is RecordKind.HOLDINGS, records):
+                done += 1
+                set_processbar('bar', done/steps)
+                if not (change_holdings(record) and save_record(record)):
+                    log(f'couldn\'t change and/or save holdings rec. – skipping items')
+                    continue
+                for item in folio.related_records(record.id, IdKind.HOLDINGS_ID,
+                                                  RecordKind.ITEM):
+                    log(f'changing item {item.id} after changing holdings {record.id}')
+                    context = f'an item associated with holdings record {record.id}'
+                    # We changed the holdings rec. => we can change item directly.
+                    if change_item(item, record, context = context):
+                        save_record(item, context = context)
+                holdings_done.append(record.id)
+
+            # 2nd pass: apply changes to item records in the input. We may have
+            # changed some already if there were holdings records in the input.
+            for item in filter(lambda r: r.kind is RecordKind.ITEM, records):
+                if item.data['holdingsRecordId'] in holdings_done:
+                    log(f'skipping {item.id}, assuming it was done in holdings pass')
+                elif change_item(item):
+                    save_record(item)
+                done += 1
+                set_processbar('bar', done/steps)
+        except Interrupted as ex:
+            tell_warning('**Stopped**.')
+            return
+        except Exception as ex:
+            tell_failure(f'Error: ' + str(ex))
+            return
+        finally:
+            stop_processbar()
+
+        what = pluralized('record', identifiers, True)
+        put_grid([[
+            put_markdown(f'Finished changing {what}.').style('margin-top: 6px'),
+            put_button('Export summary', outline = True,
+                       onclick = lambda: export_data(results, 'change-results.csv'),
+                       ).style('text-align: right')
+        ]]).style('margin: auto 17px auto 17px')
+
+
+def change_record(record, context = ''):
+    '''Returns True if successful, False if couldn't make the change.'''
+    folio = Folio()
+    # Get the list of known values for this type (folio.py will have cached
+    # it) and create a mapping of value names to value objects.
+    value_type = known_fields[pin.chg_field].type
+    values = {x['name']:x for x in folio.types(value_type)}
+
     field_key = known_fields[pin.chg_field].key
-    if (current_value := record.get(field_key, None)):
+    if (current_value := record.data.get(field_key, None)):
         if pin.chg_op == 'add':
-            skipped(id, f'item has an existing value for _{field_key}_')
-            return
+            skip(record.id, f'item _{field_key}_ has an existing value', context)
+            return False
         # We're doing change or delete. Existing value must match expected one.
-        if current_value != types[pin.old_value]['id']:
-            skipped(id, f'value of field _{field_key}_ is not "{pin.old_value}"')
-            return
+        if current_value != values[pin.old_value]['id']:
+            skip(record.id, f'_{field_key}_ value is not "{pin.old_value}"', context)
+            return False
+        # We can proceed.
         back_up_record(record)
         if pin.chg_op == 'change':
-            log(f'changing field {field_key} in item {id} to {pin.new_value}')
-            record[field_key] = types[pin.new_value]['id']
+            log(f'changing field {field_key} in item {record.id} to {pin.new_value}')
+            record.data[field_key] = values[pin.new_value]['id']
         elif pin.chg_op == 'delete':
-            log(f'deleting field {field_key} from item {id}')
-            del record[field_key]
+            # Some fields on some record kinds must always exist.
+            if record.kind in known_fields[pin.chg_field].delete_ok:
+                log(f'deleting field {field_key} from item {record.id}')
+                del record.data[field_key]
+            else:
+                skip(record.id, f'not allowed to delete field {field_key}'
+                     + ' on {record.kind} records', context)
+                return False
     elif pin.chg_op == 'add':
-        log(f'adding {field_key} value "{pin.new_value}" to item {id}')
+        log(f'adding {field_key} value "{pin.new_value}" to item {record.id}')
         back_up_record(record)
-        record[field_key] = types[pin.new_value]['id']
+        record.data[field_key] = values[pin.new_value]['id']
     else:
         # It doesn't have a value, and we're not doing an add.
-        skipped(id, f'item **{id}** has no field _{field_key}_')
-        return
+        skip(record.id, f'item **{record.id}** has no field _{field_key}_', context)
+        return False
+    log(f'changes made to {record.kind} record {record.id}')
+    return True
 
-    if pin.chg_field == 'Permanent location':
-        # The item's permanent location should match the holdings location.
-        # If an item is moved to a different place, its holdings field value
-        # should be updated, which may require creating a new holdings record.
-        # At the moment, the following does NOT create new holdings records.
 
-        holdings_id = record['holdingsRecordId']
-        if (holdings := folio.records(holdings_id, RecordIdKind.HOLDINGS_ID)):
-            holdings_record = holdings[0]
-        else:
-            failed(id, f'cannot update permanent its location because its'
-                   + f' holdings record {holdings_id} could not be retrieved')
-            return
-
-        new_location_id = record['permanentLocation']['id']
-        new_location_name = record['permanentLocation']['name']
-        if holdings_record['permanentLocationId'] != new_location_id:
-            log(f'holdings location is not the same as new location')
-            # See if the instance has another holdings record with the loc.
-            # We can get the instance id from this holdings b/c it's the same.
-            inst_id = holdings_record['instanceId']
-            for rec in folio.records(inst_id, RecordIdKind.INSTANCE_ID, 'holdings'):
-                if rec['permanentLocationId'] == new_location_id:
-                    new_holdings_id = rec['id']
-                    log(f'updating {id}\'s holdings record to be {new_holdings_id}')
-                    record['holdingsRecordId'] = new_holdings_id
-                    break
-            else:
-                # No holdings records found with the new location. Currently not
-                # handled. FIXME: support creating new holdings record.
-                failed(id, f'the parent instance {inst_id} has no holdings record'
-                       + f' with a permanent location of {new_location_name}.'
-                       + f' One will need to be created before item {id}\'s'
-                       + f' permanent location can be set there.')
-                return
-
-    # If we made it this far, send the updated record to Folio.
+def save_record(record, context = ''):
+    import pdb; pdb.set_trace()
     if config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to change {id}')
+        log(f'demo mode in effect – pretending to save {record.id}')
         success = True
     else:
-        success, error = folio.write(record, f'/item-storage/items/{id}')
-
+        folio = Folio()
+        endpoint = RecordKind.storage_endpoint(record.kind)
+        success, error = folio.write(record, endpoint + '/' + record.id)
     # Report the outcome to the user.
+    field = 'field _' + known_fields[pin.chg_field].key + '_'
     text = {'add': 'added to', 'change': 'changed in', 'delete': 'deleted from'}
-    act  = text[pin.chg_op]
+    action = text[pin.chg_op]
     if success:
-        succeeded(id, f'field _{field_key}_ {act} item record')
+        succeed(record.id, f'{field} {action} {record.kind} record', context)
+        return True
     else:
-        failed(id, str(error))
+        fail(record.id, str(error), context)
+        return False
 
 
-Field = namedtuple('Field', 'type key change')
+def change_holdings(record):
+    if pin.chg_field == 'Permanent location' and pin.chg_op != 'change':
+        # Holdings always have a perm loc., so can only change it.
+        skip(record.id, 'Cannot add or delete a permanent'
+                + ' location field on holdings records')
+        return False
+    return change_record(record)
+
+
+def change_item(item, holdings_record = None, context = ''):
+    # Try to change the item but without saving them yet. If we fail, bail.
+    if not change_record(item, context):
+        return False
+
+    # If the change is to a temporary location field, we can make the change
+    # without having to change a holdings record, and we're done.
+    if pin.chg_field == 'Temporary location':
+        return True
+
+    # Not a temporary location change. Are we making this change together with
+    # changing the holdings record? If so and the results match, we're done.
+    field_key = known_fields[pin.chg_field].key
+    if holdings_record:
+        if item.data[field_key] == holdings_record.data[field_key]:
+            return True
+        else:
+            # This should not happen.
+            import pdb; pdb.set_trace()
+
+    # No holdings record has been changed so far. Here are the possible cases:
+    # 1. Moving item from one holdings to another holdings on the instance.
+    #    1a) Original holdings has other items => no deletion needed. Done.
+    #    1b) Original holdings is empty => delete original holdings record.
+    #
+    # 2. Moving item to a location that has no holdings record on the instance
+    #    => must create new holdings record on the instance.
+    folio = Folio()
+    current_holdings = folio.record(item.data['holdingsRecordId'])
+    if not current_holdings:
+        # This should never happen, but we always want to check everything.
+        fail(id, f'cannot update {field_key} of {item.id} because its holdings'
+               + f' record {item.data["holdingsRecordId"]} could not be retrieved')
+        return False
+
+    instance_id = current_holdings['instanceId']
+    instance = folio.record(instance_id)
+    if not instance:
+        # This should never happen, but we always want to check everything.
+        fail(id, f'cannot update {field_key} of {item.id} because its'
+               + f' instance record {instance_id} could not be retrieved')
+        return False
+
+    # In practice, the only way we get to this point is if the operation is not
+    # a deletion -- so either an add or a change.
+    for holdings in folio.related_records(instance_id, IdKind.INSTANCE_ID, 'holdings'):
+        if item.data[field_key] == holdings.data[field_key]:
+            # Found a holdings record that has the new location => case 1.
+            log(f'updating {item.id}\'s holdings record to be {holdings.id}')
+            item.data['holdingsRecordId'] = holdings.id
+            break
+    else:
+        # No other existing holdings record has the new location => case 2.
+        # FIXME create new holdings rec.
+        new_location_id = item['permanentLocation']['id']
+        new_location_name = item['permanentLocation']['name']
+        fail(id, f'the parent instance {instance_id} has no holdings record'
+             + f' with a permanent location of {new_location_name}.'
+             + f' One will need to be created before item {item.id}\'s'
+             + f' permanent location can be set there.')
+        return False
+
+    # If we get here, we have a case 1a or 1b. To figure out which, check if
+    # there are any other items on the current holdings record.
+    for other in folio.related_records(current_holdings.id, IdKind.HOLDINGS_ID, 'items'):
+        if other.id != item.id:
+            # The holdings rec has another item => case 1a. We're done.
+            return True
+    else:
+        # We have case 1b and we need to delete the old holdings record.
+        if config('DEMO_MODE', cast = bool):
+            log(f'demo mode in effect – pretending to delete {current_holdings.id}')
+            success = True
+        else:
+            back_up_record(current_holdings)
+            success, error = folio.delete(current_holdings)
+        context = 'moving its last or only item ({record.id}) to another holdings record'
+        if success:
+            succeed(current_holdings.id, f'deleted holdings record {current_holdings.id}',
+                    context = context)
+            return True
+        else:
+            fail(current_holdings.id, str(error), context = context)
+            return False
+
+
+
+Field = namedtuple('Field', 'type key delete_ok')
 
 known_fields = {
     'Temporary location': Field(type = TypeKind.LOCATION,
                                 key = 'temporaryLocationId',
-                                change = change_location),
+                                delete_ok = [RecordKind.ITEM, RecordKind.HOLDINGS]),
     'Permanent location': Field(type = TypeKind.LOCATION,
                                 key = 'permanentLocationId',
-                                change = change_location),
+                                delete_ok = [RecordKind.ITEM]),
 }
