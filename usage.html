@@ -371,6 +371,39 @@
 </section>
 <section id="tab-change-records">
 <h2 id="tab-change-records">Tab: change records<a class="headerlink" href="#tab-change-records" title="Permalink to this headline">¶</a></h2>
+<p>The <em>Change records</em> tab provides functionality for changing the values of fields in records. You can use it to add, change, or delete values. It currently works only for item and holdings records, and only for the <em>Temporary location</em> and <em>Permanent location</em> fields, though this may be expanded in the future.</p>
+<figure>
+<img src="_static/media/change-tab.png"/>
+</figure>
+<p>The bottom left-hand half of the <em>Change records</em> tab includes an input box where you can type or copy-paste identifiers of item records and/or holdings records. “Identifiers” here can be barcodes, unique id’s (i.e., strings that looks like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>), or hrid’s (human readable identifiers). Alternatively, instead of typing or copy-pasting identifiers, you can upload a file of identifiers by clicking on the <span class="button color-outline-primary">Upload</span> button.</p>
+<p>The bottom right-hand half of the <em>Change records</em> tab features a set of <span class="button color-primary">Select</span> buttons and radio buttons. The first button allows you to select the field to be changed. Clicking on the button will pop up a dialog where you can select from a list of fields that Foliage knows how to change:</p>
+<figure>
+<img src="_static/media/change-tab-select-field.png"/>
+</figure>
+<p>Once you select a field and click <span class="button color-primary">Submit</span> in the dialog, the <em>Change records</em> tab will show the selected field to the right of the button you just clicked:</p>
+<figure>
+<img src="_static/media/change-tab-selected-field.png"/>
+</figure>
+<p>Next, choose the action to be performed on the records. The following are the possible actions and their meanings:</p>
+<ul class="simple">
+<li><p><em>Add value</em>: this only acts when an item record does not have a value for the selected field. If you select <em>Add value</em>, only the new field value selector is enabled; the selector for the current field value is grayed out and disabled. When the operation is actually performed, Foliage will check each record to see if the field is present at all (with any value); if the field is missing, then Foliage will add it with the given value, but if a record has a value for the given, then Foliage will skip that record.</p></li>
+<li><p><em>Change value</em>: this operation needs both a current field value and a new field value, so both selectors are enabled when you select <em>Change value</em> as the action. When the operation is performed, Foliage will check each record to see if it has the specified current field value. If it does, the record will be changed to have the new field value, but if the record doesn’t (either because the value it has is different or the record doesn’t have the field at all) then Foliage will skip that record.</p></li>
+<li><p><em>Delete value</em>: this operation needs a current field value but not a new field value, so when the action is <em>Delete value</em>, the new field value selector is disabled. When the operation is performed, Foliage will check if each record has the given value for the field. If it does, Foliage will delete the field value; if a record doesn’t, Foliage wil skip that record.</p></li>
+</ul>
+<p>Depending on the action chosen, <span class="button color-primary">Select</span> buttons may be enabled for either or both the current field value and/or the new field value. When clicked, Foliage will pop up a dialog with a long list of possible field values. Here is an example:</p>
+<figure>
+<img src="_static/media/change-tab-value-selector.png"/>
+</figure>
+<p>Once the required values have been selected for the relevant fields, click the <span class="button color-danger">Change records</span> button to proceed with the changes.</p>
+<section id="field-matching-and-change-operations">
+<h3 id="field-matching-and-change-operations">Field matching and change operations<a class="headerlink" href="#field-matching-and-change-operations" title="Permalink to this headline">¶</a></h3>
+<p>The selectors in the <em>Change records</em> interface are designed to ask only for the values actually needed for a given operation. The values requested are required. For example, if you select <em>Delete value</em> as the action, the Foliage interface will require you to select a current field value and will not allow you to leave it blank , and it will not let you specify a new field value. Foliage is also strict about matching field values when it performs the changes. For example, it will not change a record’s field value to a new value unless it matches the value expected to be the current value.</p>
+<p>These strict requirements are mainly motivated by the goal of reducing the chance of accidental unintended changes when long lists of records are involved, but they also have some benefits for how users can perform changes. For example, it’s safe to give Foliage a list of data that may or may not have specific field values, because it will skip those that don’t match. For example, suppose books from two different locations A and B are being moved to location C. You can load a list of the book barcodes, select A as the current location field value and C as the new field value, click the <span class="button color-danger">Change records</span> button to make the changes, then (without doing anything else) change the selection of the current field value to B in the user interface, and click <span class="button color-danger">Change records</span> button a second time. Since Foliage will only change matching records, the first run will change only those records that have current location A and the second run will change only those records that have current location B. Together, the two runs will have performed movers A → C and B → C.</p>
+</section>
+<section id="saving-a-log-of-the-results">
+<h3 id="saving-a-log-of-the-results">Saving a log of the results<a class="headerlink" href="#saving-a-log-of-the-results" title="Permalink to this headline">¶</a></h3>
+<p>After performing the changes and printing a summary of the results, Foliage will include a button named <span class="button color-outline-primary">Export</span> at the bottom. This allows you to export a list of all the changes as a CSV file.</p>
+</section>
 </section>
 <section id="tab-delete-records">
 <h2 id="tab-delete-records">Tab: delete records<a class="headerlink" href="#tab-delete-records" title="Permalink to this headline">¶</a></h2>
