@@ -101,3 +101,4 @@ dev/splash-screen/foliage-splash-screen.png
 docs/_build
 .README.md.tmp
 *.bak
+foliage/data/macos-systray-widget/macos-systray-widget
