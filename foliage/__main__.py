@@ -210,14 +210,16 @@ the credentials again.
         except:
             pass
         log('exiting forcefully with error code')
-        # This is a sledgehammer, but it kills everything, including ongoing
-        # network get/post. I have not found a more reliable way to interrupt.
+        # This is a sledgehammer, but it kills everything, including network
+        # get/post and the Qt widget thread (on Windows).
         os._exit(1)
+    else:
+        log('exiting normally')
 
     # And exit ----------------------------------------------------------------
 
-    log('exiting normally')
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
+
 
 
 # Main page creation function.
@@ -266,6 +268,7 @@ def foliage_page(widget):
         # The timeout is so we can check if the user quit the taskbar widget.
         changed = pin_wait_change(pin_names, timeout = 1)
         if (not widget or widget.running()) and not changed:
+            log('continuing')
             continue
         if (widget and not widget.running()):
             log('widget has exited')
@@ -348,15 +351,16 @@ def config_debug(debug_arg):
 def config_signals():
     if os.name == 'nt' and inside_pyinstaller_app():
         # Our PyQt taskbar widget is problematic because PyQt uses signals
-        # and when you exit the widget, the signal it sends causes the
-        # main thread to terminate.  I couldn't solve this by catching the
-        # signals, maybe because I just don't know how to do that properly
-        # on Windows.  Instead, this causes them to be ignored.  IMHO tha's
+        # and when you exit the widget, the signal it sends causes the main
+        # thread to terminate, which in turn means the main thread never gets
+        # a chance to close the application window.  I couldn't solve this by
+        # catching the signals, maybe because I just don't know how to do
+        # that on Windows.  Instead, this causes them to be ignored.  IMHO it's
         # OK when running as a GUI app b/c it's hard for the user to ^C it.
         import signal
         import win32api
         import ctypes
-        log('configuring signals to be ignored')
+        log('configuring signals to be ignored on Windows')
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         win32api.SetConsoleCtrlHandler(None, True)
         ctypes.windll.kernel32.SetConsoleCtrlHandler(None, True)
