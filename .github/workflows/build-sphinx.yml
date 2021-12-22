@@ -14,7 +14,7 @@ name: Update docs on GitHub
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   deploy:
