@@ -67,7 +67,7 @@ def tab_contents():
         put_textarea('textbox_find', rows = 4),
         put_grid([[
             put_radio('select_kind', inline = True,
-                      label = 'Type of record to retrieve:',
+                      label = 'Kind of record to retrieve:',
                       options = [ ('Item', RecordKind.ITEM, True),
                                   ('Holdings', RecordKind.HOLDINGS),
                                   ('Instance', RecordKind.INSTANCE),
@@ -319,7 +319,7 @@ def user_wants_reuse():
         event.set()
 
     pins = [
-        put_text('The list of identifiers and the type of record to retrieve'
+        put_text('The list of identifiers and the kind of record to retrieve'
                  + ' are unchanged from the previous lookup. Should the results'
                  + ' be reused, or should the identifiers be looked up again?'),
         put_html('<br>'),
