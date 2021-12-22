@@ -82,10 +82,10 @@ cd foliage
 python3 setup.py install
 ```
 
- 
 
 ## Usage
 
+Documentation for Foliage is available online at [https://caltechlibrary.github.io/foliage/](https://caltechlibrary.github.io/foliage/).
 
 
 ## Getting help
