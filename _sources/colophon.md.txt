@@ -1,0 +1,7 @@
+# Colophon
+
+This documentation was written by [Michael Hucka](https://www.cds.caltech.edu/~mhucka/).
+
+The source files use [MyST-flavored Markdown](https://myst-parser.readthedocs.io/en/latest/) and the [Napoleon](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html) extension to [Sphinx](https://www.sphinx-doc.org). A [GitHub Action](https://github.com/caltechlibrary/foliage/blob/main/.github/workflows/build-sphinx.yml) takes care of creating the formatted version of the documentation and hosting it on GitHub.io at https://caltechlibrary.github.io/foliage. The formatted output can also be produced manually using commands implemented in the [Makefile](Makefile) located in the [`docs/`](https://github.com/caltechlibrary/foliage/tree/main/docs) subdirectory of the Foliage source code repository.
+
+The [vector artwork](https://thenounproject.com/term/branch/1047074/) used as a starting point for the logo for this repository was created by [Alice Noir](https://thenounproject.com/AliceNoir/) for the [Noun Project](https://thenounproject.com).  It is licensed under the Creative Commons [Attribution 3.0 Unported](https://creativecommons.org/licenses/by/3.0/deed.en) license.  The vector graphics was modified by Mike Hucka to change the color.
