@@ -86,6 +86,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
+from   commonpy.interrupt import wait
 import os
 from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 from   sidetrack import log
@@ -113,7 +114,9 @@ class SystemWidget():
 
 
     def stop(self):
-        log('stopping system widget')
+        if not self.running():
+            log('stop called for system widget but it is no longer running')
+            return
         if self.widget_process:
             log('killing macos widget process')
             self.widget_process.kill()
@@ -127,7 +130,7 @@ class SystemWidget():
             self.widget_process = None
         elif self.widget_info and self.widget_info['running']:
             # Nothing to do; it will get killed when Foliage exits.
-            pass
+            log('letting Windows widget get terminated normally on quit')
 
 
     def start_macos_widget(self):
@@ -181,9 +184,12 @@ class SystemWidget():
             log('taskbar widget returned from exec_()')
             widget_info['running'] = False
 
+            # Wait a time to give the main loop time to run the quit actions.
+            wait(2)
+
         from threading import Thread
         log(f'starting taskbar icon widget in a subthread')
-        thread = Thread(target = show_widget, args = ())
+        thread = Thread(target = show_widget, daemon = True, args = ())
         thread.start()
         # Note we never join() the thread, b/c that would block.  We start the
         # widget thread & return so caller can proceed to its own event loop.
