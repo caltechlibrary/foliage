@@ -57,43 +57,40 @@ class ChangeTab(FoliageTab):
 def tab_contents():
     log(f'generating change tab contents')
     # FIXME what causes these diffs on windows?
-    textarea_rows = 11 if sys.platform.startswith('win') else 10
-    margin_adjust = 'margin-top: -1em' if sys.platform.startswith('win') else ''
+    textarea_rows = 14 if sys.platform.startswith('win') else 13
+    margin_adjust = 'margin-top: -1.1em' if sys.platform.startswith('win') else ''
     return [
         put_grid([[
             put_markdown('Input item and/or holdings identifiers'
-                         + ' (i.e., barcodes, id\'s, or hrid\'s), select'
-                         + ' a field to change, set the action'
-                         + ' (add/change/delete value), and fill'
-                         + ' in the relevant current and/or new values. All'
-                         + ' records will be changed identically. Changing a'
-                         + ' holdings record will also change its items.'),
+                         + ' (i.e., barcodes, id\'s, or hrid\'s). All'
+                         + ' records will be changed the same way. Changing a'
+                         + ' holdings record will also change all its items.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
         put_grid([[
             put_grid([
-                [put_markdown('Identifiers of items to be changed:')],
                 [put_textarea('textbox_ids', rows = textarea_rows)],
             ]),
             put_grid([
-                [put_text('Field to be changed:')],
+                [put_text('Select the field to be changed:').style('margin-top: -0.5em')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_name()
                                ).style('text-align: left'),
                     put_textarea('chg_field', rows = 1, readonly = True),
                 ], size = '95px auto').style('text-align: right')],
+                [put_text('Select the action to perform:')],
                 [put_radio('chg_op', inline = True,
                            options = [ ('Add value', 'add', True),
                                        ('Change value', 'change'),
                                        ('Delete value', 'delete')]
                            ).style(f'margin-bottom: 0.3em; {margin_adjust}')],
-                [put_text('Current field value:').style('opacity: 0.3')],
+                [put_text('Current field value (records must match this):').style('opacity: 0.3')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_value('old')),
                     put_textarea('old_value', rows = 1, readonly = True),
                 ], size = '95px auto').style('z-index: 8; opacity: 0.3')],
-                [put_text('New field value:')],
+                [put_text('New value (field will be set to this):')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_value('new')),
                     put_textarea('new_value', rows = 1, readonly = True),
