@@ -45,31 +45,31 @@ figure {
 
 .color-outline-info {
   border: 1px solid #20a1b6;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #20a1b6;
 }
 
 .color-outline-danger {
   border: 1px solid #db3a4a;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #db3a4a;
 }
 
 .color-outline-primary {
   border: 1px solid #357bf6;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #357bf6;
 }
 
 .color-outline-secondary {
   border: 1px solid #6c6c6c;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #6c6c6c;
 }
 
 .color-outline-not-available {
   border: 1px solid #a6a6a6;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #a6a6a6;
 }
 
