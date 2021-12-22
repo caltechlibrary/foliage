@@ -17,7 +17,7 @@ file "LICENSE" for more information.
 #  |    by the Makefile. Manual changes to these values will be lost.      |
 #  ╰────────────────────── Notice ── Notice ── Notice ─────────────────────╯
 
-__version__     = '0.0.5'
+__version__     = '1.0.0'
 __description__ = 'Foliage: a tool to do bulk changes in FOLIO using the OKAPI API'
 __url__         = 'https://github.com/caltechlibrary/foliage'
 __author__      = 'Mike Hucka'
