@@ -98,3 +98,6 @@ build
 dist
 dev/windows/version.py
 dev/splash-screen/foliage-splash-screen.png
+docs/_build
+.README.md.tmp
+*.bak
