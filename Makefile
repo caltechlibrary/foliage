@@ -124,7 +124,7 @@ dependencies:;
 
 pyinstaller dist/$(os)/$(app_name): | vars dependencies run-pyinstaller make-zip
 
-run-pyinstaller: vars
+run-pyinstaller: vars foliage/data/macos-systray-widget/macos-systray-widget
 	@mkdir -p dist/$(os)
 	pyinstaller --distpath dist/$(os) --clean --noconfirm pyinstaller-$(os).spec
 
