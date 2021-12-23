@@ -1,11 +1,19 @@
 # Change log for foliage
 
-## ★ Version 0.0.6 () ★
+## ★ Version 1.0.0 (2021-12-22) ★
 
-Changes relative to the previous release:
+Highlights of the changes in this release:
 
+* Implemented fully the _Change records_ tab for item and holdings record changes.
 * Changed the lookup tab to have a checkbox controlling whether only open loans are searched, or whether all loans are searched.
+* Changed the lookup tab to have a checkbox controlling whether the FOLIO inventory API or the storage API is used to get records.
 * Revised the order of the tabs to put "lookup records" first, as this seems like a more useful default.
+* Slightly revised the user interface layout of some of the tabs.
+* Fixed system tray widget for macOS.
+* Fixed various bugs throughtout.
+* Rewrote various internal functions for (hopefully) better clarity and logic.
+
+Finally, documentation is now available at https://caltechlibrary.github.io/foliage/
 
 
 ## ★ Version 0.0.5 (2021-12-06) ★
