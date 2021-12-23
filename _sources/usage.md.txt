@@ -3,13 +3,22 @@
 This page describe how Foliage works and the functionality presented in the user interface.
 
 
-## Starting the program
+## Starting and quitting
 
-There are multiple ways of starting Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder; another way is to start it like you would any other Python program on your computer. If you run Foliage as a command-line program, it offers some additional options to control its behavior. You can find out what they are by running Foliage with the `help` option, which will make it print a summary:
+There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. If you are using the command-line version of Foliage, you can start it like you would any other Python program on your computer. In its command-line form Foliage offers some additional options to control its behavior. You can find out what they are by running Foliage with the `help` option (i.e., type `foliage help` in a terminal shell).
 
-```sh
-foliage help
-```
+In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray (depending on your operating system). The icon serves as a reminder that Foliage is running, and offers a single menu option (for quitting Foliage) in the right-click menu on Windows and the left-click menu on macOS.
+
+<figure>
+    <img width="200px" src="_static/media/foliage-macos-systray.png">
+    <figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.
+</figure>
+
+<figure>
+    <img width="400px" src="_static/media/foliage-windows-taskbar.png">
+    <figcaption>Portion of a Windows taskbar, showing the Foliage icon on the right.
+</figure>
+
 
 
 ## The form of the interface
@@ -25,7 +34,7 @@ The interface is organized into five areas of functionality accessed by clicking
 Although uncommon, this style of user interface means that Foliage looks and behaves identically no matter whether it is running on Window, macOS, or Linux. It also means the elements of the user interface (buttons, tabs, scroll bars) will all be very familiar to anyone who has interacted with a modern web page.
 
 
-## Authentication
+## FOLIO authentication
 
 Before you can do anything in Foliage, the program will need to ask the FOLIO server for a _token_ (a secret key) that Foliage will use to authenticate itself every time it communicates with the server. To get the token, Foliage needs to ask you for some basic information. It does this with a short form that it presents the first time it is run on a new computer:
 
@@ -109,7 +118,34 @@ After performing the changes and printing a summary of the results, Foliage will
 
 ## Tab: delete records
 
+You may already have guessed what the _Delete records_ tab in Foliage allows you to do. The current version of Foliage only allows the deletion of item records, but this may be extended to more kinds of records in the future.
+
+<figure>
+    <img src="_static/media/delete-tab.png">
+</figure>
+
+The tab layout is simple. It includes an input box where you can type or copy-paste identifiers of item records (barcodes, unique id's, or hrid's), an <span class="button color-outline-primary">Upload</span> button that lets you upload a file of identifiers, a <span class="button color-danger">Delete records</span> button to perform the deletions, and finally, the usual <span class="button color-outline-primary">Clear</span> button to clear past output.
+
+
 ## Tab: list UUIDs
+
+Many data fields in FOLIO records take values drawn from controlled vocabularies. These vocabularies consist of unique identifiers (UUIDs &ndash; strings that look like `f6fac97a-ee31-4300-aef6-b63be4ea23a2`). Each different type of field in a record can take on values from a specific list of values.
+
+Finding out the possible values is not easy to do directly in FOLIO. To help compensate, Foliage offers a simple way to list the possible values of various identifier types. This can be done in the _List UUIDs_ tab.
+
+<figure>
+    <img src="_static/media/list-uuids-tab.png">
+</figure>
+
+The operation of the _List UUIDs_ tab is simple: select a type of UUID from the pop-up menu, and click the <span class="button color-primary">Get list</span> button to make Foliage retrieve the list of identifiers from FOLIO. Shown below is an example of doing this for the "Holdings type" list.
+
+<figure>
+    <img src="_static/media/list-uuids-example.png">
+</figure>
+
+The identifiers can be clicked to get the full data for a given value. The complete list can also be exported by clicking the  <span class="button color-outline-primary">Export</span> button.
+
+
 
 ## Tab: other
 

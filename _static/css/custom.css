@@ -7,6 +7,10 @@ figure {
   text-align: center;
 }
 
+figure figcaption {
+  font-style: italic;
+}
+
 .button {
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
