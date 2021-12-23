@@ -136,16 +136,12 @@ class SystemWidget():
     def start_macos_widget(self):
         import subprocess
         data_dir = realpath(join(dirname(__file__), 'data'))
-        widget_script = join(data_dir, 'macos-widget.py')
-        log('sys.path = ' + str(sys.path))
-        log('sys.executable = ' + sys.executable)
-        log('sys.argv[0] = ' + sys.argv[0])
-        if exists(widget_script):
-            log('starting macos menubar widget')
-            log('invoking ' + sys.executable + ' on ' + widget_script)
-            self.widget_process = subprocess.Popen([sys.executable, widget_script])
+        widget = join(data_dir, 'macos-systray-widget', 'macos-systray-widget')
+        if exists(widget):
+            log('starting macos systray widget: ' + widget)
+            self.widget_process = subprocess.Popen(widget)
         else:
-            log('macos widget script is not at the expected path')
+            log('macos widget binary is not at the expected path')
 
 
     def start_windows_widget(self):
