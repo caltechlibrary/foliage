@@ -47,6 +47,8 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
                # destination and just 'data' like the one above.
                ('foliage/data/foliage-icon-r.png', 'foliage/data'),
                ('foliage/data/foliage-icon.png', 'foliage/data'),
+               ('foliage/data/macos-systray-widget/macos-systray-widget',
+                'foliage/data/macos-systray-widget/'),
                # Local hacked copy of PyWebIO.
                ('../PyWebIO/pywebio/platform/tpl', 'pywebio/platform/tpl'),
                ('../PyWebIO/pywebio/html', 'pywebio/html'),
@@ -87,8 +89,7 @@ configuration = Analysis(['foliage/__main__.py'],
                          # For reasons I can't figure out, PyInstaller tries
                          # to load these even though they're never imported
                          # by the Martian code.  Have to exclude them manually.
-                         excludes = ['PyQt4', 'PyQt5', 'gtk', 'matplotlib',
-                                     'numpy'],
+                         excludes = ['gtk', 'matplotlib', 'numpy'],
                          win_no_prefer_redirects = False,
                          win_private_assemblies = False,
                          cipher = None,
@@ -114,7 +115,7 @@ executable         = EXE(application_pyz,
                          strip = False,
                          upx = True,
                          runtime_tmpdir = None,
-                         console = True,
+                         console = False,
                         )
 
 app             = BUNDLE(executable,
