@@ -391,7 +391,6 @@ def change_record(record, context = ''):
 
 
 def save_record(record, context = ''):
-    import pdb; pdb.set_trace()
     if config('DEMO_MODE', cast = bool):
         log(f'demo mode in effect – pretending to save {record.id}')
         success = True
