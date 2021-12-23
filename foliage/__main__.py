@@ -268,8 +268,7 @@ def foliage_page(widget):
         # The timeout is so we can check if the user quit the taskbar widget.
         changed = pin_wait_change(pin_names, timeout = 1)
         if (not widget or widget.running()) and not changed:
-            log('continuing')
-            continue
+             continue
         if (widget and not widget.running()):
             log('widget has exited')
             quit_app(ask_confirm = False)
