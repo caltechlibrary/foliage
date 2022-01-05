@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.0.1 (2022-01-05) ★
+
+This version fixes a bug when retrieving user records.
+
+
 ## ★ Version 1.0.0 (2021-12-22) ★
 
 Highlights of the changes in this release:
