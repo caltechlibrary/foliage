@@ -99,7 +99,14 @@ _TABS = [LookupTab(), ChangeTab(), DeleteTab(), ListTab(), OtherTab()]
 def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
          no_keyring = False, port = 'P', version = False, no_widget = False,
          debug = 'OUT'):
-    '''Foliage: FOLIo chAnGe Editor, a tool to do bulk changes in FOLIO.
+    '''
+Foliage (FOLIo chAnGe Editor) is a tool to do bulk changes in FOLIO. It allows
+a user to look up records of various kinds, perform bulk changes in the values
+of record fields, delete records, and more. It communicates with a FOLIO server
+using the OKAPI network API.
+
+FOLIO credentials
+~~~~~~~~~~~~~~~~~
 
 Credentials for FOLIO OKAPI access can be provided in a number of ways. The
 sequence of methods it uses are as follows:
@@ -130,6 +137,48 @@ In normal situations, the first time a user runs Foliage, they will end up in
 case #4 above (i.e., being asked for credentials so that Foliage can create
 and store an API token), and then on subsequent runs, Foliage will not ask for
 the credentials again.
+
+The form of the interface
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Although Foliage is a desktop application and not a web service, it uses a
+web page as its user interface &ndash; it opens a page in a browser on your
+computer, letting you interact with the program through the familiar elements
+of a web page. All the while, Foliage runs locally on your computer. When you
+start Foliage normally (or after it shows the one-time credentials screen,
+described below), your browser should present a page that has the title
+"Foliage" and is organized into five areas of functionality accessed by
+clicking on the row of tabs near the top: (1) "Look up records" (the first
+one shown when Foliage starts up), (2) "Change records", (3) "Delete
+records", (4) "List UUIDs", and (5) "Other".
+
+Taskbar/menubar widget
+~~~~~~~~~~~~~~~~~~~~~~
+
+When Foliage starts up, it provides an icon in the Windows taskbar or the
+macOS system tray (depending on your operating system). The icon serves as a
+reminder that Foliage is running, and offers a single menu option (for
+quitting Foliage). The menu is accssed by right-clicking the widget on
+Windows or left-clicking it on macOS.
+
+To prevent the startup of the widget process, run Foliage with the --no-widget
+command-line option.
+
+Additional command-line arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default port for the local web server started by Foliage is 8080.  To
+change this port, you can use the option --port followed by a port number.
+
+If given the -V option, this program will print the version and other
+information, and exit without doing anything else.
+
+If given the -@ argument, this program will output a detailed trace of what it
+is doing. The debug trace will be sent to the given destination, which can
+be '-' to indicate console output, or a file path to send the output to a file.
+
+Command-line arguments summary
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
 
     # Process arguments -------------------------------------------------------
