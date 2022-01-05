@@ -10,12 +10,12 @@ There are multiple ways to start Foliage. One way is to double-click the program
 In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray (depending on your operating system). The icon serves as a reminder that Foliage is running, and offers a single menu option (for quitting Foliage) in the right-click menu on Windows and the left-click menu on macOS.
 
 <figure>
-    <img width="200px" src="_static/media/foliage-macos-systray.png">
+    <img width="250px" src="_static/media/foliage-macos-systray.png">
     <figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.
 </figure>
 
 <figure>
-    <img width="400px" src="_static/media/foliage-windows-taskbar.png">
+    <img width="450px" src="_static/media/foliage-windows-taskbar.png">
     <figcaption>Portion of a Windows taskbar, showing the Foliage icon on the right.
 </figure>
 
