@@ -115,7 +115,8 @@ def do_list():
         try:
             types = folio.types(requested)
         except Exception as ex:
-            log(f'exception requesting list of {requested}: ' + str(ex))
+            import traceback
+            log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
             put_html('<br>')
             tell_failure('Error: ' + str(ex))
             return

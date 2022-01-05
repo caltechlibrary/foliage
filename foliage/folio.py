@@ -727,7 +727,7 @@ class Folio():
                 if open_loans_only:
                     loans = [ln for ln in loans if ln.data['status']['name'] == 'Open']
                 user_records = []
-                for user_id in [loan['userId'] for loan in loans]:
+                for user_id in [loan.data['userId'] for loan in loans]:
                     raise_for_interrupts()
                     user_records += self.related_records(user_id, IdKind.USER_ID, 'user',
                                                          use_inventory, open_loans_only)

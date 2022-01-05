@@ -333,6 +333,8 @@ def do_change():
             tell_warning('**Stopped**.')
             return
         except Exception as ex:
+            import traceback
+            log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
             tell_failure(f'Error: ' + str(ex))
             return
         finally:

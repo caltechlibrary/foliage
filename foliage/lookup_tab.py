@@ -206,6 +206,8 @@ def do_find():
                 log('stopping due to interruption')
                 break
             except Exception as ex:
+                import traceback
+                log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
                 tell_failure(f'Error: ' + str(ex))
                 stop_processbar()
                 return
