@@ -20,8 +20,10 @@ python-decouple == 3.5
 python_dateutil == 2.8.2
 pywebio         == 1.4.0
 rich            == 10.14.0
+setuptools      == 58.3.0
 sidetrack       == 2.0.0
 tornado         == 6.1
 python-slugify  == 4.0.1
 validators      == 0.18.2
 wand            == 0.6.7
+
