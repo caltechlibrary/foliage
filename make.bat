@@ -16,6 +16,10 @@ ECHO Removing "dist/win" and "build/win" subdirectories.
 
 RD /S /Q dist/win build/win
 
+ECHO Making sure all Python packages are the right version
+
+python -m pip install -r requirements.txt
+
 ECHO Generating version.py ...
 
 python dev/windows/create-version.py
