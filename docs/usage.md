@@ -5,9 +5,9 @@ This page describe how Foliage works and the functionality presented in the user
 
 ## Starting and quitting
 
-There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. If you are using the command-line version of Foliage, you can start it like you would any other Python program on your computer. In its command-line form Foliage offers some additional options to control its behavior. You can find out what they are by running Foliage with the `help` option (i.e., type `foliage help` in a terminal shell).
+There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. You can run Foliage as a command line application. (When doing the latter, you can find out available command-line options by running `foliage help`.)
 
-In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray (depending on your operating system). The icon serves as a reminder that Foliage is running, and offers a single menu option (for quitting Foliage) in the right-click menu on Windows and the left-click menu on macOS.
+In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray. The icon serves as a reminder that Foliage is running, and offers a single menu option to quit Foliage. You can access the menu by right-clicking on Windows and control-clicking on macOS.
 
 <figure>
     <img width="250px" src="_static/media/foliage-macos-systray.png">
@@ -20,10 +20,20 @@ In either case, Foliage will open a web browser page (described in the next sect
 </figure>
 
 
+## First-time permissions
+
+When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections. Here is an example on macOS:
+
+<figure>
+    <img width="500px" src="_static/media/macos-accept-connections.png">
+</figure>
+
+Make sure to click **Accept**. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application and not a web service, it uses a web page as its user interface &ndash; it opens a page in a browser on your computer, letting you interact with the program through the familiar elements of a web page. All the while, Foliage runs locally on your computer.  The operating system will not ask again after the first time you run a particular version of Foliage.
+
 
 ## The form of the interface
 
-Although Foliage is a desktop application and not a web service, it uses a web page as its user interface &ndash; it opens a page in a browser on your computer, letting you interact with the program through the familiar elements of a web page. All the while, Foliage runs locally on your computer. When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:
+ When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:
 
 <figure>
     <img src="_static/media/main-page.png">
