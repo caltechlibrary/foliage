@@ -246,6 +246,13 @@
     <li class="md-nav__item">
     
     
+      <a href="#first-time-permissions" class="md-nav__link">First-time permissions</a>
+      
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
       <a href="#the-form-of-the-interface" class="md-nav__link">The form of the interface</a>
       
     
@@ -328,8 +335,8 @@
 <p>This page describe how Foliage works and the functionality presented in the user interface.</p>
 <section id="starting-and-quitting">
 <h2 id="starting-and-quitting">Starting and quitting<a class="headerlink" href="#starting-and-quitting" title="Permalink to this headline">¶</a></h2>
-<p>There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. If you are using the command-line version of Foliage, you can start it like you would any other Python program on your computer. In its command-line form Foliage offers some additional options to control its behavior. You can find out what they are by running Foliage with the <code class="docutils literal notranslate"><span class="pre">help</span></code> option (i.e., type <code class="docutils literal notranslate"><span class="pre">foliage</span> <span class="pre">help</span></code> in a terminal shell).</p>
-<p>In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray (depending on your operating system). The icon serves as a reminder that Foliage is running, and offers a single menu option (for quitting Foliage) in the right-click menu on Windows and the left-click menu on macOS.</p>
+<p>There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. You can run Foliage as a command line application. (When doing the latter, you can find out available command-line options by running <code class="docutils literal notranslate"><span class="pre">foliage</span> <span class="pre">help</span></code>.)</p>
+<p>In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray. The icon serves as a reminder that Foliage is running, and offers a single menu option to quit Foliage. You can access the menu by right-clicking on Windows and control-clicking on macOS.</p>
 <figure>
 <img src="_static/media/foliage-macos-systray.png" width="250px"/>
 <figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.
@@ -339,9 +346,17 @@
 <figcaption>Portion of a Windows taskbar, showing the Foliage icon on the right.
 </figcaption></figure>
 </section>
+<section id="first-time-permissions">
+<h2 id="first-time-permissions">First-time permissions<a class="headerlink" href="#first-time-permissions" title="Permalink to this headline">¶</a></h2>
+<p>When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections. Here is an example on macOS:</p>
+<figure>
+<img src="_static/media/macos-accept-connections.png" width="500px"/>
+</figure>
+<p>Make sure to click <strong>Accept</strong>. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application and not a web service, it uses a web page as its user interface – it opens a page in a browser on your computer, letting you interact with the program through the familiar elements of a web page. All the while, Foliage runs locally on your computer.  The operating system will not ask again after the first time you run a particular version of Foliage.</p>
+</section>
 <section id="the-form-of-the-interface">
 <h2 id="the-form-of-the-interface">The form of the interface<a class="headerlink" href="#the-form-of-the-interface" title="Permalink to this headline">¶</a></h2>
-<p>Although Foliage is a desktop application and not a web service, it uses a web page as its user interface – it opens a page in a browser on your computer, letting you interact with the program through the familiar elements of a web page. All the while, Foliage runs locally on your computer. When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:</p>
+<p>When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:</p>
 <figure>
 <img src="_static/media/main-page.png"/>
 </figure>
@@ -493,7 +508,7 @@
               
           </div>
             Last updated on
-              Jan 05, 2022.
+              Jan 06, 2022.
             <br/>
             Created using
             <a href="http://www.sphinx-doc.org/">Sphinx</a> 4.3.2.
