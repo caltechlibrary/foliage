@@ -1,6 +1,7 @@
 # Installation
 
-There are multiple ways of installing Urial, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+There are multiple ways of installing Foliage, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+
 
 ## Preliminary requirements
 
