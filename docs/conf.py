@@ -1,32 +1,21 @@
-# Configuration file for the Sphinx documentation builder.
+# =============================================================================
+# @file    conf.py
+# @brief   COnfiguration file for Sphynx + MyST based documentation
+# @created 2021-01-25
+# @license Please see the file named LICENSE in the project directory
+# @website https://github.com/caltechlibrary/foliage
 #
 # This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
-
-# -- Project information -----------------------------------------------------
+# list, refer to https://www.sphinx-doc.org/en/master/usage/configuration.html
+# =============================================================================
 
 project = 'Foliage'
-copyright = '2021, Caltech Library'
+copyright = '2022, Caltech Library'
 author = 'Caltech Library'
 
 
-# -- General configuration ---------------------------------------------------
+# -- General configuration ----------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     'myst_parser',
     'sphinx.ext.autodoc',
@@ -61,7 +50,7 @@ html_theme = 'sphinx_material'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# Our additional CSS for DIBS.
+# Our additional CSS.
 html_css_files   = ['css/custom.css']
 
 html_show_sourcelink = False
@@ -73,7 +62,7 @@ html_sidebars = {
 html_last_updated_fmt = ""
 
 
-# -- Options for the Material theme ---------------------------------------------
+# -- Options for the Material theme -------------------------------------------
 # C.f. https://github.com/bashtage/sphinx-material/blob/master/docs/conf.py
 
 # Material theme options (see theme.conf for more information)
@@ -97,7 +86,7 @@ html_theme_options = {
 
     # Set the repo location to get a badge with stats
     'repo_url': 'https://github.com/caltechlibrary/foliage/',
-    'repo_name': 'Foliage',
+    'repo_name': 'foliage',
 
     # Visible levels of the global TOC; -1 means unlimited
     'globaltoc_depth': 2,
@@ -120,7 +109,7 @@ html_theme_options = {
 }
 
 
-# -- Options for the MyST parser ---------------------------------------------
+# -- Options for the MyST parser ----------------------------------------------
 
 myst_enable_extensions = [
     "colon_fence",
