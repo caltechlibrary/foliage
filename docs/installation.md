@@ -8,7 +8,7 @@ There are multiple ways of installing Foliage, ranging from downloading a self-c
 Foliage is written in [Python 3](https://www.python.org) and makes use of some additional Python software libraries that are installed automatically during the [installation steps](#installation). It also assumes a macOS, Windows or Linux environment, and a working Internet connection.
 
 
-## Installation
+## Installation instructions
 
 ### _Alternative 1: installing the ready-to-run executable programs_
 
