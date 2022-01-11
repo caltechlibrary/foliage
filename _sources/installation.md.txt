@@ -1,13 +1,14 @@
 # Installation
 
-There are multiple ways of installing Urial, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+There are multiple ways of installing Foliage, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+
 
 ## Preliminary requirements
 
 Foliage is written in [Python 3](https://www.python.org) and makes use of some additional Python software libraries that are installed automatically during the [installation steps](#installation). It also assumes a macOS, Windows or Linux environment, and a working Internet connection.
 
 
-## Installation
+## Installation instructions
 
 ### _Alternative 1: installing the ready-to-run executable programs_
 

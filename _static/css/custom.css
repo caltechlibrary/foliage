@@ -1,5 +1,21 @@
+.md-sidebar--secondary {
+  display: none !important;
+}
+
+.md-content {
+  margin-right: 0;
+}
+
+.md-header-nav__source {
+  width: 8rem !important;
+}
+
 nav.md-tabs {
-  display: none
+  display: none;
+}
+
+.md-nav__list ul {
+  margin-left: 10px !important;
 }
 
 figure {
