@@ -9,6 +9,8 @@ Foliage (_**Foli**o ch**a**n**g**e **E**ditor_) is a desktop computer applicatio
 maxdepth: 2
 ---
 installation.md
-usage.md
+first-time-usage.md
+foliage-interface.md
+nitty.md
 colophon.md
 ```

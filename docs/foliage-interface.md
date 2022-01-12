@@ -1,39 +1,6 @@
-# Using Foliage
+# The user interface
 
-This page describe how Foliage works and the functionality presented in the user interface.
-
-
-## Starting and quitting
-
-There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. You can run Foliage as a command line application. (When doing the latter, you can find out available command-line options by running `foliage help`.)
-
-In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray. The icon serves as a reminder that Foliage is running, and offers a single menu option to quit Foliage. You can access the menu by right-clicking on Windows and control-clicking on macOS.
-
-<figure>
-    <img width="250px" src="_static/media/foliage-macos-systray.png">
-    <figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.
-</figure>
-
-<figure>
-    <img width="450px" src="_static/media/foliage-windows-taskbar.png">
-    <figcaption>Portion of a Windows taskbar, showing the Foliage icon on the right.
-</figure>
-
-
-## First-time permissions
-
-When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections. Here is an example on macOS:
-
-<figure>
-    <img width="500px" src="_static/media/macos-accept-connections.png">
-</figure>
-
-Make sure to click **Accept**. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application and not a web service, it uses a web page as its user interface &ndash; it opens a page in a browser on your computer, letting you interact with the program through the familiar elements of a web page. All the while, Foliage runs locally on your computer.  The operating system will not ask again after the first time you run a particular version of Foliage.
-
-
-## The form of the interface
-
- When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:
+When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:
 
 <figure>
     <img src="_static/media/main-page.png">
@@ -41,31 +8,11 @@ Make sure to click **Accept**. The request for accepting network connections is 
 
 The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) _Look up records_ (the first one shown when Foliage starts up), (2) _Change records_, (3) _Delete records_, (4) _List UUIDs_, and (5) _Other_. They are described in detail below.
 
-Although uncommon, this style of user interface means that Foliage looks and behaves identically no matter whether it is running on Window, macOS, or Linux. It also means the elements of the user interface (buttons, tabs, scroll bars) will all be very familiar to anyone who has interacted with a modern web page.
-
-
-## FOLIO authentication
-
-Before you can do anything in Foliage, the program will need to ask the FOLIO server for a _token_ (a secret key) that Foliage will use to authenticate itself every time it communicates with the server. To get the token, Foliage needs to ask you for some basic information. It does this with a short form that it presents the first time it is run on a new computer:
-
-<figure>
-    <img src="_static/media/authentication.png">
-</figure>
-
-Foliage needs four pieces of information to connect and authenticate itself to a FOLIO server: a user account name and password, the URL for the FOLIO server, and the tenant id for the FOLIO server. The user name and password must belong to a valid account in FOLIO and are unique to each user; the URL and tenant id are the same for all users at an institution, and need to be obtained from the institute's contacts at FOLIO.
-
-Foliage **does not store** your user name and password. It uses them temporarily in the process of asking FOLIO for a token, but once it has the token, it stores _that_ (along with the URL and tenant id) in the secure password management system on the computer.
-
-Once Foliage has stored the token, subsequent start-ups of Foliage will retrieve it from the secure password management system and will not ask you for the credentials again. If something happens and you need to change the credentials or regenerate the token, you can do so by going to the "Other" tab in Foliage and clicking the <span class="button color-primary">Edit credentials</span> button.
-
-<figure>
-    <img src="_static/media/other-tab.png">
-</figure>
-
-
 ## Tab: look up records
 
-The first tab &ndash; the one presented by Foliage when you start it up &ndash; provides a facility for looking up any item, instance, holdings, loan, or user record using any of the common identifiers by which the records can be addressed.  Depending on the type of record, this may be a barcode, a unique id (i.e., a string that looks like `f6fac97a-ee31-4300-aef6-b63be4ea23a2`), an "hrid" (human readable identifier), or an accession number. You can either type or paste the numbers into the text box on the page, or use the <span class="button color-outline-primary">Upload</span> button to upload a text file containing such identifiers. Identifiers can be separated by newlines, spaces, commas, colons, or semicolons; Foliage will also strip any quote characters from the input. The screenshot below shows an example of looking up an item by its barcode:
+The first tab &ndash; the one visible when you start up Foliage &ndash; provides a facility for looking up any item, instance, holdings, loan, or user record using any of the common identifiers by which the records can be addressed.  Depending on the type of record, this may be a barcode, a unique id (i.e., a string that looks like `f6fac97a-ee31-4300-aef6-b63be4ea23a2`), an "hrid" (human readable identifier), or an accession number. You can either type or paste the numbers into the text box on the page, or use the <span class="button color-outline-primary">Upload</span> button to upload a text file containing such identifiers. Identifiers can be separated by newlines, spaces, commas, colons, or semicolons; Foliage will also strip any quote characters from the input. Lastly, identifiers can be mixed: you can enter barcodes for some items and hrid's for others all at once, and Foliage won't care.
+
+The screenshot below shows an example of looking up an item by its barcode:
 
 <figure>
     <img src="_static/media/lookup-barcode.png">
