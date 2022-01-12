@@ -47,7 +47,7 @@
   
   
   
-    <title>Using Foliage &#8212; Foliage</title>
+    <title>The user interface &#8212; Foliage</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/material.css" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
@@ -60,8 +60,8 @@
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Colophon" href="colophon.html" />
-    <link rel="prev" title="Installation" href="installation.html" />
+    <link rel="next" title="Nitty-gritty details" href="nitty.html" />
+    <link rel="prev" title="Using Foliage for the first time" href="first-time-usage.html" />
   
    
 
@@ -80,7 +80,7 @@
   <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer">
   <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search">
   <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-  <a href="#usage" tabindex="1" class="md-skip"> Skip to content </a>
+  <a href="#foliage-interface" tabindex="1" class="md-skip"> Skip to content </a>
   <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
@@ -99,7 +99,7 @@
       <div class="md-flex__cell md-flex__cell--stretch">
         <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
           <span class="md-header-nav__topic">Foliage</span>
-          <span class="md-header-nav__topic"> Using Foliage </span>
+          <span class="md-header-nav__topic"> The user interface </span>
         </div>
       </div>
       <div class="md-flex__cell md-flex__cell--shrink">
@@ -225,10 +225,38 @@
     <li class="md-nav__item">
     
     
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    <label class="md-nav__link md-nav__link--active" for="__toc"> Using Foliage </label>
+      <a href="first-time-usage.html" class="md-nav__link">Using Foliage for the first time</a>
+      <ul class="md-nav__list"> 
+    <li class="md-nav__item">
     
-      <a href="#" class="md-nav__link md-nav__link--active">Using Foliage</a>
+    
+      <a href="first-time-usage.html#starting-and-quitting" class="md-nav__link">Starting and quitting</a>
+      
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
+      <a href="first-time-usage.html#first-time-permissions" class="md-nav__link">First-time permissions</a>
+      
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
+      <a href="first-time-usage.html#folio-authentication" class="md-nav__link">FOLIO authentication</a>
+      
+    
+    </li></ul>
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    <label class="md-nav__link md-nav__link--active" for="__toc"> The user interface </label>
+    
+      <a href="#" class="md-nav__link md-nav__link--active">The user interface</a>
       
         
 <nav class="md-nav md-nav--secondary">
@@ -236,34 +264,6 @@
   </ul>
 </nav>
       <ul class="md-nav__list"> 
-    <li class="md-nav__item">
-    
-    
-      <a href="#starting-and-quitting" class="md-nav__link">Starting and quitting</a>
-      
-    
-    </li>
-    <li class="md-nav__item">
-    
-    
-      <a href="#first-time-permissions" class="md-nav__link">First-time permissions</a>
-      
-    
-    </li>
-    <li class="md-nav__item">
-    
-    
-      <a href="#the-form-of-the-interface" class="md-nav__link">The form of the interface</a>
-      
-    
-    </li>
-    <li class="md-nav__item">
-    
-    
-      <a href="#folio-authentication" class="md-nav__link">FOLIO authentication</a>
-      
-    
-    </li>
     <li class="md-nav__item">
     
     
@@ -304,6 +304,20 @@
     <li class="md-nav__item">
     
     
+      <a href="nitty.html" class="md-nav__link">Nitty-gritty details</a>
+      <ul class="md-nav__list"> 
+    <li class="md-nav__item">
+    
+    
+      <a href="nitty.html#looking-up-records" class="md-nav__link">Looking up records</a>
+      
+    
+    </li></ul>
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
       <a href="colophon.html" class="md-nav__link">Colophon</a>
       
     
@@ -330,55 +344,17 @@
         <div class="md-content">
           <article class="md-content__inner md-typeset" role="main">
             
-  <section class="tex2jax_ignore mathjax_ignore" id="using-foliage">
-<h1 id="usage--page-root">Using Foliage<a class="headerlink" href="#usage--page-root" title="Permalink to this headline">¶</a></h1>
-<p>This page describe how Foliage works and the functionality presented in the user interface.</p>
-<section id="starting-and-quitting">
-<h2 id="starting-and-quitting">Starting and quitting<a class="headerlink" href="#starting-and-quitting" title="Permalink to this headline">¶</a></h2>
-<p>There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder, if you are using the copy of Foliage that comes in the form of a ready-to-run application. You can run Foliage as a command line application. (When doing the latter, you can find out available command-line options by running <code class="docutils literal notranslate"><span class="pre">foliage</span> <span class="pre">help</span></code>.)</p>
-<p>In either case, Foliage will open a web browser page (described in the next section below) and provide an icon in the Windows taskbar or the macOS system tray. The icon serves as a reminder that Foliage is running, and offers a single menu option to quit Foliage. You can access the menu by right-clicking on Windows and control-clicking on macOS.</p>
-<figure>
-<img src="_static/media/foliage-macos-systray.png" width="250px"/>
-<figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.
-</figcaption></figure>
-<figure>
-<img src="_static/media/foliage-windows-taskbar.png" width="450px"/>
-<figcaption>Portion of a Windows taskbar, showing the Foliage icon on the right.
-</figcaption></figure>
-</section>
-<section id="first-time-permissions">
-<h2 id="first-time-permissions">First-time permissions<a class="headerlink" href="#first-time-permissions" title="Permalink to this headline">¶</a></h2>
-<p>When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections. Here is an example on macOS:</p>
-<figure>
-<img src="_static/media/macos-accept-connections.png" width="500px"/>
-</figure>
-<p>Make sure to click <strong>Accept</strong>. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application and not a web service, it uses a web page as its user interface – it opens a page in a browser on your computer, letting you interact with the program through the familiar elements of a web page. All the while, Foliage runs locally on your computer.  The operating system will not ask again after the first time you run a particular version of Foliage.</p>
-</section>
-<section id="the-form-of-the-interface">
-<h2 id="the-form-of-the-interface">The form of the interface<a class="headerlink" href="#the-form-of-the-interface" title="Permalink to this headline">¶</a></h2>
+  <section class="tex2jax_ignore mathjax_ignore" id="the-user-interface">
+<h1 id="foliage-interface--page-root">The user interface<a class="headerlink" href="#foliage-interface--page-root" title="Permalink to this headline">¶</a></h1>
 <p>When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:</p>
 <figure>
 <img src="_static/media/main-page.png"/>
 </figure>
 <p>The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) <em>Look up records</em> (the first one shown when Foliage starts up), (2) <em>Change records</em>, (3) <em>Delete records</em>, (4) <em>List UUIDs</em>, and (5) <em>Other</em>. They are described in detail below.</p>
-<p>Although uncommon, this style of user interface means that Foliage looks and behaves identically no matter whether it is running on Window, macOS, or Linux. It also means the elements of the user interface (buttons, tabs, scroll bars) will all be very familiar to anyone who has interacted with a modern web page.</p>
-</section>
-<section id="folio-authentication">
-<h2 id="folio-authentication">FOLIO authentication<a class="headerlink" href="#folio-authentication" title="Permalink to this headline">¶</a></h2>
-<p>Before you can do anything in Foliage, the program will need to ask the FOLIO server for a <em>token</em> (a secret key) that Foliage will use to authenticate itself every time it communicates with the server. To get the token, Foliage needs to ask you for some basic information. It does this with a short form that it presents the first time it is run on a new computer:</p>
-<figure>
-<img src="_static/media/authentication.png"/>
-</figure>
-<p>Foliage needs four pieces of information to connect and authenticate itself to a FOLIO server: a user account name and password, the URL for the FOLIO server, and the tenant id for the FOLIO server. The user name and password must belong to a valid account in FOLIO and are unique to each user; the URL and tenant id are the same for all users at an institution, and need to be obtained from the institute’s contacts at FOLIO.</p>
-<p>Foliage <strong>does not store</strong> your user name and password. It uses them temporarily in the process of asking FOLIO for a token, but once it has the token, it stores <em>that</em> (along with the URL and tenant id) in the secure password management system on the computer.</p>
-<p>Once Foliage has stored the token, subsequent start-ups of Foliage will retrieve it from the secure password management system and will not ask you for the credentials again. If something happens and you need to change the credentials or regenerate the token, you can do so by going to the “Other” tab in Foliage and clicking the <span class="button color-primary">Edit credentials</span> button.</p>
-<figure>
-<img src="_static/media/other-tab.png"/>
-</figure>
-</section>
 <section id="tab-look-up-records">
 <h2 id="tab-look-up-records">Tab: look up records<a class="headerlink" href="#tab-look-up-records" title="Permalink to this headline">¶</a></h2>
-<p>The first tab – the one presented by Foliage when you start it up – provides a facility for looking up any item, instance, holdings, loan, or user record using any of the common identifiers by which the records can be addressed.  Depending on the type of record, this may be a barcode, a unique id (i.e., a string that looks like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>), an “hrid” (human readable identifier), or an accession number. You can either type or paste the numbers into the text box on the page, or use the <span class="button color-outline-primary">Upload</span> button to upload a text file containing such identifiers. Identifiers can be separated by newlines, spaces, commas, colons, or semicolons; Foliage will also strip any quote characters from the input. The screenshot below shows an example of looking up an item by its barcode:</p>
+<p>The first tab – the one visible when you start up Foliage – provides a facility for looking up any item, instance, holdings, loan, or user record using any of the common identifiers by which the records can be addressed.  Depending on the type of record, this may be a barcode, a unique id (i.e., a string that looks like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>), an “hrid” (human readable identifier), or an accession number. You can either type or paste the numbers into the text box on the page, or use the <span class="button color-outline-primary">Upload</span> button to upload a text file containing such identifiers. Identifiers can be separated by newlines, spaces, commas, colons, or semicolons; Foliage will also strip any quote characters from the input. Lastly, identifiers can be mixed: you can enter barcodes for some items and hrid’s for others all at once, and Foliage won’t care.</p>
+<p>The screenshot below shows an example of looking up an item by its barcode:</p>
 <figure>
 <img src="_static/media/lookup-barcode.png"/>
 </figure>
@@ -471,7 +447,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
           
-            <a href="installation.html" title="Installation"
+            <a href="first-time-usage.html" title="Using Foliage for the first time"
                class="md-flex md-footer-nav__link md-footer-nav__link--prev"
                rel="prev">
               <div class="md-flex__cell md-flex__cell--shrink">
@@ -480,17 +456,17 @@
               <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
                 <span class="md-flex__ellipsis">
                   <span
-                      class="md-footer-nav__direction"> Previous </span> Installation </span>
+                      class="md-footer-nav__direction"> Previous </span> Using Foliage for the first time </span>
               </div>
             </a>
           
           
-            <a href="colophon.html" title="Colophon"
+            <a href="nitty.html" title="Nitty-gritty details"
                class="md-flex md-footer-nav__link md-footer-nav__link--next"
                rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span
                 class="md-flex__ellipsis"> <span
-                class="md-footer-nav__direction"> Next </span> Colophon </span>
+                class="md-footer-nav__direction"> Next </span> Nitty-gritty details </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink"><i
                 class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
@@ -508,7 +484,7 @@
               
           </div>
             Last updated on
-              Jan 11, 2022.
+              Jan 12, 2022.
             <br/>
             Created using
             <a href="http://www.sphinx-doc.org/">Sphinx</a> 4.3.2.

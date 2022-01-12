@@ -4,7 +4,8 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <meta name="lang:clipboard.copy" content="Copy to clipboard">
@@ -46,7 +47,7 @@
   
   
   
-    <title>Index &#8212; Foliage</title>
+    <title>Nitty-gritty details &#8212; Foliage</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/material.css" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
@@ -57,8 +58,10 @@
     <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
-    <link rel="index" title="Index" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Colophon" href="colophon.html" />
+    <link rel="prev" title="The user interface" href="foliage-interface.html" />
   
    
 
@@ -77,7 +80,7 @@
   <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer">
   <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search">
   <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-  <a href="#genindex" tabindex="1" class="md-skip"> Skip to content </a>
+  <a href="#nitty" tabindex="1" class="md-skip"> Skip to content </a>
   <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
@@ -96,7 +99,7 @@
       <div class="md-flex__cell md-flex__cell--stretch">
         <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
           <span class="md-header-nav__topic">Foliage</span>
-          <span class="md-header-nav__topic"> Index </span>
+          <span class="md-header-nav__topic"> Nitty-gritty details </span>
         </div>
       </div>
       <div class="md-flex__cell md-flex__cell--shrink">
@@ -292,12 +295,21 @@
     <li class="md-nav__item">
     
     
-      <a href="nitty.html" class="md-nav__link">Nitty-gritty details</a>
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    <label class="md-nav__link md-nav__link--active" for="__toc"> Nitty-gritty details </label>
+    
+      <a href="#" class="md-nav__link md-nav__link--active">Nitty-gritty details</a>
+      
+        
+<nav class="md-nav md-nav--secondary">
+  <ul class="md-nav__list" data-md-scrollfix="">
+  </ul>
+</nav>
       <ul class="md-nav__list"> 
     <li class="md-nav__item">
     
     
-      <a href="nitty.html#looking-up-records" class="md-nav__link">Looking up records</a>
+      <a href="#looking-up-records" class="md-nav__link">Looking up records</a>
       
     
     </li></ul>
@@ -332,12 +344,58 @@
         <div class="md-content">
           <article class="md-content__inner md-typeset" role="main">
             
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
-</div>
+  <section class="tex2jax_ignore mathjax_ignore" id="nitty-gritty-details">
+<h1 id="nitty--page-root">Nitty-gritty details<a class="headerlink" href="#nitty--page-root" title="Permalink to this headline">¶</a></h1>
+<p>This section delves into some topics in more detail.</p>
+<section id="looking-up-records">
+<h2 id="looking-up-records">Looking up records<a class="headerlink" href="#looking-up-records" title="Permalink to this headline">¶</a></h2>
+<p>In the <em>Look up records</em> tab, you can search for records by simply typing any kind of identifier into the search box. You can also start with one kind of record identifier (e.g., item records) and as Foliage to look up a different kind of record (e.g., loans) by starting with one kind of identifier and telling Foliage to follow the chain of references to get a different kind of record. Depending on what exactly you want to do, some of these operations can be slower than others.</p>
+<section id="identifying-the-identifiers">
+<h3 id="identifying-the-identifiers">Identifying the identifiers<a class="headerlink" href="#identifying-the-identifiers" title="Permalink to this headline">¶</a></h3>
+<p>The first thing Foliage has to do with identifiers in the <em>Look up records</em> tab is to infer the kind of identifiers that you have typed into the window. Unfortunately, the way that FOLIO itself works prevents Foliage from doing this in a simple way: there is no single FOLIO API endpoint where you can ask “what kind of record does this identifier belong to?”. Foliage has to resort to using a combination of pattern recognition and one-by-one questioning to get an answer. This makes some lookups slower than others.</p>
+<p>Here is the sequence of tests that Foliage performs on every identifier typed into the lookup box. It stops as soon as it finds an answer:</p>
+<ol class="arabic simple">
+<li><p>If it’s an integer with length &gt; 7 and starts with <code class="docutils literal notranslate"><span class="pre">350</span></code>, it’s an item barcode.</p></li>
+<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">it</span></code> and the 3rd character is a number, it’s an item record hrid.</p></li>
+<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">ho</span></code> and the 3rd character is a number, it’s a holdings record hrid.</p></li>
+<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">clc.</span></code>, it’s an instance record accession number.</p></li>
+<li><p>Does it contain a dash (<code class="docutils literal notranslate"><span class="pre">-</span></code>)?</p>
+<ul class="simple">
+<li><p><em>Yes</em>:, it’s a unique identifier of some kind, but it’s impossible to tell what kind by simply looking at the identifier. Foliage has to contact each of the following FOLIO subsystems  (which requires a separate network API call) to ask whether it recognizes the unique identifier:</p>
+<ol class="arabic simple">
+<li><p>item storage: is this an item record id?</p></li>
+<li><p>instance storage: is this an instance record id?</p></li>
+<li><p>holdings storage: is this a holdings record id?</p></li>
+<li><p>loan storage: is this a loan record id?</p></li>
+<li><p>user storage: is this a user id?</p></li>
+</ol>
+</li>
+<li><p><em>No</em>: the identifier is ambiguous (e.g., something like <code class="docutils literal notranslate"><span class="pre">634546</span></code>) and could be either an hrid of a kind that doesn’t follow the usual pattern, or else a user barcode. Similar to the “yes” case, Foliage has to make separate API calls to ask different FOLIO subsystems, one after another, if any recognizes the identifier:</p>
+<ol class="arabic simple">
+<li><p>instance storage: is this an instance record hrid?</p></li>
+<li><p>item storage: is this an item record hrid?</p></li>
+<li><p>holdings storage: is this an holdings record hrid?</p></li>
+<li><p>user storage: is this a user barcode?</p></li>
+</ol>
+</li>
+</ul>
+</li>
+<li><p>If none of the above succeeds, then Foliage reports the identifier as being unrecognized.</p></li>
+</ol>
+<p>The above hopefully explains why some lookups are slower than others. The worst-case scenario is unique identifiers that belong to user records; then, Foliage has to make a total of 5 API calls to determine the identifier kind (first asking, and failing, for item, instance, holdings, and loan, before getting a positive answer for user).</p>
+<p>Note that the order in which the calls are made is arbitrary and based on guessing what Foliage users might look up most often. The order can be changed, but at present, the tests are done in sequence, so changing the order will simply make some <em>other</em> kind of record slower to identify.</p>
+</section>
+<section id="one-record-leads-to-another">
+<h3 id="one-record-leads-to-another">One record leads to another<a class="headerlink" href="#one-record-leads-to-another" title="Permalink to this headline">¶</a></h3>
+<p>The <em>Look up records</em> tab allows a user to find a chosen kind of record by starting with a <em>different</em> kind of record identifier. An example of this is starting with an item identifier and getting back loan records for loans involving that item. To achieve this, Foliage sometimes has to do multiple steps, to follow the chain of references between records in FOLIO. Here is a rough summary of how many steps (and thus how slow) different kinds of operations are. Keep in mind that Foliage first has to figure out what kind of identifier it has been given (as discussed in the previous section), so the following steps occur <em>after</em> – and in addition to – any API calls needed for that.</p>
+<ol class="arabic simple">
+<li><p>Direct lookups of the same kind of identifier (e.g., item records given item identifiers) are fastest and need only a single API call.</p></li>
+<li><p>FOLIO item records point to holdings records, and holdings records point to instance records. Going between them takes 1 or 2 API calls, depending on whether FOLIO happens to support a search query for that combination. Not all combinations are covered. For example, getting an instance record given a holdings record id takes 2 API calls: first Foliage uses the holdings id to retrieve the holdings record (first API call), reads the instance identifier inside that record, and then retrieves the actual instance record (second API call).</p></li>
+<li><p>Looking up items, holdings and instances starting from user identifiers can take an unpredictable number of API calls, based on the number of loans that the user currently has or (if searching for all loans and not only open loans) that the user has <em>ever</em> made. For example, asking for instance records given a user id requires, for every loan, (a) retrieving the loan record to get the identifier of the item loaned, and then  (b) getting the instance record for that item identifier.  Some users have made dozens of loans, so this process can take an extremely long time.</p></li>
+</ol>
+</section>
+</section>
+</section>
 
 
           </article>
@@ -349,6 +407,30 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
           
+            <a href="foliage-interface.html" title="The user interface"
+               class="md-flex md-footer-nav__link md-footer-nav__link--prev"
+               rel="prev">
+              <div class="md-flex__cell md-flex__cell--shrink">
+                <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+              </div>
+              <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+                <span class="md-flex__ellipsis">
+                  <span
+                      class="md-footer-nav__direction"> Previous </span> The user interface </span>
+              </div>
+            </a>
+          
+          
+            <a href="colophon.html" title="Colophon"
+               class="md-flex md-footer-nav__link md-footer-nav__link--next"
+               rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span
+                class="md-flex__ellipsis"> <span
+                class="md-footer-nav__direction"> Next </span> Colophon </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink"><i
+                class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
           
         </a>
         
