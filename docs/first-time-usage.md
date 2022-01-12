@@ -1,4 +1,4 @@
-# Using Foliage for the first time
+# Starting Foliage
 
 Foliage is a desktop application that runs on your computer, but &ndash; somewhat uncommonly &ndash; it uses a web page as its user interface. When you run Foliage, **you interact with it through your usual web browser**, but all the while, you are interacting with a program running on your computer. This style of user interface means the elements of the interface (the buttons, tabs, scroll bars) will be very familiar to anyone who has interacted with a modern web page. It also means that Foliage looks and behaves identically no matter whether it is running on Window, macOS, or Linux.
 

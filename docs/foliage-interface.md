@@ -1,4 +1,4 @@
-# The user interface
+# The Foliage user interface
 
 When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:
 
