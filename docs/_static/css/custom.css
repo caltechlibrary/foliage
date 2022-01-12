@@ -7,6 +7,10 @@ body, input {
     font-family: "Atkinson Hyperlegible", "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+.md-typeset {
+  line-height: 1.5;
+}
+
 .md-sidebar--secondary {
   display: none !important;
 }
