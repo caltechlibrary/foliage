@@ -1,4 +1,4 @@
-# DIBS architecture diagram
+# Foliage diagrams
 
 The diagrams used in the Foliage documentation were created by Michael Hucka in 2022, using OmniGraffle Pro 7.18.5 on a macOS 10.4.6 computer. The SVG versions were produced using the following steps:
 
