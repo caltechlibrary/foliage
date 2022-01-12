@@ -7,6 +7,27 @@ body, input {
     font-family: "Atkinson Hyperlegible", "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+.md-typeset p, .md-typeset ol {
+    margin-top: 0.75em;;
+    margin-bottom: 0.75em;;
+}
+
+.md-typeset {
+  line-height: 1.5;
+}
+
+.md-typeset ol li,.md-typeset ul li{
+    margin-bottom: .35em;
+}
+
+.md-typeset ol li ol,.md-typeset ol li ul,.md-typeset ul li ol,.md-typeset ul li ul{
+    margin:.35em 0 .35em .625em
+}
+
+.md-typeset ol li blockquote,.md-typeset ol li p,.md-typeset ul li blockquote,.md-typeset ul li p{
+    margin: .35em 0 !important;
+}
+
 .md-sidebar--secondary {
   display: none !important;
 }
@@ -17,6 +38,18 @@ body, input {
 
 .md-header-nav__source {
   width: 8rem !important;
+}
+
+.md-typeset h1{
+    margin: 0 0 1.5rem;
+}
+
+.md-typeset h2 {
+    margin: 1.5rem 0 .8rem;
+}
+
+.md-typeset h3{
+    margin: 1.35rem 0 .8rem;
 }
 
 nav.md-tabs {
