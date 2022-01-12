@@ -320,12 +320,12 @@ class Folio():
         elif id.startswith('it') and id[2].isdigit():
             log(f'recognized {id} as an item hrid')
             id_kind = IdKind.ITEM_HRID
-        elif id.startswith('clc') and '.' in id:
-            log(f'recognized {id} as an accession number')
-            id_kind = IdKind.ACCESSION
         elif id.startswith('ho') and id[2].isdigit():
             log(f'recognized {id} as an holdings hrid')
             id_kind = IdKind.HOLDINGS_HRID
+        elif id.startswith('clc') and '.' in id:
+            log(f'recognized {id} as an accession number')
+            id_kind = IdKind.ACCESSION
         elif id.count('-') > 2:
             # Given a uuid, there's no way to ask Folio what kind it is, b/c
             # of Folio's microarchitecture & the lack of a central coordinating
@@ -347,11 +347,12 @@ class Folio():
                         raise RuntimeError('FOLIO server error')
         else:
             # We have a value that's more ambiguous. Try some searches.
+            # Most hrid's will follow the pattern above, so try other cases 1st.
             folio_searches = [
+                ('/users?query=barcode=',                   IdKind.USER_BARCODE),
                 ('/instance-storage/instances?query=hrid=', IdKind.INSTANCE_HRID),
                 ('/item-storage/items?query=hrid=',         IdKind.ITEM_HRID),
                 ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
-                ('/users?query=barcode=',                   IdKind.USER_BARCODE),
             ]
             for query, kind in folio_searches:
                 if (response := self._folio('get', f'{query}{id}&limit=0')):
