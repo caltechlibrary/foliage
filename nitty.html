@@ -61,7 +61,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Colophon" href="colophon.html" />
-    <link rel="prev" title="The user interface" href="foliage-interface.html" />
+    <link rel="prev" title="The Foliage user interface" href="foliage-interface.html" />
   
    
 
@@ -225,7 +225,7 @@
     <li class="md-nav__item">
     
     
-      <a href="first-time-usage.html" class="md-nav__link">Using Foliage for the first time</a>
+      <a href="first-time-usage.html" class="md-nav__link">Starting Foliage</a>
       <ul class="md-nav__list"> 
     <li class="md-nav__item">
     
@@ -253,7 +253,7 @@
     <li class="md-nav__item">
     
     
-      <a href="foliage-interface.html" class="md-nav__link">The user interface</a>
+      <a href="foliage-interface.html" class="md-nav__link">The Foliage user interface</a>
       <ul class="md-nav__list"> 
     <li class="md-nav__item">
     
@@ -310,6 +310,13 @@
     
     
       <a href="#looking-up-records" class="md-nav__link">Looking up records</a>
+      
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
+      <a href="#changing-records" class="md-nav__link">Changing records</a>
       
     
     </li></ul>
@@ -372,10 +379,10 @@
 </li>
 <li><p><em>No</em>: the identifier is ambiguous (e.g., something like <code class="docutils literal notranslate"><span class="pre">634546</span></code>) and could be either an hrid of a kind that doesn’t follow the usual pattern, or else a user barcode. Similar to the “yes” case, Foliage has to make separate API calls to ask different FOLIO subsystems, one after another, if any recognizes the identifier:</p>
 <ol class="arabic simple">
+<li><p>user storage: is this a user barcode?</p></li>
 <li><p>instance storage: is this an instance record hrid?</p></li>
 <li><p>item storage: is this an item record hrid?</p></li>
-<li><p>holdings storage: is this an holdings record hrid?</p></li>
-<li><p>user storage: is this a user barcode?</p></li>
+<li><p>holdings storage: is this a holdings record hrid?</p></li>
 </ol>
 </li>
 </ul>
@@ -387,12 +394,54 @@
 </section>
 <section id="one-record-leads-to-another">
 <h3 id="one-record-leads-to-another">One record leads to another<a class="headerlink" href="#one-record-leads-to-another" title="Permalink to this headline">¶</a></h3>
-<p>The <em>Look up records</em> tab allows a user to find a chosen kind of record by starting with a <em>different</em> kind of record identifier. An example of this is starting with an item identifier and getting back loan records for loans involving that item. To achieve this, Foliage sometimes has to do multiple steps, to follow the chain of references between records in FOLIO. Here is a rough summary of how many steps (and thus how slow) different kinds of operations are. Keep in mind that Foliage first has to figure out what kind of identifier it has been given (as discussed in the previous section), so the following steps occur <em>after</em> – and in addition to – any API calls needed for that.</p>
+<p>The <em>Look up records</em> tab allows you to find a chosen kind of record by starting with a <em>different</em> kind of record identifier. An example of this is starting with an item identifier and getting back loan records for loans involving that item. To achieve this, Foliage sometimes has to do multiple steps, to follow the chain of references between records in FOLIO. Here is a rough summary of how many steps (and thus how slow) different kinds of operations are. Keep in mind that Foliage first has to figure out what kind of identifier it has been given (as discussed in the previous section), so the following steps occur <em>after</em> – and in addition to – any API calls needed for that.</p>
 <ol class="arabic simple">
 <li><p>Direct lookups of the same kind of identifier (e.g., item records given item identifiers) are fastest and need only a single API call.</p></li>
 <li><p>FOLIO item records point to holdings records, and holdings records point to instance records. Going between them takes 1 or 2 API calls, depending on whether FOLIO happens to support a search query for that combination. Not all combinations are covered. For example, getting an instance record given a holdings record id takes 2 API calls: first Foliage uses the holdings id to retrieve the holdings record (first API call), reads the instance identifier inside that record, and then retrieves the actual instance record (second API call).</p></li>
 <li><p>Looking up items, holdings and instances starting from user identifiers can take an unpredictable number of API calls, based on the number of loans that the user currently has or (if searching for all loans and not only open loans) that the user has <em>ever</em> made. For example, asking for instance records given a user id requires, for every loan, (a) retrieving the loan record to get the identifier of the item loaned, and then  (b) getting the instance record for that item identifier.  Some users have made dozens of loans, so this process can take an extremely long time.</p></li>
 </ol>
+</section>
+</section>
+<section id="changing-records">
+<h2 id="changing-records">Changing records<a class="headerlink" href="#changing-records" title="Permalink to this headline">¶</a></h2>
+<p>The current implementation of Foliage (version 1.0.x) allows you to change the locations of items and holdings. Changing the location of an item may require behind-the-scenes work to change one or more corresponding holdings record. The following explains the cases that Foliage can handle.</p>
+<p>The following convention is used in the diagrams of this section</p>
+<ul class="simple">
+<li><p>Rounded rectangles represent FOLIO records.</p></li>
+<li><p>A filled-in rectangle represents the target of the change operation; dotted rectangles represent records that are changed as a consequence of performing the operation.</p></li>
+<li><p>A name beginning with <strong>r</strong> represents an instance record, <strong>h</strong> represents a holdings record, and <strong>i</strong> represents an item record.</p></li>
+</ul>
+<section id="case-1-instance-record-with-only-one-item-in-one-location">
+<h3 id="case-1-instance-record-with-only-one-item-in-one-location">Case 1: instance record with only one item in one location<a class="headerlink" href="#case-1-instance-record-with-only-one-item-in-one-location" title="Permalink to this headline">¶</a></h3>
+<p>The simplest case of moving an item is when an instance record has one item in one location, and no other items. To move the item to another location, the item’s location field value needs to be changed and since there are no other items, the holdings record’s location field can simply be changed directly; no new holdings record need to be created and none deleted.</p>
+<figure>
+<img src="_static/media/foliage-change-case-1.svg" width="300px"/>
+<figcaption>Illustration of changes to the hierarchical relationships of records for case 1.</figcaption>
+</figure>
+</section>
+<section id="case-2-instance-record-with-two-items-in-one-location">
+<h3 id="case-2-instance-record-with-two-items-in-one-location">Case 2: instance record with two items in one location<a class="headerlink" href="#case-2-instance-record-with-two-items-in-one-location" title="Permalink to this headline">¶</a></h3>
+<p>Suppose an instance has two items in the same location, and we want to move one of the items to a new location. The changes needed are as follows: a new holdings record needs to be created to represent the new location; the item’s holdings record reference needs to be changed to point to this new holdings record, and the item’s location value also needs to be changed to the new location.</p>
+<figure>
+<img src="_static/media/foliage-change-case-2.svg" width="450px"/>
+<figcaption>Illustration of changes to the hierarchical relationships of records for case 2.</figcaption>
+</figure>
+</section>
+<section id="case-3-moving-an-item-between-existing-locations">
+<h3 id="case-3-moving-an-item-between-existing-locations">Case 3: moving an item between existing locations<a class="headerlink" href="#case-3-moving-an-item-between-existing-locations" title="Permalink to this headline">¶</a></h3>
+<p>Suppose an instance has 3 items – two in one location, a third in another. We move one of the items from one location to the other. Changes needed: item 2’s location is changed from location 1 to location 2, and its holdings record reference is changed from <strong>h1</strong> to <strong>h2</strong>. No other changes needed.</p>
+<figure>
+<img src="_static/media/foliage-change-case-3.svg" width="625px"/>
+<figcaption>Illustration of changes to the hierarchical relationships of records for case 3.</figcaption>
+</figure>
+</section>
+<section id="case-4-moving-the-only-item-in-a-location-to-another-location">
+<h3 id="case-4-moving-the-only-item-in-a-location-to-another-location">Case 4: moving the only item in a location to another location<a class="headerlink" href="#case-4-moving-the-only-item-in-a-location-to-another-location" title="Permalink to this headline">¶</a></h3>
+<p>Suppose an instance has two items in two different locations, and we move one of the items between the locations. This leaves the original location without any items. Changes needed: item 1’s location is changed to the new location and its holdings record reference is changed to the other holdings record (<strong>h2</strong>). Since holdings record <strong>h1</strong> no longer has any items attached to it, we delete that holdings record.</p>
+<figure>
+<img src="_static/media/foliage-change-case-4.svg" width="500px"/>
+<figcaption>Illustration of changes to the hierarchical relationships of records for case 4.</figcaption>
+</figure>
 </section>
 </section>
 </section>
@@ -407,7 +456,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
           
-            <a href="foliage-interface.html" title="The user interface"
+            <a href="foliage-interface.html" title="The Foliage user interface"
                class="md-flex md-footer-nav__link md-footer-nav__link--prev"
                rel="prev">
               <div class="md-flex__cell md-flex__cell--shrink">
@@ -416,7 +465,7 @@
               <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
                 <span class="md-flex__ellipsis">
                   <span
-                      class="md-footer-nav__direction"> Previous </span> The user interface </span>
+                      class="md-footer-nav__direction"> Previous </span> The Foliage user interface </span>
               </div>
             </a>
           
