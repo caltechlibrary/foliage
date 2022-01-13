@@ -1,6 +1,6 @@
-# About the Foliage docs
+# Foliage user documentation
 
-This page describes how to (re)create the formatted Foliage documentation.
+This directory contains the **user** documentation for Foliage. The **developer** documentation is in a separate directory, [`../dev/dev-docs`](../dev/dev-docs). The rest of this page describes how to (re)create the formatted Foliage user documentation.
 
 ## Building the docs locally
 
@@ -12,7 +12,7 @@ python3 -m pip install sphinx-material
 python3 -m pip install sphinx-autobuild
 ```
 
-After that, rebuilding the docs is simply a matter of running `make html` in the current directory:
+After that, rebuilding the docs should be simply a matter of running `make html` in the current directory:
 
 ```sh
 make html
@@ -27,4 +27,4 @@ make auto
 
 ## Writing documentation
 
-This documentation is written in [MyST-flavored Markdown](https://myst-parser.readthedocs.io/en/latest/) and the [Napoleon](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html) extension to Sphinx.  What this means is that the documentation is written in Markdown instead of reStructuredText, with essentially all the features of Sphinx and reStructuredText having MyST equivalents and some additional features beyond _that_ &ndash; things like [pandoc](https://pandoc.org)-style footnotes, LaTeX math, and more.
+This documentation is written in [MyST-flavored Markdown](https://myst-parser.readthedocs.io/en/latest/) and the [Napoleon](https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html) extension to Sphinx.  What this means is that the documentation is written in Markdown (not reStructuredText), with essentially all the features of Sphinx and reStructuredText having MyST equivalents and some additional features &ndash; things like [pandoc](https://pandoc.org)-style footnotes, LaTeX math, and more.
