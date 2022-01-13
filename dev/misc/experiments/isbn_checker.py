@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# Note: put folio info into settings.ini in the same directory as this file.
+#
 
 import sys
 from   sys import exit as exit
