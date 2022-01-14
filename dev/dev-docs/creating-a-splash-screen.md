@@ -35,3 +35,5 @@ I automated this process using code in the subdirectory [`dev/splash-screen`](..
    1. substitute values for the placeholders and produce a new file, `foliage-splash-screen.svg`
    2. convert `foliage-splash-screen.svg` to a PNG file (`foliage-splash-screen.png`) written in the same directory
 3. The PyInstaller [specification file](../../pyinstaller-win32.spec) points to the `.png` file in the splash screen configuration, so that PyInstaller reads an image with an up-to-date version number.
+
+The splash screen image for a given Foliage release is static. The small program is run at application build time, not at run-time. The image is embedded in the self-contained Foliage application created by PyInstaller.
