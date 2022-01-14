@@ -8,3 +8,4 @@ Sections:
 
 * [Using PyInstaller](using-pyinstaller.md)
 * [How the Foliage splash screen works](creating-a-splash-screen.md)
+* [Making a new release of Foliage](making-a-new-release.md)
