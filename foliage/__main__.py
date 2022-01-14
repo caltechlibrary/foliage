@@ -40,16 +40,10 @@ import pywebio
 # aiohttp server does not.  Unfortunately, only tornado auto-reloads.
 # from   pywebio.platform.aiohttp import start_server
 from   pywebio import start_server
-from   pywebio.output import put_text, put_markdown, put_row, put_html
-from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
-from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
-from   pywebio.output import put_success, put_info, put_table, put_grid, span
-from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
-from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column
-from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
-from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
-from   pywebio.session import run_js, eval_js, download
+from   pywebio.output import put_html, put_warning, put_success
+from   pywebio.output import put_tabs, put_image
+from   pywebio.pin import pin, pin_wait_change, put_actions
+from   pywebio.session import run_js
 from   sidetrack import set_debug, log
 from   tornado.template import Template
 
