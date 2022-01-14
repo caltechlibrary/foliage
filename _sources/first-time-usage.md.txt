@@ -51,3 +51,15 @@ Once Foliage has stored the token, subsequent start-ups of Foliage will retrieve
 </figure>
 
 
+## Second-time permissions
+
+On macOS, after you have run a given version of Foliage for the first time and it has stored the FOLIO token, the next time you start Foliage, macOS will ask you for another set of permissions:
+
+<figure>
+    <img width="500px" src="_static/media/macos-keychain.png">
+</figure>
+
+Click **Always Allow** in this dialog. Foliage needs to read the token it stored in your password keychain. It is safe to give Foliage this access because it only reads a specific key in the keychain (namely, `org.caltechlibrary.foliage`) and cannot read any other keys in your keychain.
+
+If you only click **Allow** in this dialog, macOS will nag you repeatedly about the permissions and it will be very annoying.
+

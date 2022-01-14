@@ -256,6 +256,13 @@
       <a href="#folio-authentication" class="md-nav__link">FOLIO authentication</a>
       
     
+    </li>
+    <li class="md-nav__item">
+    
+    
+      <a href="#second-time-permissions" class="md-nav__link">Second-time permissions</a>
+      
+    
     </li></ul>
     
     </li>
@@ -388,6 +395,15 @@
 <figure>
 <img src="_static/media/other-tab.png"/>
 </figure>
+</section>
+<section id="second-time-permissions">
+<h2 id="second-time-permissions">Second-time permissions<a class="headerlink" href="#second-time-permissions" title="Permalink to this headline">¶</a></h2>
+<p>On macOS, after you have run a given version of Foliage for the first time and it has stored the FOLIO token, the next time you start Foliage, macOS will ask you for another set of permissions:</p>
+<figure>
+<img src="_static/media/macos-keychain.png" width="500px"/>
+</figure>
+<p>Click <strong>Always Allow</strong> in this dialog. Foliage needs to read the token it stored in your password keychain. It is safe to give Foliage this access because it only reads a specific key in the keychain (namely, <code class="docutils literal notranslate"><span class="pre">org.caltechlibrary.foliage</span></code>) and cannot read any other keys in your keychain.</p>
+<p>If you only click <strong>Allow</strong> in this dialog, macOS will nag you repeatedly about the permissions and it will be very annoying.</p>
 </section>
 </section>
 
