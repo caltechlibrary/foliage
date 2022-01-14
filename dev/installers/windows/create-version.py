@@ -13,7 +13,7 @@ from   os.path import abspath, dirname, join
 from   string import Template
 
 here = abspath(dirname(__file__))
-with open(join(here, '../../setup.cfg')) as setup_file:
+with open(join(here, '../../../setup.cfg')) as setup_file:
     for line in setup_file.readlines():
         if line.startswith('version'):
             version = line.split('=')[1].strip()

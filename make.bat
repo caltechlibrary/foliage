@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 
 ECHO Generating version.py ...
 
-python dev/windows/create-version.py
+python dev/installers/windows/create-version.py
 
 ECHO Generating splash screen file ...
 
@@ -34,7 +34,7 @@ python -m PyInstaller --distpath dist/win --clean --noconfirm pyinstaller-win32.
 
 ECHO Creating ZIP file
 
-python dev/windows/create-zip.py -o -d dist/win dist/win/Foliage.exe
+python dev/installer/windows/create-zip.py -o -d dist/win dist/win/Foliage.exe
 
 ECHO "make.bat" finished.
 ECHO The .exe will be in the "dist" subdirectory.
