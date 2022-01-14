@@ -30,17 +30,7 @@ if not exists(setup_file):
 # Gather information.
 # .............................................................................
 
-# Get the current software version number from setup.cfg
-
-with open('setup.cfg', 'r') as setup_file:
-    for line in setup_file.readlines():
-        if line.startswith('version'):
-            version = line.split('=')[1].strip()
-            break
-    else:
-        raise RuntimeError('Could not read version number from setup.cfg')
-
-# Format of the following list: ('source file', 'destination in package').
+# Format of the following list: ('source file', 'destination in bundle').
 
 data_files = [ ('foliage/data/index.tpl', 'data'),
                # I don't know why the next ones need 'foliage/data' for the
@@ -80,7 +70,7 @@ data_files += copy_metadata('humanize')
 # Create the PyInstaller configuration.
 # .............................................................................
 
-# Define application to PyInstaller.
+# The following controls how PyInstaller finds what comprises the application.
 
 configuration = Analysis([r'foliage\__main__.py'],
                          pathex = ['.'],
@@ -93,9 +83,10 @@ configuration = Analysis([r'foliage\__main__.py'],
                          hookspath = [],
                          runtime_hooks = [],
                          # For reasons I can't figure out, PyInstaller tries
-                         # to load these even though they're never imported
-                         # by the Martian code.  Have to exclude them manually.
-                         excludes = ['PyQt4', 'gtk', 'matplotlib', 'numpy'],
+                         # to load matplotlib even though it's never imported
+                         # by our code. It causes the build to fail. Need to
+                         # exclude it explicitly.
+                         excludes = ['matplotlib'],
                          win_no_prefer_redirects = False,
                          win_private_assemblies = False,
                          cipher = None,
@@ -106,9 +97,14 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
-splash             = Splash(r'dev\splash-screen\foliage-splash-screen.png',
-                            binaries = configuration.binaries,
-                            datas = configuration.datas)
+splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
+                         binaries = configuration.binaries,
+                         datas = configuration.datas)
+
+# Notes about the configuration below:
+# - "debug = True" produces output on the cmd line when you start the app.
+#
+# - "console = True" makes the app show a console window at run time.
 
 executable         = EXE(application_pyz,
                          configuration.scripts,
@@ -119,7 +115,7 @@ executable         = EXE(application_pyz,
                          splash.binaries,
                          name = 'Foliage',
                          icon = r'dev/icon/foliage-icon.ico',
-                         version = r'dev/windows/version.py',
+                         version = r'dev/installers/windows/version.py',
                          debug = False,
                          strip = False,
                          upx = False,

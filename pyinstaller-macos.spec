@@ -30,7 +30,8 @@ if not exists(setup_file):
 # Gather information.
 # .............................................................................
 
-# Get the current software version number from setup.cfg
+# Get the current software version number from setup.cfg. The value of the
+# variable "version" is used near the end, in the call to BUNDLE.
 
 with open('setup.cfg', 'r') as setup_file:
     for line in setup_file.readlines():
@@ -40,7 +41,7 @@ with open('setup.cfg', 'r') as setup_file:
     else:
         raise RuntimeError('Could not read version number from setup.cfg')
 
-# Format of the following list: ('source file', 'destination in package').
+# Format of the following list: ('source file', 'destination in bundle').
 
 data_files = [ ('foliage/data/index.tpl', 'data'),
                # I don't know why the next ones need 'foliage/data' for the
@@ -49,7 +50,7 @@ data_files = [ ('foliage/data/index.tpl', 'data'),
                ('foliage/data/foliage-icon.png', 'foliage/data'),
                ('foliage/data/macos-systray-widget/macos-systray-widget',
                 'foliage/data/macos-systray-widget/'),
-               # Local hacked copy of PyWebIO.
+               # My local hacked copy of PyWebIO.
                ('../PyWebIO/pywebio/platform/tpl', 'pywebio/platform/tpl'),
                ('../PyWebIO/pywebio/html', 'pywebio/html'),
               ]
@@ -77,6 +78,8 @@ data_files += copy_metadata('humanize')
 # Create the PyInstaller configuration.
 # .............................................................................
 
+# The following controls how PyInstaller finds what comprises the application.
+
 configuration = Analysis(['foliage/__main__.py'],
                          pathex = ['.'],
                          binaries = [],
@@ -87,9 +90,10 @@ configuration = Analysis(['foliage/__main__.py'],
                          hookspath = [],
                          runtime_hooks = [],
                          # For reasons I can't figure out, PyInstaller tries
-                         # to load these even though they're never imported
-                         # by the Martian code.  Have to exclude them manually.
-                         excludes = ['gtk', 'matplotlib', 'numpy'],
+                         # to load matplotlib even though it's never imported
+                         # by our code. It causes the build to fail. Need to
+                         # exclude it explicitly.
+                         excludes = ['matplotlib'],
                          win_no_prefer_redirects = False,
                          win_private_assemblies = False,
                          cipher = None,
@@ -101,8 +105,12 @@ application_pyz    = PYZ(configuration.pure,
                         )
 
 # Notes about the configuration below:
-# - As of PyInstaller 4.7, splash screens are not supported on macOS.
-# - debug = True produces output on the cmd line when you start the app.
+# - As of PyInstaller 4.7, splash screens are not supported on macOS. That's
+#   why the windows configuration has a splash screen but this one doesn't.
+#
+# - "debug = True" produces output on the cmd line when you start the app.
+#
+# - "console = True" makes the app show a console window at run time.
 
 executable         = EXE(application_pyz,
                          configuration.scripts,
