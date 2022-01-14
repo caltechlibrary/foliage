@@ -12,7 +12,7 @@ This step will update some in the Foliage source directory, and those changes ar
 2. Open `setup.py` in a text editor, update the version number inside, and commit the change to git
 3. Run `make update-init`
 4. Run `make really-clean`
-5. Run `make pyinstaller`
+5. Run `make binary`
 6. Test the binary that gets built:
    1. Run it from the command line by starting `dist/macos/foliage`
    2. Run it by double-clicking `dist/macos/Foliage.app` in the macOS Finder
