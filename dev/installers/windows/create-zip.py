@@ -43,7 +43,7 @@ def main(dest_dir = 'D', overwrite = False, *files):
     '''Put one or more files into a ZIP archive.'''
 
     here = abspath(dirname(__file__))
-    with open(join(here, '../../setup.cfg')) as setup_file:
+    with open(join(here, '../../../setup.cfg')) as setup_file:
         for line in setup_file.readlines():
             if line.startswith('version'):
                 version = line.split('=')[1].strip()
