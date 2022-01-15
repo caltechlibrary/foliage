@@ -32,7 +32,7 @@ Although Foliage is a desktop application and not a web service, it uses a web p
 
 ## Installation
 
-There are multiple ways of installing Urial, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+There are multiple ways of installing Foliage, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
 
 
 ### _Alternative 1: installing the ready-to-run executable programs_
@@ -86,6 +86,8 @@ python3 setup.py install
 ## Usage
 
 Documentation for Foliage is available online at [https://caltechlibrary.github.io/foliage/](https://caltechlibrary.github.io/foliage/).
+
+Developer documentation is available in the repository at [`dev/dev-docs`](dev/dev-docs).
 
 
 ## Getting help
