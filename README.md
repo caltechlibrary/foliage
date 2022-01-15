@@ -87,8 +87,6 @@ python3 setup.py install
 
 Documentation for Foliage is available online at [https://caltechlibrary.github.io/foliage/](https://caltechlibrary.github.io/foliage/).
 
-Developer documentation is available in the repository at [`dev/dev-docs`](dev/dev-docs).
-
 
 ## Getting help
 
@@ -97,7 +95,7 @@ If you find an issue, please submit it in [the GitHub issue tracker](https://git
 
 ## Contributing
 
-Your help and participation in enhancing Foliage is welcome!  Please visit the [guidelines for contributing](CONTRIBUTING.md) for some tips on getting started.
+Your help and participation in enhancing Foliage is welcome!  Please visit the [guidelines for contributing](CONTRIBUTING.md) for some tips on getting started. Developer documentation is available in the repository at [`dev/dev-docs`](dev/dev-docs).
 
 
 ## License
