@@ -12,12 +12,12 @@ In either case, Foliage will both (a) open a web browser page that acts as the m
 
 <figure>
     <img width="250px" src="_static/media/foliage-macos-systray.png">
-    <figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.
+    <figcaption>Portion of a macOS menubar, showing the Foliage "leaf" icon on the left.</figcaption>
 </figure>
 
 <figure>
     <img width="450px" src="_static/media/foliage-windows-taskbar.png">
-    <figcaption>Portion of a Windows taskbar, showing the Foliage "leaf" icon on the right.
+    <figcaption>Portion of a Windows taskbar, showing the Foliage "leaf" icon on the right.</figcaption>
 </figure>
 
 
