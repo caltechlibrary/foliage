@@ -10,10 +10,8 @@ A traditional desktop application on Windows or macOS would have an indication, 
 </p>
 
 <p align="center">
-<figure>
     <img width="450px" src="../../docs/_static/media/foliage-windows-taskbar.png"><br>
     <i>Portion of a Windows taskbar, showing the Foliage "leaf" icon on the right.</i>
-</figure>
 </p>
 
 There is no built-in capability in PyWebIO itself to do this. That's actually not so surprising; PyWebIO's purpose is to let applications use a web page in a browser as a user interface, so it makes sense that it does not have facilities for creating or managing taskbar/menubar/dock widgets. A separate and independent (from PyWebIO) approach must be used. I could find no existing solution, so I developed a novel approach. It works, but creating it turned out to be much harder than expected.
