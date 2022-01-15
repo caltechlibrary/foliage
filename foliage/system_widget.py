@@ -3,19 +3,23 @@ system-widget.py: class for creating a taskbar or menubar widget
 
 A disadvantage of using a PyWebIO-based approach is that there is no obvious
 indication to the user whether Foliage is running, aside from looking at the
-web page that serves as Foliage's interface.  If the user switches away from
-the web page or minimizes the window or does anything that might cause them
-to lose sight of it, then they may forget about it altogther or be confused
-about what's happening.
+web page that serves as Foliage's interface.  This is not great: users
+typically have a lot of browser windows and tabs open, and could lose track
+of the one for Foliage. If the user switches away from the web page or
+minimizes the window or does anything that might cause them to lose sight of
+it, then they may forget about it altogether or be confused about what's
+happening.
 
-A traditional application would have an indication, such as an icon in the
-Windows taskbar or in the macOS Dock, or alternatively, an icon in the macOS
-status bar, to show that the application is still running.  This widget would
-be tightly coupled with the application, such that exiting from the widget
-would exit Foliage too and exiting Foliage would close the widget.
+A traditional desktop application on Windows or macOS would have an
+indication, such as an icon in the Windows taskbar or in the macOS Dock, or
+alternatively, an icon in the macOS status bar, showing that the application
+is still running.  This widget would be tightly coupled with the application
+itself, such that exiting from the widget would exit Foliage too and exiting
+Foliage would close the widget.
 
-The purpose of the code in this file is to implement such a thing.  It turned
-out to be much, much harder than expected.
+There is no built-in capability in PyWebIO itself to do this, so I had to
+develop a novel approach.  It turned out to be much, much harder than
+expected.
 
 The biggest obstacle to doing it is how GUI libraries expect event loops to
 be implemented, and on macOS, a related problem involving GUI threads.
@@ -40,12 +44,12 @@ separate threads, which then leads to more problems:
    can't call app.exec_() from the Foliage main thread.
 
    The solution that I finally hit upon for macOS is to bundle a separate
-   Python script just to create a widget, and then using a subprocess (not a
-   thread) to start that widget program.  This avoids the threading problem,
-   at the cost of requiring a scheme for being able to learn the state of the
-   widget.
+   non-Python application to create a widget, and then using a subprocess (not
+   a thread) to start that widget program.  This avoids the threading problem,
+   at the cost of requiring a scheme for communicating with a separate process
+   for the widget.
 
-2) On Windows, where a subthread can be used for the PyQt widget, it was
+2) On Windows, where a subthread *can* be used for the PyQt widget, it was
    another challenge to figure out how to communicate to the main Foliage app
    when the user chooses to quit the widget.  It would have been simplest to
    have the widget code call our quit_app() directly.  It turns out that a
@@ -75,7 +79,15 @@ separate threads, which then leads to more problems:
    PyInstaller-built application.  The problem is that PyInstaller does not
    bundle a Python interpreter, so running a separate Python script becomes
    impossible.  You don't want to make the assumption that the user's machine
-   will have a Python installed.
+   will have a Python installed.  After going down a number of rabbit holes,
+   I finally hit on a working solution: use a separate, statically-linked
+   program that is run by Foliage as a subprocess.  The binary can be bundled
+   in the PyInstaller-built application so that Foliage knows where to find
+   it.  The Go language provides an especially attractive solution because the
+   binaries are very easy to build and statically-linked by default, and as
+   luck would have it, a system tray package already existed and I was able to
+   use it as a starting point (https://github.com/getlantern/systray).  The
+   code for this widget written in Go is in data/macos-systray-widget/.
 
 
 Copyright
@@ -94,6 +106,26 @@ import sys
 
 
 class SystemWidget():
+    '''Encapsulate the control of a taskbar/system tray widget
+
+    The approach taken here involves 2 separate systems:
+
+    On Windows: the code for the widget is in this file, in the method
+       start_windows_widget(). It  uses PyQt and runs the PyQt event loop
+       in a subthread.  It sets the variable self.widget_info to a structured
+       object (a dict), and sets a value inside that object when the PyQt
+       event loop ends.  The PyQt event loop ends when the user selects "Quit"
+       from the widget menu.  The use of a structured object (and not a simple
+       Boolean variable) makes it possible to check the value outside the PyQt
+       event loop, in the method running().
+
+    On macOS: the widget is implemented as a separate program altogether.  The
+       code is in the subdirectory data/macos-systray-widget/.  The method
+       start_macos_widget() runs the separate program as a subprocess.  The
+       method running() tests whether the process is still running; if it's
+       not, it means either the user quit the widget using the "Quit" menu
+       or else the widget was killed somehow externally to Foliage.
+    '''
 
     def __init__(self):
         log('creating system widget')
@@ -107,6 +139,18 @@ class SystemWidget():
 
 
     def running(self):
+        '''Return True if the taskbar/system tray widget is still running.
+
+        In the Windows version of the widget (which uses PyQt GUI elements),
+        a subthread runs the PyQt event loop.  The user can select the "Quit"
+        menu item to indicate they want to exit Foliage.  If the PyQt event
+        loop is not running, this method returns False.
+
+        In the macOS version of the widget (which is a completely separate
+        program written in Go), a subprocess runs the widget program.  The
+        user can select the "Quit" menu item to exit the widget.  If the
+        widget process is not running, this method returns False.
+        '''
         if sys.platform.startswith('darwin'):
             return self.widget_process and (self.widget_process.poll() is None)
         else:
@@ -114,6 +158,15 @@ class SystemWidget():
 
 
     def stop(self):
+        '''Stop the widget.
+
+        On Windows, this does not actually need to do anything, because when
+        the main Foliage application process exits then Python will kill
+        daemon threads automatically.
+
+        On macOS, this performs a process kill() on the subprocess, and if
+        that fails, it sends a SIGTERM to the process.
+        '''
         if not self.running():
             log('stop called for system widget but it is no longer running')
             return
@@ -134,6 +187,7 @@ class SystemWidget():
 
 
     def start_macos_widget(self):
+        '''Start the Foliage system tray widget on macOS.'''
         import subprocess
         data_dir = realpath(join(dirname(__file__), 'data'))
         widget = join(data_dir, 'macos-systray-widget', 'macos-systray-widget')
@@ -145,8 +199,15 @@ class SystemWidget():
 
 
     def start_windows_widget(self):
-        # We return a structured type, because the value needs to be set
-        # inside a thread but we need to have a handle on it from the outside.
+        '''Start the taskbar widget on Windows.'''
+        # We use a structured type, not a simple Boolean, because the value
+        # needs to be set inside a thread but we need a handle on it from
+        # outside the thread outside.  This next variable declaration puts it
+        # in the lexical scope of the current function, such that the
+        # show_widget() function below can access it.  Then, at the very end
+        # of the current function, we set self.widget_info to point to this.
+        # The indirection is needed because show_widget() can't get access
+        # self.widget_info directly, because of scoping issues.
         widget_info = {'running': True}
 
         # The taskbar widget is implemented using PyQt and runs in a subthread.
@@ -176,11 +237,35 @@ class SystemWidget():
             app.exec_()
 
             # If the user right-clicks on the taskbar widget & chooses exit,
-            # we end up here. Set a flag to tell the main loop what happened.
+            # app.exec_() exits and we continue execution here.  We proceed to
+            # set the value inside widget_info to False.
             log('taskbar widget returned from exec_()')
             widget_info['running'] = False
 
-            # Wait a time to give the main loop time to run the quit actions.
+            # The main Foliage loop tests the running state (via the method
+            # running() on our parent object) on a 1-second polling interval.
+            # Here we have to wait longer than 1 second, to give the main
+            # loop enough time to detect that the running state has changed
+            # and communicate to the browser window to close itself.  If we
+            # don't pause long enough here, then something bad happens: the
+            # ending of the PyQt thread results in Foliage being killed
+            # before the main loop has a chance to perform an orderly quit
+            # (and specifically, before it has time to run JavaScript code in
+            # the browser window to close the window). If the Foliage window
+            # is left on the screen but the Foliage process has quit, it's
+            # very confusing for users, so we want to avoid that.  I haven't
+            # been able to figure out how to prevent the PyQt thread exit
+            # from killing all of Foliage; I think the problem lies in how
+            # PyQt uses signals to communicate events, but despite various
+            # attempts to ignore signals in the main thread on Windows, I've
+            # been unable to prevent it from happening.  (Python signals on
+            # Windows are known to be problematic; see the following very
+            # informative posting by Eryk Sun on 2016-03-04 on Stack
+            # Overflow: https://stackoverflow.com/a/35792192/743730) The only
+            # solution I have found so far is to make *this* code pause
+            # longer than the 1-sec polling interval of the main loop, to
+            # give the main loop enough time to do an orderly exit.  That is
+            # the reason for the next line.
             wait(2)
 
         from threading import Thread
