@@ -114,15 +114,28 @@ def tab_contents():
 # operation type (add value, change value, delete value), we want different
 # buttons and fields to look visually "unavailable" as a clue to the user
 # that they don't have to fill in those values.  However, PyWebIO doesn't
-# provide a way to control the properties of the elements dynamically.  It
-# does provide a way to run JavaScript in the page, and of course in Javascript
-# you can edit CSS values dynamically ... but you need to target the right
-# elements somehow, and PyWebIO also doesn't provide a way to put CSS id's on
-# HTML elements, so you can't target specific elements via their id's.  And
-# finally, you can't do it by targeting CSS classes, because they're more of
-# them on the page than just the ones we want to change.
+# provide a way to control the properties of the elements dynamically: there's
+# PyWebIO API for changing a CSS attribute at run-time.
 #
-# So here's the hack:
+# One *can* do it using JavaScript using well-known methods, and PyWebIO
+# *does* provide a function (eval_js) to execute JavaScript at run-time in
+# the web page.  But, here we face a new challenge: how do do you refer to
+# the things on the page whose CSS attributes you want to change?
+#
+# For some of the elements, it's possible to target them by searching for the
+# element content.  That's the case for the text fields, where we can use a
+# jQuery selector such as
+#    $("p.contains('Current field value')")
+# to get at the element, and from there, to change the CSS.  This is used in
+# the code below for elements for which it's possible to do that.  But you
+# can't do that for buttons -- you need to find another way to refer to them.
+# Frustratingly, PyWebIO doesn't provide a way to put id attributes on
+# elements; if you could do that, it would make it easy to target exactly the
+# elements you need to change.  You also can't target CSS classes, because
+# that would end up catching other elements with the same class on the page.
+#
+# So to get the other elements (the ones that can't be found using the jQuery
+# "contains" operator mentioned above), I ended up using an insane hack:
 #
 #  1. Add distinguishing features to specific elements using one of the few
 #     CSS/HTML controls that PyWebIO does provide, namely the style()
@@ -135,6 +148,13 @@ def tab_contents():
 #     for the elements that have the specific z-index values.  That's how the
 #     specific elements are found.  Then it's easy to change the value of
 #     desired CSS properties on those elements.
+#
+# Why use the numbers 8 and 9?  In case a future change ends up using a z-index
+# value for something.  I hypothesized that a future developer who used z-index
+# for a real purpose would use a value like 1, 2, or maybe 100, 1000, etc.
+# The values 8 and 9 seemed off-beat enough that they wouldn't clash with
+# something in the future, even if a future developer doesn't read this comment
+# explaining what's going on.
 
 def update_tab(value):
     log(f'updating form in response to radio box selection: "{value}"')
@@ -294,7 +314,7 @@ def do_change():
         log(f'user declined to proceed')
         return
     reset_interrupts()
-    steps = 2*len(identifiers)          # 2 passes => 2x number of items
+    steps = 2*len(identifiers)         # We need 2 passes => 2x number of items
     folio = Folio()
     with use_scope('output', clear = True):
         try:
