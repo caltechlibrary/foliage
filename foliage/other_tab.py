@@ -116,7 +116,6 @@ def show_log_file():
     def open_log_folder():
         open_file(dirname(log_file))
 
-    folio = Folio()
     event = threading.Event()
     log_contents = ''
     log('reading log file ' + log_file)

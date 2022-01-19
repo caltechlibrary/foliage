@@ -1,6 +1,40 @@
 '''
 credentials.py: module for handling credentials for Foliage
 
+Reading credentials
+-------------------
+
+This module implements storage and retrieval of credentials needed for the user
+to interact with FOLIO.  It supports multiple ways of reading the creds:
+
+- from environment variables
+- from a .ini style file
+- from a user interface dialog
+
+Storing credentials
+-------------------
+
+The Foliage code only stores credentials outside of itself in one way: by
+writing a combination of the FOLIO token, FOLIO tenant id, and FOLIO OKAPI URL
+under the key "org.caltechlibrary.foliage" in the user's system keyring.
+The values are never written to a file by Foliage.
+
+Passing credentials around within Foliage
+-----------------------------------------
+
+The way credentials are communicated to the FOLIO functions (in folio.py) is
+slightly unobvious.  The credentials are set via environment variables in the
+Foliage process (see use_credentials() below) so that they're available to
+the folio.py functions without having to pass around a variable holding them.
+It's also a simpler alternative to keeping a singleton global object to hold
+the credentials data.
+
+When other functions below need to pass credentials around (e.g., when first
+reading them in __main__.py), they're generally passed around in the form of a
+named tuple, called (in a very imaginative fashion) "Credentials".  That's
+done because while credentials are being configured or changed, the flow of
+information is more clear when it's done point-to-point, via arguments.
+
 Copyright
 ---------
 

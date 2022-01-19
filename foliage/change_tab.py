@@ -109,6 +109,33 @@ def tab_contents():
 # Implementation of tab functionality.
 # .............................................................................
 
+# This next bit is an egregious and unobvious hack.  Here's the deal.  When
+# the user selects different options using the radio buttons for the
+# operation type (add value, change value, delete value), we want different
+# buttons and fields to look visually "unavailable" as a clue to the user
+# that they don't have to fill in those values.  However, PyWebIO doesn't
+# provide a way to control the properties of the elements dynamically.  It
+# does provide a way to run JavaScript in the page, and of course in Javascript
+# you can edit CSS values dynamically ... but you need to target the right
+# elements somehow, and PyWebIO also doesn't provide a way to put CSS id's on
+# HTML elements, so you can't target specific elements via their id's.  And
+# finally, you can't do it by targeting CSS classes, because they're more of
+# them on the page than just the ones we want to change.
+#
+# So here's the hack:
+#
+#  1. Add distinguishing features to specific elements using one of the few
+#     CSS/HTML controls that PyWebIO does provide, namely the style()
+#     function, to add a property that we can uniquely find in the DOM at run
+#     time.  I'm using the z-index, setting it specific numbers (8 and 9) in
+#     tab_contents() above.  The z-index is not used for anything else on
+#     this page so it's irrelevant as far as layout is concerned.
+#
+#  2. Invoke some JavaScript code in the web page that uses jQuery to look
+#     for the elements that have the specific z-index values.  That's how the
+#     specific elements are found.  Then it's easy to change the value of
+#     desired CSS properties on those elements.
+
 def update_tab(value):
     log(f'updating form in response to radio box selection: "{value}"')
     if value == 'add':

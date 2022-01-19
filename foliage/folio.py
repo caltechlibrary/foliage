@@ -1,6 +1,30 @@
 '''
 folio.py: functions for interacting with FOLIO over the network API
 
+How FOLIO credentials are supplied
+----------------------------------
+
+Almost all of the methods in this file that need FOLIO credentials get them
+from three environment variables:
+
+- FOLIO_OKAPI_TOKEN
+- FOLIO_OKAPI_TENANT_ID
+- FOLIO_OKAPI_URL
+
+These environmewnt variables are set only by one function in Foliage:
+use_credentials() in credentials.py.  The credentials may be gathered from the
+user in a variety of ways, but as far as this module is concerned, the values
+are only read from the environment variables.  This simplifies the calls here
+and makes it possible to easily update the credentials at run time.
+
+The exception in the code below is the method new_token(...), which takes
+parameters that include the user's login and password.  This method is called
+by the functions that ask the user for the credentials when first getting a
+token from FOLIO, which happens at a time when none of the environment
+variables are set.  Using parameters in this case is simpler than having the
+caller set four environment variables prior to calling new_token(...) and then
+having new_token(...) have to read four environment variables.
+
 Copyright
 ---------
 
@@ -48,6 +72,12 @@ _RETRY_TIME_FACTOR = 2
 # .............................................................................
 
 class RecordKind(ExtendedEnum):
+    '''Class representing a kind of record in FOLIO.
+
+    "Kind" in this case means the distinction between an item, versus an
+    instance, versus a loan, versus other records.
+    '''
+
     UNKNOWN  = 'unknown'
     ITEM     = 'item'
     INSTANCE = 'instance'
@@ -58,6 +88,9 @@ class RecordKind(ExtendedEnum):
 
     @staticmethod
     def name_key(kind):
+        '''Return the JSON key to use as the equivalen of a "name" field.
+        The value is used mainly when sorting lists of records.
+        '''
         mapping = {
             RecordKind.ITEM     : 'title',
             RecordKind.INSTANCE : 'title',
@@ -70,6 +103,7 @@ class RecordKind(ExtendedEnum):
 
     @staticmethod
     def storage_endpoint(kind):
+        '''FOLIO API endpoint for getting the given kind of record.'''
         mapping = {
             RecordKind.ITEM     : '/item-storage/items',
             RecordKind.INSTANCE : '/instance-storage/instances',
@@ -82,6 +116,7 @@ class RecordKind(ExtendedEnum):
 
     @staticmethod
     def deletion_endpoint(kind):
+        '''FOLIO API endpoint for deleting the given kind of record.'''
         mapping = {
             RecordKind.ITEM     : '/inventory/items',
             RecordKind.INSTANCE : '/inventory/instances',
@@ -93,6 +128,8 @@ class RecordKind(ExtendedEnum):
 
 
 class IdKind(ExtendedEnum):
+    '''Enumeration representing what kind of record an id corresponds to.'''
+
     UNKNOWN       = 'unknown'
     ITEM_BARCODE  = 'item barcode'
     ITEM_ID       = 'item id'
@@ -109,6 +146,7 @@ class IdKind(ExtendedEnum):
 
     @staticmethod
     def to_record_kind(id_kind):
+        '''Return a RecordKind corresponding to a given IdKind.'''
         mapping = {
             IdKind.UNKNOWN       : RecordKind.UNKNOWN,
             IdKind.ITEM_BARCODE  : RecordKind.ITEM,
@@ -128,6 +166,8 @@ class IdKind(ExtendedEnum):
 
 
 class TypeKind(ExtendedEnum):
+    '''Enumeration of data types (e.g., for location types).'''
+
     ACQUISITION_UNIT     = 'acquisitions-units/units'
     ADDRESS              = 'addresstypes'
     ALT_TITLE            = 'alternative-title-types'
@@ -248,6 +288,10 @@ class Folio():
 
     @staticmethod
     def credentials_valid():
+        '''Return True if the current FOLIO credentials are valid.
+        This reads the environment variables for the credentials and tries to
+        call a FOLIO API endpoint to test whether the creds are valid.
+        '''
         url       = config('FOLIO_OKAPI_URL', default = None)
         tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
         token     = config('FOLIO_OKAPI_TOKEN', default = None)
@@ -273,8 +317,9 @@ class Folio():
 
 
     def _folio(self, op, endpoint, convert = None, retry = 0):
-        '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.'''
-
+        '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.
+        This method reads the FOLIO credentials from environment variables.
+        '''
         headers = {
             "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
@@ -871,8 +916,9 @@ class Folio():
 
 
     def write(self, record, endpoint):
-        '''Write a record to the given endpoint.'''
-
+        '''Write a record to the given endpoint.
+        This method reads the FOLIO credentials from environment variables.
+        '''
         headers = {
             "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
@@ -891,8 +937,9 @@ class Folio():
 
 
     def delete(self, record):
-        '''Delete a record.'''
-
+        '''Delete a record.
+        This method reads the FOLIO credentials from environment variables.
+        '''
         headers = {
             "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
@@ -955,6 +1002,7 @@ def instance_id_from_accession(an):
 
 
 def unique_identifiers(text):
+    '''Return a list of identifiers found in the text after some cleanup.'''
     lines = text.splitlines()
     identifiers = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
     identifiers = [id.replace('"', '') for id in identifiers]

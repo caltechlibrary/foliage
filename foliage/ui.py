@@ -1,6 +1,19 @@
 '''
 ui.py: user interface utilities for Foliage
 
+This contains miscellaneous user interface code:
+
+* some CSS styling for Foliage
+* some JavaScript code that gets added to the Foliage web page to work around
+    some undesirable behaviors in PyWebIO, sometimes by calling jQuery
+    functions to do something in the DOM
+* some functions to encapsulate operations in PyWebIO.
+* some user interface utility functions, including PyQt-based message functions
+    for use before the main Foliage PyWebIO window is available
+
+Comments in the rest of this file try to explain what is going on in some
+places.
+
 Copyright
 ---------
 
@@ -84,13 +97,6 @@ $(document).keyup(function(e) {
     }
 });
 ''' % UPLOAD_CANCEL_MARKER
-
-# Hiding the footer is only done because in my environment, the footer causes
-# the whole page to scroll down, thus hiding part of the top.  I don't mind
-# the mention of PyWebIO in the footer, but the page behavior is a problem.
-
-# The footer height and pywebio min-height interact. I found these numbers by
-# trial and error.
 
 CSS_CODE = '''
 html {
@@ -277,6 +283,12 @@ def notify(msg):
 
 def stop_processbar():
     '''Stop the animation of the PyWebIO process bar.'''
+    # PyWebIO uses Bootstrap animation for the progress bar.  Nice ... except
+    # it doesn't provide a way to *stop* the animation effect!  Without that,
+    # the progress bar maintains its movement animation even if the bar reaches
+    # 100%, or you interrupt the operation.  The following code uses jQuery to
+    # find the processbar via its id (which is set by PyWebIO) and remove the
+    # Bootsrap class that controls the animation state.
     eval_js('''$("#webio-processbar-bar").removeClass("progress-bar-animated");''')
 
 
@@ -292,11 +304,13 @@ def quit_app(ask_confirm = True):
 
 
 def reload_page():
+    '''Reload the Foliage application page.'''
     log(f'running JS function to reload the page')
     run_js('reload_page()')
 
 
 def image_data(file_name):
+    '''Return the data from the given image file.'''
     here = dirname(__file__)
     image_file = join(here, 'data', file_name)
     if exists(image_file):
@@ -308,17 +322,21 @@ def image_data(file_name):
 
 
 def user_file(msg):
+    '''Ask the user to upload a file and return the contents.'''
     result = file_upload(msg)
     if result and result['filename'] != UPLOAD_CANCEL_MARKER:
         return result['content'].decode()
     return None
 
 
-# Summary of the scheme below:
-#   - "tell" functions print a message in the output area
-#   - "note" functions print a "toast" message shown temporarily across the top.
-# Warning & error note functions print to the console if popup == False.
-# The info note function just doesn't print anything if popup == False.
+# The remainder of this file implements functions for reporting info, warning,
+# success and failure, using 2 separate approaches. Summary of the scheme:
+#
+# 1) the tell_* functions print a message in the output area
+# 2) the note_* functions print a "toast" message temporarily across the top
+#
+# Warning & error note_* functions print to the console if popup == False.
+# The note_info(...) function just doesn't print anything if popup == False.
 #
 # Since note_* functions may be called before the PyWebIO GUI system has
 # started, we need alternative approaches for different cases.
@@ -332,6 +350,10 @@ def user_file(msg):
 #                                      yes        no
 #                                      /           \
 #                                 Use PyQt      Print to command line
+#
+# This uses PyQt message widgets as a platform-independent way of showing
+# dialogs to the user when the main Foliage window is not available.
+# (E.g., before the main GUI loop is started.)
 
 qtapp = QApplication([''])
 

@@ -1,6 +1,118 @@
 '''
 __main__.py: main function for foliage.
 
+User interface design
+---------------------
+
+Foliage runs locally as a Python application, but it opens a web page in the
+user's default web browser to use as a user interface.  Foliage does this via
+PyWebIO, a framework for building browser-based synchronous GUI applications.
+The page has familiar GUI elements like page tabs, buttons, and input forms.
+
+The main Foliage application also starts a separate graphical interface written
+in PyQT to put a widget in the taskbar (on Windows) or system tray (on macOS),
+This widget provides a visual indication to the user that Foliage is still
+running, and also provides a single menu item, "Quit", that allows the user to
+quit Foliage.  It's an alternative to using the "Quit" button in the main
+Foliage window or closing the window, in case the user has done something to
+hide or lose track of the Window.  On Windows, the PyQT widget runs in a thread
+but on macOS, it must run as a separate process spawned by Foliage.  The macOS
+requirement is a result of how macOS's graphical framework works; the issues
+are explained in the file "system_widget.py" in this directory.
+
+The PyWebIO framework does its magic by running a web server on the user's
+machine.  Foliage uses Tornado as the web server, mainly because Tornado
+supports a useful feature during development: auto-reloading Foliage files
+when they've been edited.  However, the PyWebIO interface to Tornado lacks a
+critical feature needed by Foliage to implement a proper "Quit" capability
+(which is a significant problem, because being able to quit the app is kind
+of an important thing). The copy of PyWebIO currently used by Foliage is a
+modified version PyWebIO 1.5.2; the modification solves a problem I was having
+in which PyWebIO could not detect that the user has closed the application
+window.  I'm submitting a pull request to PyWebIO that I hope will mean future
+versions of PyWebIO will provide the feature and Foliage won't have to use a
+fork in the future.
+
+The main event loop for user interaction is implemented in the Foliage function
+foliage_page() in this file.  This function populates the web page (calling
+on functions in other files to create the elements on the various tabs) and
+then ends with a "while True" loop.  The loop periodically checks whether
+certain GUI elements have changed state (such as certain buttons being pressed)
+and if not, goes back to waiting for a change in state.  Most of the tabs in
+Foliage actually don't need to be engaged in this loop, because they set up
+buttons to trigger functions if the user presses the button.  However, not
+everything can be done that way, plus we need to check the state of the widget
+mentioned above and that needs to be done by polling.
+
+FOLIO user credentials
+----------------------
+
+The typical scenario expected for Foliage is that the first time the user
+starts it, it will ask the user for credentials, store a token in the user's
+private system keychain, and then on subsequent starts, Foliage will read the
+token the keychain instead of asking the user again.  The information Foliage
+needs is a FOLIO tenant id, FOLIO URL, and (once only to create a token) the
+user's FOLIO login and password; it does not store the user login and password
+because it only needs the token, tenant id and URL.
+
+For flexibility and to support other scenarios, Foliage actually supports
+multiple ways of providing the credentials:
+
+  1. If the command line argument --creds-file is used, and the given file
+     contains the credentials (OKAPI URL, tenant id, and OKAPI API token), then
+     those credentials are used and nothing more is tried. (In other words,
+     credentials given via --creds-file override everything else.) If the
+     given file cannot be read or does not contain complete credentials, then
+     it is an error and Foliage will quit.
+
+  2. Else, if all three of the environment variables FOLIO_OKAPI_URL,
+     FOLIO_OKAPI_TENANT_ID and FOLIO_OKAPI_TOKEN are set, it uses those
+     credentials and nothing more is tried.
+
+  3. Else, it looks up the credentials in the user's system keyring/keychain.
+     If all 3 pieces of info are found (i.e., OKAPI URL, tenant id, and OKAPI
+     API token), then those credentials are used.
+
+  4. Else, it asks the user for the FOLIO_OKAPI_URL, FOLIO_OKAPI_TENANT_ID, a
+     FOLIO login, and a password, and uses that combination to request an API
+     token from FOLIO. Unless the --no-keyring argument is given, Foliage also
+     stores the URL, tenant id, and token in the user's keyring/keychain so
+     that it doesn't have to ask again in future runs. (The user's login and
+     password are not stored.)
+
+FOLIO API
+---------
+
+Calls to the FOLIO API are encapsulated in folio.py and credentials.py.
+This main function doesn't interact directly with FOLIO except during the
+initial startup when it deals with user credentials.  The calls to FOLIO are
+mostly all made by the various tab functions.
+
+Debug log
+---------
+
+Unlike some other applications I've written, Foliage always writes a log file.
+The file can be accessed by the user from the "Other" tab.  The location of
+the file is set to a default application-specific location unless the user
+sets it explicitly to another destination using the command-line argument
+--debug.  Using the command-line argument is the only way to set it; the GUI
+does not provide a way to change the location.  (This is done on purpose;
+changing the log destination is something only advanced users or developers
+should do.  For normal users, we want the output to go to a known and reliable
+location, so that it's findable in case it's needed to help solve problems
+that users may be experiencing.)
+
+Backup directory
+----------------
+
+Before destructive operations are made on records in FOLIO, Foliage saves a
+copy of the record as it existed before the change is performed.  It saves it
+in an application-specific directory.  Similar to the case of the debug log
+destination, the backup directory can also be changed via a command-line
+argument, --backup-dir.  For similar reasons to those discussed above for the
+debug flag, there is no GUI facility to change the location of the backup dir.
+It can only be done via the command line interface.
+
 Copyright
 ---------
 
@@ -36,9 +148,11 @@ from   os import makedirs
 from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
 import plac
 import pywebio
-# Default server is tornado, and tornado mucks with logging.
-# aiohttp server does not.  Unfortunately, only tornado auto-reloads.
-# from   pywebio.platform.aiohttp import start_server
+# PyWebIO's default is tornado, and tornado mucks with logging, so I would
+# have preferred to use aiohttp (which doesn't muck with logging).
+# Unfortunately, only tornado provides an auto-reload feature.  IMPORTANT:
+# the copy of PyWebIO used by Foliage is a fork where I've modified an
+# important function for detecting when the user has closed the app window.
 from   pywebio import start_server
 from   pywebio.output import put_html, put_warning, put_success
 from   pywebio.output import put_tabs, put_image
@@ -136,7 +250,7 @@ The form of the interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Although Foliage is a desktop application and not a web service, it uses a
-web page as its user interface &ndash; it opens a page in a browser on your
+web page as its user interface -- it opens a page in a browser on your
 computer, letting you interact with the program through the familiar elements
 of a web page. All the while, Foliage runs locally on your computer. When you
 start Foliage normally (or after it shows the one-time credentials screen,
@@ -185,7 +299,7 @@ Command-line arguments summary
     config_debug(debug)                # Set up debugging before going further.
 
     log('='*8 + f' started {timestamp()} ' + '='*8)
-    os.environ['FOLIAGE_GUI_STARTED'] = 'False'
+    os.environ['FOLIAGE_GUI_STARTED'] = 'False'      # Used by ui.py functions.
 
     config_signals()
     config_backup_dir(None if backup_dir == 'B' else backup_dir)
@@ -234,8 +348,8 @@ Command-line arguments summary
     # Try to deal with exceptions gracefully ----------------------------------
 
     if widget:
-        # Do this first, in case we need to handle an exception and end up
-        # calling os._exit, b/c that would not kill the widget subprocess.
+        # Stop the widget explicit now, in case we have an exception and end up
+        # calling os._exit, b/c doing that would not kill the widget subprocess.
         widget.stop()
 
     if exception:
@@ -269,7 +383,10 @@ Command-line arguments summary
 # .............................................................................
 
 def foliage_page(widget):
-    os.environ['FOLIAGE_GUI_STARTED'] = 'True'
+    '''Main page creation function and main loop for Foliage.
+    This is handed to the PyWebIO start_server() function in our main().
+    '''
+    os.environ['FOLIAGE_GUI_STARTED'] = 'True'   # Used by ui.py functions.
     log('generating main Foliage page')
     put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
     put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
@@ -284,14 +401,15 @@ def foliage_page(widget):
                 buttons = [{'label': 'Quit', 'value': True, 'color': 'warning'}]
                 ).style('position: absolute; bottom: 0px;'
                         + 'left: calc(50% - 3em); z-index: 2')
-    advise_demo_mode()
+    warn_if_demo_mode()
     close_splash_screen()
 
-    # Make sure we have a network before trying to test Folio creds.
-    if not network_available:
+    # Make sure we have a working network before trying to test Folio creds.
+    if not network_available():
         notify('No network -- cannot proceed.')
         quit_app(ask_confirm = False)
 
+    # Work through our options to get (or ask for) credentials.
     if not credentials_complete(credentials_from_env()):
         creds = credentials_from_user(initial_creds = credentials_from_env())
         if not credentials_complete(creds):
@@ -305,6 +423,7 @@ def foliage_page(widget):
     # Create a single dict from all the separate pin_watchers dicts.
     watchers  = dict(ChainMap(*[tab.pin_watchers() for tab in _TABS]))
     pin_names = ['quit'] + list(watchers.keys())
+
     log(f'entering pin handler loop for pins {pin_names}')
     while True:
         # Block, waiting for a change event on any of the pins being watched.
@@ -329,10 +448,7 @@ def foliage_page(widget):
 # .............................................................................
 
 def config_debug(debug_arg):
-    '''Takes the value of the --debug flag & returns a tuple (bool, log_file).
-    The tuple values represent whether --debug was given a value other than
-    the default, and the destination log file for debug output.
-    '''
+    '''Takes the value of the --debug flag & configures debugging accordingly.'''
 
     log_file = None
     try:
@@ -391,6 +507,7 @@ def config_debug(debug_arg):
 
 
 def config_signals():
+    '''Configure process signal handling.'''
     if os.name == 'nt' and inside_pyinstaller_app():
         # Our PyQt taskbar widget is problematic because PyQt uses signals
         # and when you exit the widget, the signal it sends causes the main
@@ -411,6 +528,7 @@ def config_signals():
 
 
 def config_backup_dir(backup_dir):
+    '''Configure the directory used for backing up FOLIO records.'''
     if not backup_dir:
         default_backups =  join(_DIRS.user_data_dir, 'Backups')
         backup_dir = config('BACKUP_DIR', default = default_backups)
@@ -432,6 +550,7 @@ def config_backup_dir(backup_dir):
 
 
 def config_credentials(creds_file, use_keyring):
+    '''Takes credentials-related command line options and processes them.'''
     os.environ['USE_KEYRING'] = str(use_keyring)
     os.environ['CREDS_FILE'] = creds_file or 'None'
 
@@ -469,12 +588,14 @@ def config_credentials(creds_file, use_keyring):
 
 
 def config_demo_mode(demo_mode):
+    '''Takes the --demo-mode option and handles it.'''
     os.environ['DEMO_MODE'] = str(demo_mode)
     if demo_mode:
         note_warn('Demo mode is on -- changes to FOLIO will NOT be made')
 
 
 def config_port(port):
+    '''Takes the --port option and changes the Foliage port if needed.'''
     if not isint(port):
         note_error(f'Port number value is not an integer: antiformat(port)')
         exit(1)
@@ -482,6 +603,7 @@ def config_port(port):
 
 
 def log_config():
+    '''Write the configuration to the log file.'''
     import platform
     log(f'Foliage version = {__version__}')
     log(f'system          = {platform.system()}')
@@ -498,7 +620,8 @@ def log_config():
     log(f'demo_mode       = {config("DEMO_MODE")}')
 
 
-def advise_demo_mode():
+def warn_if_demo_mode():
+    '''Put a marker on the Foliage GUI to indicate that demo mode is in effect.'''
     if config('DEMO_MODE', cast = bool):
         put_warning('Demo mode in effect').style(
             'position: absolute; left: calc(50% - 5.5em); width: 11em;'
