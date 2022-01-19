@@ -38,23 +38,23 @@ In the Windows version of the widget (which uses PyQt GUI elements), a subthread
 The approach for testing `running()` in the Foliage main loop is slightly unobvious, so here is some additional elaboration about what's going on. The relevant code is at the end of the function `foliage_page()` in [`../../foliage/__main__.py`](../../foliage/__main__.py):
 
 ```python
-    while True:
-        # Block, waiting for a change event on any of the pins being watched.
-        # The timeout is so we can check if the user quit the taskbar widget.
-        changed = pin_wait_change(pin_names, timeout = 1)
-        if (not widget or widget.running()) and not changed:
-             continue
-        if (widget and not widget.running()):
-            log('widget has exited')
-            quit_app(ask_confirm = False)
-        if changed and changed['name'] == 'quit':
-            log('user clicked the Quit button')
-            quit_app(ask_confirm = True)
-            continue                    # In case the user cancels the exit.
-        # Find handler associated w/ pin name & call it with value from event.
-        name = changed["name"]
-        log(f'invoking pin callback for {name}')
-        watchers[name](changed['value'])
+while True:
+    # Block, waiting for a change event on any of the pins being watched.
+    # The timeout is so we can check if the user quit the taskbar widget.
+    changed = pin_wait_change(pin_names, timeout = 1)
+    if (not widget or widget.running()) and not changed:
+         continue
+    if (widget and not widget.running()):
+        log('widget has exited')
+        quit_app(ask_confirm = False)
+    if changed and changed['name'] == 'quit':
+        log('user clicked the Quit button')
+        quit_app(ask_confirm = True)
+        continue                    # In case the user cancels the exit.
+    # Find handler associated w/ pin name & call it with value from event.
+    name = changed["name"]
+    log(f'invoking pin callback for {name}')
+    watchers[name](changed['value'])
 ```
 
 The infinite loop checks the state of PyWebIO GUI elements on a 1 second interval. When 1 second has passed, the call to `pin_wait_changes(...)` returns. The next line tests if the widget is still running; if it is, and none of the GUI elements have changed state, then the loop immediately returns for another round. If instead the widget is no longer running, then Foliage calls `quit_app(...)`.
