@@ -102,3 +102,7 @@ docs/_build
 .README.md.tmp
 *.bak
 foliage/data/macos-systray-widget/macos-systray-widget
+ABOUT.md
+ABOUT.html
+dev/installers/windows/version.py
+dev/installers/windows/lostit_innosetup_script.iss
