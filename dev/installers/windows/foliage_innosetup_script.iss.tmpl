@@ -1,6 +1,6 @@
 ; =============================================================================
 ; @file    foliage_innosetup_script.iss
-; @brief   Inno Setup script for Lost It!
+; @brief   Inno Setup script for Foliage!
 ; @author  Michael Hucka <mhucka@caltech.edu>
 ; @license Please see the file named LICENSE in the project directory
 ; @website https://github.com/caltechlibrary/foliage
@@ -19,7 +19,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 ; Also, the AppId setting must start with two "{" characters.
 
-AppId={{0F911487-945E-4CC2-A5D8-30BDEEE0E570}
+AppId={{0F911487-945E-4CC2-A5D8-30BDEEE0E580}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -29,9 +29,9 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-OutputDir=Z:\project-files\library\repos\foliage\dist
+OutputDir=Z:\project-files\library\repos\foliage\dist\win
 OutputBaseFilename=Foliage_{#MyAppVersion}_win10
-SetupIconFile=Z:\project-files\library\repos\foliage\dev\icons\generated-icons\foliage-icon-512px.ico
+SetupIconFile=Z:\project-files\library\repos\foliage\dev\icon\foliage-icon.ico
 Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
@@ -60,7 +60,7 @@ Name: "Uninstall\exe\{#MyAppName}"; Attribs: hidden;
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 ;
-Source: "\\Mac\Home\project-files\library\repos\foliage\dist\Foliage.exe"; DestDir: "{app}"; Flags:
+Source: "\\Mac\Home\project-files\library\repos\foliage\dist\win\Foliage.exe"; DestDir: "{app}"; Flags:
 Source: "\\Mac\Home\project-files\library\repos\foliage\ABOUT.html"; DestDir: "{app}"; Flags: isreadme
 
 
