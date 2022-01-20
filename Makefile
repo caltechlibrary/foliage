@@ -13,7 +13,7 @@
 # The following is based on the approach posted by Jonathan Ben-Avraham to
 # Stack Overflow in 2014 at https://stackoverflow.com/a/25668869
 
-PROGRAMS_NEEDED = curl gh git jq sed pyinstaller
+PROGRAMS_NEEDED = curl gh git jq sed pyinstaller pandoc inliner
 TEST := $(foreach p,$(PROGRAMS_NEEDED),\
 	  $(if $(shell which $(p)),_,$(error Cannot find program "$(p)")))
 
@@ -27,13 +27,16 @@ desc	  := $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
 author	  := $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
 email	  := $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
 license	  := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
-app_name  := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
+appname   := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
 platform  := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
 os	  := $(subst $(platform),darwin,macos)
-init_file := $(name)/__init__.py
-dist_dir  := dist/$(os)
-build_dir := build/$(os)
-zip_file  := $(dist_dir)/$(name)-$(version)-$(os).zip
+initfile  := $(name)/__init__.py
+distdir   := dist/$(os)
+builddir  := build/$(os)
+zipfile   := $(distdir)/$(name)-$(version)-$(os).zip
+dmgfile   := $(distdir)/$(name)-$(version)-$(os).dmg
+aboutfile := ABOUT.html
+githubcss := dev/github-css/github-markdown-css.html
 branch	  := $(shell git rev-parse --abbrev-ref HEAD)
 
 
@@ -115,11 +118,11 @@ report: vars
 	@echo doi_url	= $(doi_url)
 	@echo doi	= $(doi)
 	@echo doi_tail	= $(doi_tail)
-	@echo init_file = $(init_file)
-	@echo app_name	= $(app_name)
-	@echo dist_dir	= $(dist_dir)
-	@echo build_dir	= $(build_dir)
-	@echo zip_file	= $(zip_file)
+	@echo initfile  = $(initfile)
+	@echo appname	= $(appname)
+	@echo distdir	= $(distdir)
+	@echo builddir	= $(builddir)
+	@echo zipfile	= $(zipfile)
 
 
 # make binary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,30 +130,46 @@ report: vars
 # Note: the actions in this section only work on non-Windows systems. For
 # building on Windows, see the file "make.bat" in this directory.
 
-binary: | vars $(dist_dir)/$(app_name) zip-archive
+binary: | vars extra-files $(distdir)/$(appname) dmg
 
 dependencies:;
 	pip3 install -r requirements.txt
 
-pyinstaller $(dist_dir)/$(app_name): | vars dependencies
-	@mkdir -p $(dist_dir)
-	pyinstaller --distpath $(dist_dir) --clean --noconfirm pyinstaller-$(os).spec
+extra-files: $(aboutfile)
 
-zip-archive: pyinstaller
-	$(eval tmp_file := $(shell mktemp /tmp/comments-$(name).XXXX))
-	@cat <<- EOF > $(tmp_file)
-	┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-	┃ This Zip archive file includes a self-contained, runnable ┃
-	┃ version of the program Foliage for macOS. To learn        ┃
-	┃ more about Foliage, please visit the following site:      ┃
-	┃                                                           ┃
-	┃         https://github.com/$(repo)         ┃
-	┃                                                           ┃
-	┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-	EOF
-	zip $(zip_file) $(dist_dir)/$(name)
-	zip -z $(zip_file) < $(tmp_file)
-	-rm -f $(tmp_file)
+$(aboutfile): README.md
+	pandoc --standalone --quiet -f gfm -H $(githubcss) -o README.html README.md
+	inliner -n < README.html > ABOUT.html
+	rm -f README.html
+
+pyinstaller $(distdir)/$(appname): | vars dependencies
+	@mkdir -p $(distdir)
+	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
+
+dmg: # pyinstaller
+	$(eval dmgcontents := $(shell /bin/pwd)/$(dmgfile) $(aboutfile))
+	pushd $(distdir)
+	hdiutil create -volname Foliage -srcfolder $(appname) -ov -format UDZO $(dmgcontents)
+	popd
+
+# zip-archive: pyinstaller
+# 	$(eval tmp_file := $(shell mktemp /tmp/comments-$(name).XXXX))
+# 	@cat <<- EOF > $(tmp_file)
+# 	┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+# 	┃ This Zip archive file includes a self-contained, runnable ┃
+# 	┃ version of the program Foliage for macOS. To learn        ┃
+# 	┃ more about Foliage, please visit the following site:      ┃
+# 	┃                                                           ┃
+# 	┃         https://github.com/$(repo)         ┃
+# 	┃                                                           ┃
+# 	┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+# 	EOF
+# 	$(eval abs_zipfile := $(shell /bin/pwd)/$(zipfile))
+# 	pushd $(distdir)
+# 	zip -r $(abs_zipfile) $(appname)
+# 	popd
+# 	zip -z $(abs_zipfile) < $(tmp_file)
+# 	-rm -f $(tmp_file)
 
 
 # make release ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -163,12 +182,12 @@ ifneq ($(branch),main)
 endif
 
 update-init: vars
-	@sed -i .bak -e "s|^\(__version__ *=\).*|\1 '$(version)'|"  $(init_file)
-	@sed -i .bak -e "s|^\(__description__ *=\).*|\1 '$(desc)'|" $(init_file)
-	@sed -i .bak -e "s|^\(__url__ *=\).*|\1 '$(url)'|"	    $(init_file)
-	@sed -i .bak -e "s|^\(__author__ *=\).*|\1 '$(author)'|"    $(init_file)
-	@sed -i .bak -e "s|^\(__email__ *=\).*|\1 '$(email)'|"	    $(init_file)
-	@sed -i .bak -e "s|^\(__license__ *=\).*|\1 '$(license)'|"  $(init_file)
+	@sed -i .bak -e "s|^\(__version__ *=\).*|\1 '$(version)'|"  $(initfile)
+	@sed -i .bak -e "s|^\(__description__ *=\).*|\1 '$(desc)'|" $(initfile)
+	@sed -i .bak -e "s|^\(__url__ *=\).*|\1 '$(url)'|"	    $(initfile)
+	@sed -i .bak -e "s|^\(__author__ *=\).*|\1 '$(author)'|"    $(initfile)
+	@sed -i .bak -e "s|^\(__email__ *=\).*|\1 '$(email)'|"	    $(initfile)
+	@sed -i .bak -e "s|^\(__license__ *=\).*|\1 '$(license)'|"  $(initfile)
 
 update-meta: vars
 	@sed -i .bak -e "/version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" codemeta.json
@@ -178,7 +197,7 @@ update-citation: vars
 	@sed -i .bak -e "/^date-released/ s/[0-9][0-9-]*/$(date)/" CITATION.cff
 	@sed -i .bak -e "/^version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" CITATION.cff
 
-edited := codemeta.json $(init_file) CITATION.cff
+edited := codemeta.json $(initfile) CITATION.cff
 
 commit-updates: vars
 	git add $(edited)
@@ -220,10 +239,10 @@ update-doi: vars
 	    (git commit -m"Update DOI" CITATION.cff && git push -v --all)
 
 packages: vars
-	-mkdir -p $(build_dir) $(dist_dir)
-	python3 setup.py sdist --dist-dir $(dist_dir)
-	python3 setup.py bdist_wheel --dist-dir $(dist_dir)
-	python3 -m twine check $(dist_dir)/$(name)-$(version).tar.gz
+	-mkdir -p $(builddir) $(distdir)
+	python3 setup.py sdist --dist-dir $(distdir)
+	python3 setup.py bdist_wheel --dist-dir $(distdir)
+	python3 -m twine check $(distdir)/$(name)-$(version).tar.gz
 
 # Note: for the next action to work, the repository "testpypi" needs to be
 # defined in your ~/.pypirc file. Here is an example file:
@@ -243,10 +262,10 @@ packages: vars
 # https://packaging.python.org/en/latest/specifications/pypirc/
 
 test-pypi: packages
-	python3 -m twine upload --repository testpypi $(dist_dir)/$(name)-$(version)*.{whl,gz}
+	python3 -m twine upload --repository testpypi $(distdir)/$(name)-$(version)*.{whl,gz}
 
 pypi: packages
-	python3 -m twine upload $(dist_dir)/$(name)-$(version)*.{gz,whl}
+	python3 -m twine upload $(distdir)/$(name)-$(version)*.{gz,whl}
 
 
 # Cleanup and miscellaneous directives ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,22 +279,23 @@ completely-clean: really-clean
 	rm -rf build dist
 
 clean-dist: vars
-	rm -fr $(dist_dir)/$(name) $(dist_dir)/$(app_name) $(zip_file) \
+	rm -fr $(distdir)/$(name) $(distdir)/$(appname) $(zipfile) \
 	    dist/$(name)-$(version)-py3-none-any.whl
 
 really-clean-dist:;
-	rm -fr $(dist_dir)
+	rm -fr $(distdir)
 
 clean-build:;
-	rm -rf $(build_dir)
+	rm -rf $(builddir)
 
 really-clean-build:;
 	rm -rf build/lib build/pyinstaller-$(os) build/bdist.*
 
 clean-release:;
-	rm -rf $(name).egg-info codemeta.json.bak $(init_file).bak README.md.bak
+	rm -rf $(name).egg-info codemeta.json.bak $(initfile).bak README.md.bak
 
 clean-other:;
+	rm -f $(aboutfile)
 	rm -fr __pycache__ $(name)/__pycache__ .eggs
 	rm -rf .cache
 
