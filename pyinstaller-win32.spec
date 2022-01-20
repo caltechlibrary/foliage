@@ -97,9 +97,10 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
-splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
-                         binaries = configuration.binaries,
-                         datas = configuration.datas)
+# splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
+#                          binaries = configuration.binaries,
+#                          datas = configuration.datas
+#                          )
 
 # Notes about the configuration below:
 # - "debug = True" produces output on the cmd line when you start the app.
@@ -111,16 +112,20 @@ executable         = EXE(application_pyz,
                          configuration.binaries,
                          configuration.zipfiles,
                          configuration.datas,
-                         splash,
-                         splash.binaries,
+                         # splash,
+                         # splash.binaries,
                          name = 'Foliage',
                          icon = r'dev/icon/foliage-icon.ico',
                          version = r'dev/installers/windows/version.py',
-                         debug = False,
                          strip = False,
-                         upx = False,
+                         upx = True,
                          runtime_tmpdir = None,
+                         # To debug run problems on Windows, first try setting
+                         # console to True. If that doesn't reveal enough, then
+                         # try setting debug to True. (Debug produces a lot of
+                         # dialogs, so better to start with console.)
                          console = False,
+                         debug = False,
                         )
 
 app             = BUNDLE(executable,
