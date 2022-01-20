@@ -23,13 +23,17 @@ In either case, Foliage will both (a) open a web browser page that acts as the m
 
 ## First-time permissions
 
-When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections. Here is an example on macOS:
+When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections.  The following images show examples from macOS and Windows, respectively:
 
 <figure>
     <img width="500px" src="_static/media/macos-accept-connections.png">
 </figure>
 
-Make sure to click **Accept**. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application, it needs to let your web browser to connect to it so that the browser can interact with Foliage, and this triggers normal operating system security warnings. The operating system will not ask again after the first time you run a particular version of Foliage.
+<figure style="margin-top: 0;">
+    <img class="shadowed" width="500px" style="margin-bottom: 3em" src="_static/media/windows-accept-connections.png">
+</figure>
+
+Make sure to click **Allow**. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application, it needs to let your web browser to connect to it so that the browser can interact with Foliage, and this triggers normal operating system security warnings. The operating system will not ask again after the first time you run a particular version of Foliage.
 
 
 ## FOLIO authentication
