@@ -65,6 +65,10 @@ figure {
   text-align: center;
 }
 
+figure img {
+  max-width: 75% !important;
+}
+
 figure figcaption {
   font-style: italic;
 }
