@@ -12,7 +12,7 @@ Foliage is written in [Python 3](https://www.python.org) and makes use of some a
 
 ### _Alternative 1: installing the ready-to-run executable programs_
 
-For the Caltech Library, we provide Foliage in a ready-to-run form for Windows computers. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.
+For the Caltech Library, we provide Foliage in a ready-to-run form for Windows and macOS computers. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.
 
 
 ### _Alternative 2: installing Foliage using `pipx`_
