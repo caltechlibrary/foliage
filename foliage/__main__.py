@@ -597,7 +597,7 @@ def config_demo_mode(demo_mode):
 def config_port(port):
     '''Takes the --port option and changes the Foliage port if needed.'''
     if not isint(port):
-        note_error(f'Port number value is not an integer: antiformat(port)')
+        note_error(f'Port number value is not an integer: {antiformat(port)}')
         exit(1)
     os.environ['PORT'] = str(port)
 
