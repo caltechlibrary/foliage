@@ -299,12 +299,13 @@ Command-line arguments summary
     config_debug(debug)                # Set up debugging before going further.
 
     log('='*8 + f' started {timestamp()} ' + '='*8)
+    log('command line: ' + str(sys.argv))
     os.environ['FOLIAGE_GUI_STARTED'] = 'False'      # Used by ui.py functions.
 
     config_signals()
     config_backup_dir(None if backup_dir == 'B' else backup_dir)
     config_credentials(None if creds_file == 'C' else creds_file, not no_keyring)
-    config_port(8080 if port == 'P' else port)
+    config_port(port if (port != 'P' and isint(port)) else 8080)
     config_demo_mode(demo_mode)
 
     log_config()
