@@ -36,6 +36,7 @@ builddir  := build/$(os)
 zipfile   := $(distdir)/$(name)-$(version)-$(os).zip
 dmgfile   := $(distdir)/$(name)-$(version)-$(os).dmg
 aboutfile := ABOUT.html
+macreadme := "dev/installers/macos/READ THIS PLEASE.html"
 githubcss := dev/github-css/github-markdown-css.html
 branch	  := $(shell git rev-parse --abbrev-ref HEAD)
 
@@ -135,22 +136,30 @@ binary: | vars extra-files $(distdir)/$(appname) dmg
 dependencies:;
 	pip3 install -r requirements.txt
 
-extra-files: $(aboutfile)
+extra-files: $(macreadme) # $(aboutfile)
 
 $(aboutfile): README.md
-	pandoc --standalone --quiet -f gfm -H $(githubcss) -o README.html README.md
-	inliner -n < README.html > ABOUT.html
-	rm -f README.html
+	pandoc --standalone --quiet -f gfm -H $(githubcss) -o tmp.html $<
+	inliner -n < tmp.html > $(aboutfile)
+	rm -f tmp.html
+
+$(macreadme): dev/installers/macos/read-first.md
+	pandoc --standalone --quiet -f gfm -H $(githubcss) -o tmp.html $<
+	inliner -n < tmp.html > $(macreadme)
+	rm -f tmp.html
 
 pyinstaller $(distdir)/$(appname): | vars dependencies
 	@mkdir -p $(distdir)
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
 
-dmg: # pyinstaller
-	$(eval dmgcontents := $(shell /bin/pwd)/$(dmgfile) $(aboutfile))
-	pushd $(distdir)
-	hdiutil create -volname Foliage -srcfolder $(appname) -ov -format UDZO $(dmgcontents)
-	popd
+dmg: # $(distdir)/$(appname) $(macreadme)
+	$(eval volname	 := Foliage_$(version))
+	$(eval srcfolder := $(distdir)/$(volname))
+	-mkdir -p $(srcfolder)
+	cp -a $(distdir)/$(appname) $(srcfolder)
+	cp -a $(macreadme) $(srcfolder)
+	hdiutil create -volname $(volname) -srcfolder $(srcfolder) \
+	    -ov -format UDZO $(abspath $(dmgfile))
 
 # zip-archive: pyinstaller
 # 	$(eval tmp_file := $(shell mktemp /tmp/comments-$(name).XXXX))
