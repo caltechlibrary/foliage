@@ -289,13 +289,11 @@ def skip(id, msg, context = ''):
 
 
 _UNSUPPORTED_KINDS = [
-    IdKind.INSTANCE_ID,
-    IdKind.INSTANCE_HRID,
-    IdKind.ACCESSION,
-    IdKind.USER_ID,
-    IdKind.USER_BARCODE,
-    IdKind.LOAN_ID,
-    IdKind.TYPE_ID,
+    RecordKind.UNKNOWN,
+    RecordKind.INSTANCE,
+    RecordKind.LOAN,
+    RecordKind.USER,
+    RecordKind.TYPE,
 ]
 
 def do_change():
@@ -335,10 +333,10 @@ def do_change():
                 done += 1
                 set_processbar('bar', done/steps)
                 if not record:
-                    fail(id, f'unrecognized identifier **{id}**.')
+                    fail(id, f'unrecognized identifier **{id}**')
                     continue
                 if record.kind in _UNSUPPORTED_KINDS:
-                    skip(id, 'changing this kind of record is not supported.')
+                    skip(id, f'changing {record.kind} records is not supported')
                     continue
                 records.append(record)
 
@@ -376,6 +374,7 @@ def do_change():
                     save_record(item)
                 done += 1
                 set_processbar('bar', done/steps)
+            set_processbar('bar', 1)
         except Interrupted as ex:
             tell_warning('**Stopped**.')
             return
