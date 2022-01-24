@@ -22,6 +22,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
+from   commonpy.data_utils import flattened
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
 from   contextlib import contextmanager
@@ -321,11 +322,37 @@ def image_data(file_name):
     return b''
 
 
-def user_file(msg):
-    '''Ask the user to upload a file and return the contents.'''
-    result = file_upload(msg)
+def user_file(instructions):
+    '''Ask the user to upload a file and return the contents as text.
+    Currently supports plain text, CSV, and MS Office .xslx files.
+    '''
+    result = file_upload(instructions,
+                         help_text = 'The file can be in any of the following'
+                         + ' formats: .txt (plain text), .csv (comma-separated'
+                         + '  values), .xlsx (Excel).')
     if result and result['filename'] != UPLOAD_CANCEL_MARKER:
-        return result['content'].decode()
+        if result['mime_type'] in ['text/plain', 'text/csv']:
+            return result['content'].decode()
+        elif result['mime_type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            # It's an excel .xslx file.
+            import io
+            from openpyxl import load_workbook
+            content = io.BytesIO(result['content'])
+            wb = load_workbook(content)
+            ws = wb.active
+            # The rows will be tuples. Flatten everything out as text.
+            try:
+                return '\n'.join(flattened(ws.values))
+            except Exception as ex:
+                log('failed to get flattened worksheet: ' + str(ex))
+                notify('Unable to extract values from this spreadsheet.'
+                       + ' This is probably an error in Foliage. Please'
+                       + ' report it to the developers.')
+        else:
+            notify('This type of file is currently unsupported.'
+                   + f' (MIME type {result["mime_type"]}.) Please contact the'
+                   + 'developers to request support for this type.')
+            return None
     return None
 
 
