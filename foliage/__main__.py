@@ -417,7 +417,7 @@ def foliage_page(widget):
             notify('Unable to proceed without complete credentials. Quitting.')
             quit_app(ask_confirm = False)
         use_credentials(creds)
-    if not Folio.credentials_valid():
+    if not Folio().credentials_valid():
         notify('Invalid FOLIO credentials. Quitting.')
         quit_app(ask_confirm = False)
 
