@@ -172,7 +172,7 @@ def do_find():
     with use_scope('output', clear = True):
         put_grid([[
             put_markdown(f'_Certain lookups can take a very long time. Please'
-                     + ' be patient._').style('color: DarkOrange')
+                     + ' be patient._').style('color: DarkOrange; margin-bottom: 0')
             ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
@@ -223,10 +223,12 @@ def do_find():
             tell_warning('**Stopped**.')
         else:
             what = pluralized(f'{kind_wanted} identifier', identifiers, True)
-            put_markdown(f'Finished looking up {what}.').style('text-align: center')
-            put_button('Export', outline = True,
-                       onclick = lambda: do_export(_last_results, kind_wanted),
-                       ).style('float: right; margin: auto 17px auto 10px')
+            put_grid([[
+                put_markdown(f'Finished looking up {what}.').style('margin-top: 6px'),
+                put_button('Export', outline = True,
+                           onclick = lambda: do_export(_last_results, kind_wanted),
+                           ).style('text-align: right')
+            ]]).style('margin: 1.5em 17px auto 17px')
 
 
 def print_record(record, identifier, index, show_index, show_raw):
