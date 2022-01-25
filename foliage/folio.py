@@ -39,7 +39,7 @@ from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import writable
 from   commonpy.interrupt import wait, interrupted, raise_for_interrupts
 from   commonpy.string_utils import antiformat
-from   commonpy.network_utils import net
+from   commonpy.network_utils import net, network_available
 from   dataclasses import dataclass
 from   datetime import datetime as dt
 from   dateutil import tz
@@ -55,7 +55,7 @@ from   sidetrack import set_debug, log
 from   validators.url import url as valid_url
 
 from   foliage.enum_utils import MetaEnum, ExtendedEnum
-from   foliage.exceptions import FolioError
+from   foliage.exceptions import *
 
 
 # Internal constants.
@@ -102,8 +102,17 @@ class RecordKind(ExtendedEnum):
 
 
     @staticmethod
-    def storage_endpoint(kind):
-        '''FOLIO API endpoint for getting the given kind of record.'''
+    def creation_endpoint(kind):
+        '''FOLIO API endpoint for creating the given kind of record.'''
+        mapping = {
+            RecordKind.HOLDINGS : '/holdings-storage/holdings',
+        }
+        return mapping[kind] if kind in mapping else None
+
+
+    @staticmethod
+    def update_endpoint(kind):
+        '''FOLIO API endpoint for updating the given kind of record.'''
         mapping = {
             RecordKind.ITEM     : '/item-storage/items',
             RecordKind.INSTANCE : '/instance-storage/instances',
@@ -347,6 +356,39 @@ class Folio():
                 wait(wait_time)
                 return self._folio(op, endpoint, convert, retry = retry)
         raise error
+
+
+    def types(self, type_kind):
+        '''Return a list of types of type_kind.'''
+        if type_kind not in TypeKind:
+            raise RuntimeError(f'Unknown type kind {type_kind}')
+        if type_kind in self._type_list_cache:
+            log(f'returning cached value of types {type_kind}')
+            return self._type_list_cache[type_kind]
+
+        def result_parser(response):
+            if not response:
+                log('no response received from FOLIO')
+                return {}
+            elif 200 <= response.status_code < 300:
+                data_dict = json.loads(response.text)
+                if 'totalRecords' in data_dict:
+                    log(f'successfully got list of {type_kind} types from FOLIO')
+                    key = set(set(data_dict.keys()) - {'totalRecords'}).pop()
+                    return data_dict[key]
+                else:
+                    raise RuntimeError('Unexpected data returned by FOLIO')
+            elif response.status_code == 401:
+                log(f'user lacks authorization to get a {type_kind} list')
+                return {}
+            else:
+                raise RuntimeError('Problem retrieving list of types')
+
+        endpoint = '/' + type_kind + '?limit=10000'
+        type_list = self._folio('get', endpoint, result_parser)
+        if type_list:
+            self._type_list_cache[type_kind] = type_list
+        return type_list
 
 
     def id_kind(self, id):
@@ -882,114 +924,130 @@ class Folio():
         return self._folio('get', endpoint, data_extractor)
 
 
-    def types(self, type_kind):
-        '''Return a list of types of type_kind.'''
-        if type_kind not in TypeKind:
-            raise RuntimeError(f'Unknown type kind {type_kind}')
-        if type_kind in self._type_list_cache:
-            log(f'returning cached value of types {type_kind}')
-            return self._type_list_cache[type_kind]
+    def new_record(self, record):
+        '''Create a new record using the data in 'record' & return the new id.
+        This method reads the FOLIO credentials from environment variables.
+        It will raise an exception with an error message if it fails.
+        '''
+        response = self._do('create', record)
+        data = json.loads(response.text)
+        if 'id' in data:
+            log(f'newly created record has id {id}')
+            return data['id']
+        log('data returned for creation lacks an id: ' + response.text)
+        raise FolioOpFailed('Unexpected data returned by FOLIO')
 
-        def result_parser(response):
-            if not response:
-                log('no response received from FOLIO')
-                return {}
-            elif 200 <= response.status_code < 300:
-                data_dict = json.loads(response.text)
-                if 'totalRecords' in data_dict:
-                    log(f'successfully got list of {type_kind} types from FOLIO')
-                    key = set(set(data_dict.keys()) - {'totalRecords'}).pop()
-                    return data_dict[key]
-                else:
-                    raise RuntimeError('Unexpected data returned by FOLIO')
-            elif response.status_code == 401:
-                log(f'user lacks authorization to get a {type_kind} list')
-                return {}
+
+    def update_record(self, record):
+        '''Update the given record.
+        This method reads the FOLIO credentials from environment variables.
+        It will raise an exception with an error message if it fails.
+        '''
+        self.do('update', record)
+
+
+    def delete_record(self, record):
+        '''Delete the given record.
+        This method reads the FOLIO credentials from environment variables.
+        It will raise an exception with an error message if it fails.
+        '''
+        self.do('delete', record)
+
+
+    def _do(self, what, record):
+        '''Do something to a record: create, update, or delete.
+        This method reads the FOLIO credentials from environment variables.
+        It will raise an exception with an error message if it fails.
+        '''
+        headers = {
+            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
+            "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
+            "content-type":   "application/json",
+        }
+        if what == 'create':
+            endpoint = RecordKind.creation_endpoint(record.kind)
+            request_url = config('FOLIO_OKAPI_URL') + endpoint
+            op = 'post'
+            data = json.dumps(record.data)
+        elif what == 'update':
+            endpoint = RecordKind.update_endpoint(record.kind)
+            request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
+            op = 'put'
+            data = json.dumps(record.data)
+        elif what == 'delete':
+            endpoint = RecordKind.deletion_endpoint(record.kind)
+            request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
+            op = 'delete'
+            data = None
+        else:
+            log(f'unrecognized record actio {what}')
+            raise FoliageException('Internal error – please report this')
+
+        if not endpoint:
+            log(f'no endpoint found for updating {record.kind} record')
+            raise FolioOpFailed(f'Updating {record.kind} records is not implemented')
+
+        log(f'requesting Folio to {what} record: ' + str(record))
+        (response, error) = net(op, request_url, headers = headers, data = data)
+        if not error and what == 'create':
+            # Creation returns a record; other actions don't return anything.
+            return response
+        # Error from net() is an exception if appropriate, but we have special
+        # understanding of FOLIO's http codes, so we handle most cases ourselves.
+        if isinstance(error, NetworkFailure):
+            raise FolioOpFailed('Network error')
+        self._finish(response, f'{what}d record {record.id} using {request_url}')
+
+
+    def _finish(response, what):
+        '''Interpret FOLIO HTTP response & log + raise errors if appropriate.'''
+        if not response:
+            # Could we have lost the network?
+            if not network_available():
+                log('lost network connection')
+                raise FolioOpFailed('Network connection appears to be down')
             else:
-                raise RuntimeError('Problem retrieving list of types')
-
-        endpoint = '/' + type_kind + '?limit=10000'
-        type_list = self._folio('get', endpoint, result_parser)
-        if type_list:
-            self._type_list_cache[type_kind] = type_list
-        return type_list
-
-
-    def write(self, record, endpoint):
-        '''Write a record to the given endpoint.
-        This method reads the FOLIO credentials from environment variables.
-        '''
-        headers = {
-            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
-            "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
-            "content-type":   "application/json",
-        }
-
-        request_url = config('FOLIO_OKAPI_URL') + endpoint
-        data = json.dumps(record.data)
-        (response, error) = net('put', request_url, headers = headers, data = data)
-        if response and response.status_code == 204:
-            log(f'successfully wrote record to {request_url}')
-            return True, ''
+                # Something is really wonky.
+                log('response to API call is empty or None')
+                raise FolioError('Network API call produced no response')
+        elif 200 <= response.status_code < 300:
+            log(f'successfully {what}')
+            return
+        elif response.status_code == 400:
+            # "Bad request, e.g. malformed request body or query parameter.
+            # Details of the error (e.g. name of the parameter or line/character
+            # number with malformed data) provided in the response."
+            log('FOLIO response code 400 details: ' + response.text)
+            raise FolioOpFailed('Error in API call to FOLIO – please report this')
+        elif response.status_code == 401:
+            # "Not authorized to perform requested action"
+            log('FOLIO response code 401: user is not authorized')
+            raise FolioOpFailed('FOLIO permissions error: not authorized for action')
+        elif response.status_code == 404:
+            # "Item not found" etc.
+            log(f'FOLIO response code 404 details: ' + response.text)
+            raise FolioOpFailed('FOLIO returned an error: ' + response.text)
+        elif response.status_code in [409, 500, 501]:
+            # "internal server error"
+            log(f'FOLIO response {response.status_code} details: ' + response.text)
+            raise FolioError('FOLIO server error: ' + response.text)
+        elif response.status_code == 422:
+            # Schema validation error, probably in JSON we tried to upload.
+            # 1st get the JSON 'errors' field; it's a list, ea w/ 'message'.
+            response_dict = json.loads(response.text)
+            if 'errors' in response_dict:
+                error_list = response_dict['errors']
+                log('code 422: schema errors')
+                for index, error in enumerate(error_list):
+                    log(f'error #{index}:' + error)
+            else:
+                log('got code 422 but response did not include errors')
+            raise FolioOpFailed('Foliage data format error – please report this')
         else:
-            log(f'failed to write record to {request_url}: ' + str(error))
-            return False, error
-
-
-    def delete(self, record):
-        '''Delete a record.
-        This method reads the FOLIO credentials from environment variables.
-        '''
-        headers = {
-            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
-            "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
-            "content-type":   "application/json",
-        }
-
-        # Some deletions are done via the inventory api & some via storage api.
-        endpoint = RecordKind.deletion_endpoint(record.kind)
-        request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
-        (response, error) = net('delete', request_url, headers = headers)
-        if response and response.status_code == 204:
-            log(f'successfully deleted record {record.id} from {request_url}')
-            return True, ''
-        else:
-            log(f'failed to delete record {record.id}: ' + str(error))
-            return False, error
-
-
-    # https://s3.amazonaws.com/foliodocs/api/mod-inventory/p/inventory.html
-
-    def operation(self, op, endpoint, data = None):
-        '''Do 'op' on 'endpoint' and return a tuple (success, response text).'''
-
-        def result_parser(response):
-            if not response:
-                return (False, '')
-            elif 200 <= response.status_code < 300:
-                return (True, response.text)
-            elif response.status_code == 400:
-                # "Bad request, e.g. malformed request body or query
-                # parameter. Details of the error (e.g. name of the parameter
-                # or line/character number with malformed data) provided in
-                # the response."
-                return (False, response.text)
-            elif response.status_code == 401:
-                # "Not authorized to perform requested action"
-                return (False, response.text)
-            elif response.status_code == 404:
-                # "Item with a given ID not found"
-                return (False, response.text)
-            elif response.status_code == 422:
-                # "Validation error"
-                return (False, response.text)
-            elif response.status_code in [409, 500]:
-                # "internal server error"
-                return (False, response.text)
-
-        # return self._folio(op, endpoint, result_parser)
-        log(f'issuing operation {op} on {endpoint}')
-        return self._folio(op, endpoint, result_parser)
+            # A code that I didn't see in the FOLIO API documentation.
+            log(f'Unrecognized FOLIO response code {response.status_code}'
+                + ' details: ' + response.text)
+            raise FoliageException('Unexpected FOLIO response – please report this')
 
 
 # Misc. utilities
@@ -1004,11 +1062,13 @@ def instance_id_from_accession(an):
 def unique_identifiers(text):
     '''Return a list of identifiers found in the text after some cleanup.'''
     lines = text.splitlines()
-    identifiers = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
-    identifiers = [id.replace('"', '') for id in identifiers]
-    identifiers = [id.replace("'", '') for id in identifiers]
-    identifiers = [id.replace(':', '') for id in identifiers]
-    return unique(filter(None, identifiers))
+    ids = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
+    ids = [id.replace('"', '') for id in ids]
+    ids = [id.replace("'", '') for id in ids]
+    ids = [id.replace(':', '') for id in ids]
+    ids = [id for id in ids if not any(c in id for c in r'!@#$%^&*=\/')]
+    ids = [id for id in ids if any(c.isnumeric() for c in id)]
+    return unique(filter(None, ids))
 
 
 def back_up_record(record):
