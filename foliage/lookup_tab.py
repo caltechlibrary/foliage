@@ -222,9 +222,10 @@ def do_find():
         if interrupted():
             tell_warning('**Stopped**.')
         else:
-            what = pluralized(f'{kind_wanted} identifier', identifiers, True)
+            summary = (f'Finished looking for {kind_wanted} records given '
+                       + pluralized('unique identifier', identifiers, True))
             put_grid([[
-                put_markdown(f'Finished looking up {what}.').style('margin-top: 6px'),
+                put_markdown(summary).style('margin-top: 6px'),
                 put_button('Export', outline = True,
                            onclick = lambda: do_export(_last_results, kind_wanted),
                            ).style('text-align: right')
