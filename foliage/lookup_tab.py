@@ -59,8 +59,8 @@ def tab_contents():
         put_grid([[
             put_markdown('Input one or more item barcode, item id, item hrid,'
                          + ' instance id, instance hrid, instance accession'
-                         + ' number, loan id, loan hrid, user id, or user barcode'
-                         + ' in the field below, or by uploading a text file.'),
+                         + ' number, loan id, loan hrid, user id, or user'
+                         + ' barcode below, or upload a file containing them.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -149,6 +149,10 @@ def do_find():
     if not pin.textbox_find.strip():
         note_error('Please input at least one barcode or other id.')
         return
+    identifiers = unique_identifiers(pin.textbox_find)
+    if not identifiers:
+        note_error('The input does not appear to contain FOLIO identifiers.')
+        return
     reuse_results = False
     if (pin.textbox_find == _last_textbox and pin.select_kind == _last_kind
         and pin.inventory_api == _last_inventory_api
@@ -162,7 +166,6 @@ def do_find():
     _last_inventory_api = pin.inventory_api
     _last_open_loans = pin.open_loans
     kind_wanted = pin.select_kind
-    identifiers = unique_identifiers(pin.textbox_find)
     steps = len(identifiers) + 1
     folio = Folio()
     reset_interrupts()
@@ -174,7 +177,8 @@ def do_find():
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
+            ]], cell_widths = '85% 15%').style(
+                'padding: 17px; margin-bottom: 17px; border: 1px solid #ededed; border-radius: 0.25em')
         for count, id in enumerate(identifiers, start = 2):
             try:
                 # Figure out what kind of identifier we were given.
