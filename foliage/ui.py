@@ -207,6 +207,13 @@ textarea.form-control[readonly] {
 }
 '''
 
+STATUS_BOX_STYLE = '''
+padding: 17px;
+margin-bottom: 17px;
+border: 1px solid #ededed;
+border-radius: 0.25em
+'''
+
 
 # Exported functions
 # .............................................................................
