@@ -132,10 +132,10 @@ def do_list():
         ]).style('margin-top: 15px; margin-bottom: 14px')
         rows = []
         for item in types:
-            name, id = item[TypeKind.name_key(requested)], item['id']
+            name = item.data[TypeKind.name_key(requested)]
             title = f'Data for {cleaned_name} value "{name.title()}"'
-            rows.append([name, link_button(name, id, title, requested),
-                         copy_button(id).style('padding: 0; margin-right: 13px')])
+            rows.append([name, link_button(name, item.id, title, requested),
+                         copy_button(item.id).style('padding: 0; margin-right: 13px')])
 
         contents = [[put_markdown('**Name**'), put_markdown('**Id**'), put_text('')]]
         contents += sorted(rows, key = lambda x: x[0])
@@ -147,7 +147,7 @@ def show_record(title, id, record_type):
     folio = Folio()
     try:
         log(f'getting {record_type} record {id} from FOLIO')
-        recs  = folio.related_records(id, IdKind.TYPE_ID, record_type)
+        recs  = folio.types(record_type)
     except Exception as ex:
         note_error(str(ex))
         return

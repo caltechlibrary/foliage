@@ -359,7 +359,7 @@ class Folio():
 
 
     def types(self, type_kind):
-        '''Return a list of types of type_kind.'''
+        '''Return a list of types of type_kind, as Record objects.'''
         if type_kind not in TypeKind:
             raise RuntimeError(f'Unknown type kind {type_kind}')
         if type_kind in self._type_list_cache:
@@ -367,20 +367,21 @@ class Folio():
             return self._type_list_cache[type_kind]
 
         def result_parser(response):
-            if not response:
+            if not response or not response.text:
                 log('no response received from FOLIO')
-                return {}
+                return []
             elif 200 <= response.status_code < 300:
                 data_dict = json.loads(response.text)
                 if 'totalRecords' in data_dict:
                     log(f'successfully got list of {type_kind} types from FOLIO')
                     key = set(set(data_dict.keys()) - {'totalRecords'}).pop()
-                    return data_dict[key]
+                    return [Record(id = item['id'], kind = type_kind, data = item)
+                            for item in data_dict[key]]
                 else:
                     raise RuntimeError('Unexpected data returned by FOLIO')
             elif response.status_code == 401:
                 log(f'user lacks authorization to get a {type_kind} list')
-                return {}
+                return []
             else:
                 raise RuntimeError('Problem retrieving list of types')
 
