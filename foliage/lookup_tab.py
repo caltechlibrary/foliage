@@ -36,7 +36,7 @@ from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
-from   foliage.ui import note_info, note_warn, note_error
+from   foliage.ui import note_info, note_warn, note_error, STATUS_BOX_STYLE
 
 
 # Tab definition class.
@@ -171,14 +171,13 @@ def do_find():
     reset_interrupts()
     with use_scope('output', clear = True):
         put_grid([[
-            put_markdown(f'_Certain lookups can take a very long time. Please'
+            put_markdown(f'_Certain lookups can take a long time. Please'
                      + ' be patient._').style('color: DarkOrange; margin-bottom: 0')
             ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style(
-                'padding: 17px; margin-bottom: 17px; border: 1px solid #ededed; border-radius: 0.25em')
+            ]], cell_widths = '85% 15%').style(STATUS_BOX_STYLE)
         for count, id in enumerate(identifiers, start = 2):
             try:
                 # Figure out what kind of identifier we were given.
