@@ -29,12 +29,13 @@ from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
 
 from   foliage.base_tab import FoliageTab
+from   foliage.exceptions import *
 from   foliage.export import export_data
 from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
-from   foliage.ui import note_info, note_warn, note_error
+from   foliage.ui import note_info, note_warn, note_error, STATUS_BOX_STYLE
 
 
 # Tab definition class.
@@ -55,9 +56,9 @@ def tab_contents():
     log(f'generating delete tab contents')
     return [
         put_grid([[
-            put_markdown('Input one or more item barcodes, id\'s, or hrid\'s,'
-                         + ' then press the button'
-                         + ' to delete the associated FOLIO records.'),
+            put_markdown('Input one or more item or holdings identifiers'
+                         + ' (which can be id\'s, barcodes, or hrid\'s),'
+                         + ' then press the button to delete the records.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -118,73 +119,98 @@ def skipped(id, msg, why = ''):
 def do_delete():
     log(f'do_delete invoked')
     global results
+    results = []
     identifiers = unique_identifiers(pin.textbox_delete)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
         return
-    if not confirm('Warning: you are about to delete records from FOLIO'
-                   + ' permanently. Proceed?', danger = True):
+    if not confirm('Proceed with deleting records from FOLIO?', danger = True):
         log(f'user declined to proceed')
         return
+    reset_interrupts()
     steps = len(identifiers) + 1
     folio = Folio()
-    results = []
-    reset_interrupts()
     with use_scope('output', clear = True):
         put_grid([[
+            put_markdown(f'_Performing deletions_ ...').style('margin-bottom: 0')
+        ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style('margin: auto 17px 1.5em 17px')
-        for count, id in enumerate(identifiers, start = 2):
-            try:
+        ]], cell_widths = '85% 15%').style(STATUS_BOX_STYLE)
+        try:
+            for count, id in enumerate(identifiers, start = 2):
                 record = folio.record(id)
                 if not record:
-                    failed(id, f'no item record(s) found for {id}.')
+                    failed(id, f'unrecognized identifier **{id}**')
                     continue
-                elif record.kind is not RecordKind.ITEM:
-                    skipped(id, f'{id_kind} deletion is currently turned off.')
+                if record.kind not in _HANDLERS.keys():
+                    skipped(id, f'deleting {record.kind} records is not supported')
                     continue
-                delete(record)
-            except Interrupted as ex:
-                log('stopping due to interruption')
-                break
-            except Exception as ex:
-                import traceback
-                log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
-                tell_failure(f'Error: ' + str(ex))
-                stop_processbar()
-                return
-            finally:
-                if not interrupted():
-                    set_processbar('bar', count/steps)
-        stop_processbar()
-        if interrupted():
+                _HANDLERS[record.kind](record)
+                set_processbar('bar', count/steps)
+        except Interrupted as ex:
             tell_warning('**Stopped**.')
-        else:
-            what = pluralized('record', identifiers, True)
-            put_grid([[
-                put_markdown(f'Finished deleting {what}.').style('margin-top: 6px'),
-                put_button('Export summary', outline = True,
-                           onclick = lambda: export_data(results, 'deletion-results.csv'),
-                           ).style('text-align: right')
-            ]]).style('margin: 1.5em 17px auto 17px')
+            return
+        except Exception as ex:
+            import traceback
+            log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
+            tell_failure(f'Error: ' + str(ex))
+            return
+        finally:
+            stop_processbar()
+
+        what = pluralized('record', identifiers, True)
+        put_grid([[
+            put_markdown(f'Finished deleting {what}.').style('margin-top: 6px'),
+            put_button('Export summary', outline = True,
+                       onclick = lambda: export_data(results, 'foliage-deletions.csv'),
+                       ).style('text-align: right')
+        ]]).style('margin: 1.5em 17px auto 17px')
 
 
 def delete(record, for_id = None):
+    '''Generic low-level function to delete the given record.'''
+    why = ('for request to delete ' + for_id) if for_id else ''
     if config('DEMO_MODE', cast = bool):
         log(f'demo mode in effect – pretending to delete {record.id}')
-        success = True
     else:
-        back_up_record(record)
-        folio = Folio()
-        (success, msg) = folio.delete(record)
-    why = ('for request to delete ' + for_id) if for_id else ''
-    if success:
-        succeeded(record.id, f'deleted item record {record.id}', why)
-    else:
-        failed(record.id, f'{msg}', why)
+        try:
+            back_up_record(record)
+            folio = Folio()
+            folio.delete_record(record)
+        except FolioOpFailed as ex:
+            failed(record.id, str(ex), why)
+            return
+    succeeded(record.id, f'deleted {record.kind} record {record.id}', why)
 
+
+def delete_holdings(record, for_id = None):
+    '''Delete the given holdings record.'''
+    # Does the holdings record have any items?
+    folio = Folio()
+    if folio.related_records(record.id, IdKind.HOLDINGS_ID, RecordKind.ITEM):
+        failed(record.id, 'nonempty holdings records cannot be deleted at this time')
+        return
+    delete(record, for_id)
+
+
+def delete_instance(record, for_id = None):
+    '''Delete the given instance record.'''
+    failed(record.id, 'instance records cannot be deleted at this time')
+
+
+def delete_user(record, for_id = None):
+    '''Delete the given user record.'''
+    failed(record.id, 'user records cannot be deleted at this time')
+
+
+_HANDLERS = {
+    RecordKind.ITEM     : delete,       # The generic function suffices.
+    RecordKind.HOLDINGS : delete_holdings,
+    RecordKind.INSTANCE : delete_instance,
+    RecordKind.USER     : delete_user,
+}
 
 # The following is based on
 # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
