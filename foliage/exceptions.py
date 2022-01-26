@@ -28,6 +28,11 @@ class FoliageException(Exception):
 # Exception classes.
 # .............................................................................
 
+class FolioOpFailed(FoliageException):
+    '''Requested operation was unsuccessful.'''
+    pass
+
+
 class FolioError(FoliageException):
     '''Unrecoverable problem involving interactions with the FOLIO server.'''
     pass
