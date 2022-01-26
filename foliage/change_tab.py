@@ -452,7 +452,7 @@ def change_item(item, given_hrec = None, context = ''):
                     failed(item.id, str(ex), context)
                     return False
             context = f'moving item to holdings record for destination location'
-            succeeded(item.id, f'changed item holdings record to {hrec.id}', context = context)
+            succeeded(item.id, f'changed item holdings record to {hrec.id}', context)
             break
     else:
         # No other existing holdings record has the new location => case 2.
@@ -464,7 +464,7 @@ def change_item(item, given_hrec = None, context = ''):
                 context = f'holdings record for {item.id}'
                 # Case 2a: the instance has only 1 item.
                 if change_holdings(item_hrec):
-                    succeeded(item_hrec.id, f'field _{field_key}_ changed', context = context)
+                    succeeded(item_hrec.id, f'field _{field_key}_ changed', context)
                     return True
                 else:
                     failed(item.id, 'failed to change holdings record')
@@ -492,7 +492,7 @@ def change_item(item, given_hrec = None, context = ''):
             except FolioOpFailed as ex:
                 failed(item.id, str(ex), context = context)
                 return False
-        succeeded(item.id, f'created holdings record {new_id}', context = context)
+        succeeded(item.id, f'created holdings record {new_id}', context)
 
         log(f'changing location of {item.id} to new holdings record {new_id}')
         item.data['holdingsRecordId'] = new_id
@@ -505,7 +505,7 @@ def change_item(item, given_hrec = None, context = ''):
             except FolioOpFailed as ex:
                 failed(item.id, str(ex), context)
                 return False
-        succeeded(item.id, f'attached item to holdings record {new_id}', context = context)
+        succeeded(item.id, f'attached item to holdings record {new_id}', context)
         return True
 
     # If we get here, we have a case 1a or 1b. To figure out which, check if
@@ -530,7 +530,7 @@ def change_item(item, given_hrec = None, context = ''):
         except FolioOpFailed as ex:
             failed(id, str(ex), context = context)
             return False
-    succeeded(id, f'deleted empty holdings record {id}', context = context)
+    succeeded(id, f'deleted empty holdings record {id}', context)
     return True
 
 
