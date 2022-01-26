@@ -213,7 +213,7 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
 
 def use_credentials(creds):
     '''Set run-time environment credentials and save them to the keyring.'''
-    log(f'setting environment variables for credentials using {creds}')
+    log(f'setting environment variables for credentials')
     os.environ['FOLIO_OKAPI_URL']       = creds.url
     os.environ['FOLIO_OKAPI_TENANT_ID'] = creds.tenant_id
     os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
@@ -275,5 +275,5 @@ def _store_credentials(creds, ring = _KEYRING):
     if sys.platform.startswith('darwin'):
         keyring.set_keyring(Keyring())
     value = _encoded(creds.url, creds.tenant_id, creds.token)
-    if __debug__: log(f'storing "{value}" to keyring {_KEYRING}')
+    if __debug__: log(f'storing credentials to keyring {_KEYRING}')
     keyring.set_password(ring, getpass.getuser(), value)
