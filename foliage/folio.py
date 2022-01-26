@@ -35,7 +35,7 @@ file "LICENSE" for more information.
 
 from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
-from   commonpy.exceptions import Interrupted
+from   commonpy.exceptions import Interrupted, NetworkFailure
 from   commonpy.file_utils import writable
 from   commonpy.interrupt import wait, interrupted, raise_for_interrupts
 from   commonpy.string_utils import antiformat
@@ -493,7 +493,10 @@ class Folio():
             if not response or not response.text:
                 log(f'FOLIO returned no result searching for {id} and {kind}')
                 return []
-            data = json.loads(response.text)
+            try:
+                data = json.loads(response.text)
+            except json.decoder.JSONDecodeError:
+                raise RuntimeError('Unexpected response format returned by FOLIO')
             if key:
                 if 'totalRecords' in data:
                     log(f'got {data["totalRecords"]} records for {id}')
@@ -932,7 +935,7 @@ class Folio():
         response = self._do('create', record)
         data = json.loads(response.text)
         if 'id' in data:
-            log(f'newly created record has id {id}')
+            log(f'newly created record has id {data["id"]}')
             return data['id']
         log('data returned for creation lacks an id: ' + response.text)
         raise FolioOpFailed('Unexpected data returned by FOLIO')
@@ -943,7 +946,7 @@ class Folio():
         This method reads the FOLIO credentials from environment variables.
         It will raise an exception with an error message if it fails.
         '''
-        self.do('update', record)
+        self._do('update', record)
 
 
     def delete_record(self, record):
@@ -951,7 +954,7 @@ class Folio():
         This method reads the FOLIO credentials from environment variables.
         It will raise an exception with an error message if it fails.
         '''
-        self.do('delete', record)
+        self._do('delete', record)
 
 
     def _do(self, what, record):
@@ -964,31 +967,28 @@ class Folio():
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
             "content-type":   "application/json",
         }
+        log(f'requesting Folio to {what} record: ' + str(record))
         if what == 'create':
             endpoint = RecordKind.creation_endpoint(record.kind)
             request_url = config('FOLIO_OKAPI_URL') + endpoint
             op = 'post'
             data = json.dumps(record.data)
+            (response, error) = net(op, request_url, headers = headers, data = data)
         elif what == 'update':
             endpoint = RecordKind.update_endpoint(record.kind)
             request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
             op = 'put'
             data = json.dumps(record.data)
+            (response, error) = net(op, request_url, headers = headers, data = data)
         elif what == 'delete':
             endpoint = RecordKind.deletion_endpoint(record.kind)
             request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
             op = 'delete'
-            data = None
+            (response, error) = net(op, request_url, headers = headers)
         else:
             log(f'unrecognized record actio {what}')
             raise FoliageException('Internal error – please report this')
 
-        if not endpoint:
-            log(f'no endpoint found for updating {record.kind} record')
-            raise FolioOpFailed(f'Updating {record.kind} records is not implemented')
-
-        log(f'requesting Folio to {what} record: ' + str(record))
-        (response, error) = net(op, request_url, headers = headers, data = data)
         if not error and what == 'create':
             # Creation returns a record; other actions don't return anything.
             return response
@@ -999,7 +999,7 @@ class Folio():
         self._finish(response, f'{what}d record {record.id} using {request_url}')
 
 
-    def _finish(response, what):
+    def _finish(self, response, what):
         '''Interpret FOLIO HTTP response & log + raise errors if appropriate.'''
         if not response:
             # Could we have lost the network?
@@ -1063,9 +1063,7 @@ def unique_identifiers(text):
     '''Return a list of identifiers found in the text after some cleanup.'''
     lines = text.splitlines()
     ids = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
-    ids = [id.replace('"', '') for id in ids]
-    ids = [id.replace("'", '') for id in ids]
-    ids = [id.replace(':', '') for id in ids]
+    ids = [id.strip(r'''.'":''') for id in ids]
     ids = [id for id in ids if not any(c in id for c in r'!@#$%^&*=\/')]
     ids = [id for id in ids if any(c.isnumeric() for c in id)]
     return unique(filter(None, ids))
