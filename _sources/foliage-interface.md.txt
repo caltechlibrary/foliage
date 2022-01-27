@@ -18,12 +18,18 @@ The screenshot below shows an example of looking up an item by its barcode:
     <img src="_static/media/lookup-barcode.png">
 </figure>
 
+### Options for controlling lookups
+
 Under the input text box, there are four control elements that influence what Foliage does.
 
 * _Kind of record to retrieve_: The five radio boxes allow you to select the kind of record to retrieve based on the identifiers given. One of Foliage's powerful features is that it lets you use one kind of record identifier to search for _other_ kinds of records. For example, you can supply item barcodes and select _Instance_ as the type of record to retrieve, and Foliage will retrieve the instance records for the given identifiers. Or you can select _Loan_ as the type to retrieve and find out if there are any loans out for the given items. To take another example, you could provide a user identifier, select _Item_ as the kind of record to retrieve, and get back a list of the items on loan to the user.
 * _Search open loans only_: When searching for loans, Foliage can be told to consider only open loans, or all loans. You can use this checkbox to choose what Foliage should do. Use this option with caution: unchecking this will cause Foliage to retrieve any loans, including closed loans from the history of loans for every item in the input, which could potentially be a long list and take a very long time to retrieve.
 * _Output format_: Foliage can present the output either in a summary format or in the raw data format retrieved from the FOLIO server. The summary format is a custom tabular format that shows a subset of the fields from each record. Different record kinds are presented with different fields in the output.
-* _Use inventory API for items and instances_: Items and instances in FOLIO come in two slightly different record formats, depending on which one of two FOLIO APIs are used to retrieve them. The so-called "inventory" API returns results that have slightly more data compared to the so-called "storage" API. The additional fields are computed by FOLIO and are not actually stored with the records. The additional information can be useful when exploring items and instances, but because the inventory API does not represent what is actually stored by FOLIO, it is better to deselect this option and make Foliage use the storage API if you are working with records for the purpose of changing field values or performing other actions.
+* _Use inventory [API](glossary.html#API) for items and instances_: Items and instances in FOLIO come in two slightly different record formats, depending on which one of two FOLIO APIs are used to retrieve them. The so-called "inventory" API returns results that have slightly more data compared to the so-called "storage" API. The additional fields are computed by FOLIO and are not actually stored with the records. The additional information can be useful when exploring items and instances, but because the inventory API does not represent what is actually stored by FOLIO, it is better to deselect this option and make Foliage use the storage API if you are working with records for the purpose of changing field values or performing other actions.
+
+### Saving the results
+
+After performing the search and displaying the results, Foliage includes a button named <span class="button color-outline-primary">Export</span> at the bottom of the page. This allows you to export a list of all the records you looked up as a file in [CSV](glossary.html#CSV) or [JSON](glossary.html#JSON) format.
 
 
 ## Tab: change records
@@ -75,7 +81,7 @@ After performing the changes and printing a summary of the results, Foliage will
 
 ## Tab: delete records
 
-You may already have guessed what the _Delete records_ tab in Foliage allows you to do. The current version of Foliage only allows the deletion of item records, but this may be extended to more kinds of records in the future.
+You may already have guessed what the _Delete records_ tab in Foliage allows you to do. The current version of Foliage allows the deletion of item, holdings, and instance records. Foliage is smart enough to perform deletions recursively if necessary: deleting a holdings record deletes all the associated items, and deleting an instance record deletes all the associated holdings and items.
 
 <figure>
     <img src="_static/media/delete-tab.png">
@@ -83,10 +89,14 @@ You may already have guessed what the _Delete records_ tab in Foliage allows you
 
 The tab layout is simple. It includes an input box where you can type or copy-paste identifiers of item records (barcodes, unique id's, or hrid's), an <span class="button color-outline-primary">Upload</span> button that lets you upload a file of identifiers, a <span class="button color-danger">Delete records</span> button to perform the deletions, and finally, the usual <span class="button color-outline-primary">Clear</span> button to clear past output.
 
+```{warning}
+As noted above, deleting a holdings record **will delete all the item records too**, for items associated with the holdings record; likewise, deleting an instance record **will delete all its holdings and items**. Use the Delete facility carefully!
+```
+
 
 ## Tab: list UUIDs
 
-Many data fields in FOLIO records take values drawn from controlled vocabularies. These vocabularies consist of unique identifiers (UUIDs &ndash; strings that look like `f6fac97a-ee31-4300-aef6-b63be4ea23a2`). Each different type of field in a record can take on values from a specific list of values.
+Many data fields in FOLIO records take values drawn from controlled vocabularies. These vocabularies consist of unique identifiers ([UUIDs](glossary.html#UUID) &ndash; strings that look like `f6fac97a-ee31-4300-aef6-b63be4ea23a2`). Each different type of field in a record can take on values from a specific list of values.
 
 Finding out the possible values is not easy to do directly in FOLIO. To help compensate, Foliage offers a simple way to list the possible values of various identifier types. This can be done in the _List UUIDs_ tab.
 
@@ -94,7 +104,7 @@ Finding out the possible values is not easy to do directly in FOLIO. To help com
     <img src="_static/media/list-uuids-tab.png">
 </figure>
 
-The operation of the _List UUIDs_ tab is simple: select a type of UUID from the pop-up menu, and click the <span class="button color-primary">Get list</span> button to make Foliage retrieve the list of identifiers from FOLIO. Shown below is an example of doing this for the "Holdings type" list.
+The operation of the _List UUIDs_ tab is simple: select a type of [UUIDs](glossary.html#UUID) from the pop-up menu, and click the <span class="button color-primary">Get list</span> button to make Foliage retrieve the list of identifiers from FOLIO. Shown below is an example of doing this for the "Holdings type" list.
 
 <figure>
     <img src="_static/media/list-uuids-example.png">

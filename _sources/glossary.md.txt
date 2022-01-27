@@ -16,6 +16,10 @@ CQL
     a CQL expression looks like:
     `(username=="ab*" or personal.firstName=="ab*" or personal.lastName=="ab*")`
 
+CSV
+    "Comma-separated values." A spreadsheet format stored as text, in which
+    values of different columns are separated by commas.
+
 Foliage
     **FOLI**O ch**a**n**g**e **e**ditor.
 
