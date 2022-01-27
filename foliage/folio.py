@@ -947,13 +947,18 @@ class Folio():
             elif id_kind == IdKind.ITEM_HRID:
                 data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
                 endpoint = f'/holdings-storage/holdings?query=item.hrid=={id}&limit=10000'
-            elif id_kind == IdKind.INSTANCE_HRID:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                endpoint = f'/holdings-storage/holdings?query=hrid=={id}&limit=10000'
             elif id_kind == IdKind.ACCESSION:
                 data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
                 inst_id = instance_id_from_accession(id)
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={inst_id}&limit=10000'
+            elif id_kind == IdKind.INSTANCE_HRID:
+                records = self.related_records(id, IdKind.INSTANCE_HRID, 'instance',
+                                               use_inventory, open_loans_only)
+                if not records:
+                    return []
+                record_id = records[0].id
+                return self.related_records(record_id, IdKind.INSTANCE_ID, 'holdings',
+                                            use_inventory, open_loans_only)
             elif id_kind == IdKind.LOAN_ID:
                 records = self.related_records(id, IdKind.LOAN_ID, 'loan',
                                                use_inventory, open_loans_only)
