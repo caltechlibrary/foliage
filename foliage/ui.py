@@ -121,6 +121,10 @@ pre {
     padding-bottom: 1px; /* if set 0, safari has min-height issue */
 }
 
+.pywebio_cancel_btn {
+    float: right;
+}
+
 #output-container {
     margin-bottom: 40px;
 }
