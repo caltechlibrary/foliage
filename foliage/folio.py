@@ -325,9 +325,10 @@ class Folio():
             return False
 
 
-    def _folio(self, op, endpoint, convert = None, retry = 0):
-        '''Invoke 'op' on 'endpoint', call 'convert' on it, return result.
+    def request(self, api, op = 'get', data = None, converter = None, retry = 0):
+        '''Invoke 'op' on 'api', call 'converter' on it, return result.
         This method reads the FOLIO credentials from environment variables.
+        In case of rate limits being hit, this will retry the operation.
         '''
         headers = {
             "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
@@ -335,27 +336,87 @@ class Folio():
             "content-type":   "application/json",
         }
 
-        request_url = config('FOLIO_OKAPI_URL') + endpoint
-        (response, error) = net(op, request_url, headers = headers)
+        url = config('FOLIO_OKAPI_URL') + api
+        if data is not None:
+            (response, error) = net(op, url, headers = headers, data = data)
+        else:
+            (response, error) = net(op, url, headers = headers)
+
         if not error:
-            log(f'got result from {request_url}')
-            return convert(response) if convert is not None else response
-        elif isinstance(error, Interrupted):
-            log('request interrupted: ' + request_url)
+            log(f'got result from {url}')
+            return converter(response) if converter is not None else response
         elif isinstance(error, NoContent):
-            log(f'got empty content from {request_url}')
-            return convert(response) if convert is not None else response
+            log(f'got empty content from {url}')
+            return converter(response) if converter is not None else response
         elif isinstance(error, RateLimitExceeded):
             retry += 1
             if retry > _MAX_RETRY:
-                raise FolioError(f'Rate limit exceeded for {request_url}')
+                raise FolioError(f'Rate limit exceeded for {url}')
             else:
                 # Wait and then call ourselves recursively.
                 wait_time = retry * _RETRY_TIME_FACTOR
                 log(f'hit rate limit; pausing {wait_time}s')
                 wait(wait_time)
-                return self._folio(op, endpoint, convert, retry = retry)
-        raise error
+                return self.request(api, op, data, converter, retry = retry)
+        # Error from net() may be an exception object, but we have special
+        # understanding of FOLIO return codes, so handle most cases ourselves.
+        self._finish(response, error, 'HTTP get ' + url)
+
+
+    def _finish(self, response, error, what):
+        '''Interpret FOLIO HTTP response & log + raise errors if appropriate.'''
+        if isinstance(error, Interrupted):
+            # Propagate interruptions to callers.
+            raise error
+        elif isinstance(error, NetworkFailure):
+            raise FolioOpFailed('Network error')
+        elif not response:
+            # Could we have lost the network?
+            if not network_available():
+                log('lost network connection')
+                raise FolioOpFailed('Network connection appears to be down')
+            else:
+                # Something is really wonky.
+                log('got empty or None response for ' + what)
+                raise FolioError('Network API call produced no response')
+        elif 200 <= response.status_code < 300:
+            log('success for ' + what)
+            return
+        elif response.status_code == 400:
+            # "Bad request, e.g. malformed request body or query parameter.
+            # Details of the error (e.g. name of the parameter or line/character
+            # number with malformed data) provided in the response."
+            log('FOLIO response code 400 details: ' + response.text)
+            raise FolioOpFailed('Error in API call to FOLIO – please report this')
+        elif response.status_code == 401:
+            # "Not authorized to perform requested action"
+            log('FOLIO response code 401: user is not authorized')
+            raise FolioOpFailed('FOLIO permissions error: not authorized for action')
+        elif response.status_code == 404:
+            # "Item not found" etc.
+            log(f'FOLIO response code 404 details: ' + response.text)
+            raise FolioOpFailed('FOLIO returned an error: ' + response.text)
+        elif response.status_code in [409, 500, 501]:
+            # "internal server error"
+            log(f'FOLIO response {response.status_code} details: ' + response.text)
+            raise FolioError('FOLIO server error: ' + response.text)
+        elif response.status_code == 422:
+            # Schema validation error, probably in JSON we tried to upload.
+            # 1st get the JSON 'errors' field; it's a list, ea w/ 'message'.
+            response_dict = json.loads(response.text)
+            if 'errors' in response_dict:
+                error_list = response_dict['errors']
+                log('code 422: schema errors')
+                for index, error in enumerate(error_list):
+                    log(f'error #{index}:' + error)
+            else:
+                log('got code 422 but response did not include errors')
+            raise FolioOpFailed('Foliage data format error – please report this')
+        else:
+            # A code that I didn't see in the FOLIO API documentation.
+            log(f'Unrecognized FOLIO response code {response.status_code}'
+                + ' details: ' + response.text)
+            raise FoliageException('Unexpected FOLIO response – please report this')
 
 
     def types(self, type_kind):
@@ -386,7 +447,7 @@ class Folio():
                 raise RuntimeError('Problem retrieving list of types')
 
         endpoint = '/' + type_kind + '?limit=10000'
-        type_list = self._folio('get', endpoint, result_parser)
+        type_list = self.request(endpoint, converter = result_parser)
         if type_list:
             self._type_list_cache[type_kind] = type_list
         return type_list
@@ -426,7 +487,7 @@ class Folio():
                 ('/users',                      IdKind.USER_ID),
             ]
             for base, kind in record_endpoints:
-                if (response := self._folio('get', f'{base}/{id}')):
+                if (response := self.request(f'{base}/{id}')):
                     if response.status_code == 200:
                         log(f'recognized {id} as {kind}')
                         id_kind = kind
@@ -443,7 +504,7 @@ class Folio():
                 ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
             ]
             for query, kind in folio_searches:
-                if (response := self._folio('get', f'{query}{id}&limit=0')):
+                if (response := self.request(f'{query}{id}&limit=0')):
                     if response.status_code == 200:
                         # These endpoints always return a value, even when
                         # there are no hits, so we have to look inside.
@@ -491,7 +552,7 @@ class Folio():
         log(f'getting {requested} record(s) for {id_kind} id {id} {use_inv}')
 
         def record_list(kind, key, response):
-            if not response or not response.text:
+            if not response or not response.text or response.status_code == 404:
                 log(f'FOLIO returned no result searching for {id} and {kind}')
                 return []
             try:
@@ -687,7 +748,7 @@ class Folio():
             elif id_kind == IdKind.USER_ID:
                 endpoint = f'/loan-storage/loans?query=userId=={id}&limit=10000'
                 data_extractor = partial(record_list, RecordKind.LOAN, 'loans')
-                loans = self._folio('get', endpoint, data_extractor)
+                loans = self.request(endpoint, converter = data_extractor)
                 if not loans:
                     return []
                 if open_loans_only:
@@ -705,7 +766,7 @@ class Folio():
             elif id_kind == IdKind.ITEM_ID:
                 endpoint = f'/loan-storage/loans?query=itemId=={id}&limit=10000'
                 data_extractor = partial(record_list, RecordKind.LOAN, 'loans')
-                loans = self._folio('get', endpoint, data_extractor)
+                loans = self.request(endpoint, converter = data_extractor)
                 if not loans:
                     return []
                 if open_loans_only:
@@ -925,7 +986,7 @@ class Folio():
         else:
             raise RuntimeError(f'Unrecognized record type value {requested}')
 
-        return self._folio('get', endpoint, data_extractor)
+        return self.request(endpoint, converter = data_extractor)
 
 
     def new_record(self, record):
@@ -971,21 +1032,21 @@ class Folio():
         log(f'requesting Folio to {what} record: ' + str(record))
         if what == 'create':
             endpoint = RecordKind.creation_endpoint(record.kind)
-            request_url = config('FOLIO_OKAPI_URL') + endpoint
+            url = config('FOLIO_OKAPI_URL') + endpoint
             op = 'post'
             data = json.dumps(record.data)
-            (response, error) = net(op, request_url, headers = headers, data = data)
+            (response, error) = net(op, url, headers = headers, data = data)
         elif what == 'update':
             endpoint = RecordKind.update_endpoint(record.kind)
-            request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
+            url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
             op = 'put'
             data = json.dumps(record.data)
-            (response, error) = net(op, request_url, headers = headers, data = data)
+            (response, error) = net(op, url, headers = headers, data = data)
         elif what == 'delete':
             endpoint = RecordKind.deletion_endpoint(record.kind)
-            request_url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
+            url = config('FOLIO_OKAPI_URL') + endpoint + '/' + record.id
             op = 'delete'
-            (response, error) = net(op, request_url, headers = headers)
+            (response, error) = net(op, url, headers = headers)
         else:
             log(f'unrecognized record actio {what}')
             raise FoliageException('Internal error – please report this')
@@ -993,62 +1054,9 @@ class Folio():
         if not error and what == 'create':
             # Creation returns a record; other actions don't return anything.
             return response
-        # Error from net() is an exception if appropriate, but we have special
-        # understanding of FOLIO's http codes, so we handle most cases ourselves.
-        if isinstance(error, NetworkFailure):
-            raise FolioOpFailed('Network error')
-        self._finish(response, f'{what}d record {record.id} using {request_url}')
-
-
-    def _finish(self, response, what):
-        '''Interpret FOLIO HTTP response & log + raise errors if appropriate.'''
-        if not response:
-            # Could we have lost the network?
-            if not network_available():
-                log('lost network connection')
-                raise FolioOpFailed('Network connection appears to be down')
-            else:
-                # Something is really wonky.
-                log('response to API call is empty or None')
-                raise FolioError('Network API call produced no response')
-        elif 200 <= response.status_code < 300:
-            log(f'successfully {what}')
-            return
-        elif response.status_code == 400:
-            # "Bad request, e.g. malformed request body or query parameter.
-            # Details of the error (e.g. name of the parameter or line/character
-            # number with malformed data) provided in the response."
-            log('FOLIO response code 400 details: ' + response.text)
-            raise FolioOpFailed('Error in API call to FOLIO – please report this')
-        elif response.status_code == 401:
-            # "Not authorized to perform requested action"
-            log('FOLIO response code 401: user is not authorized')
-            raise FolioOpFailed('FOLIO permissions error: not authorized for action')
-        elif response.status_code == 404:
-            # "Item not found" etc.
-            log(f'FOLIO response code 404 details: ' + response.text)
-            raise FolioOpFailed('FOLIO returned an error: ' + response.text)
-        elif response.status_code in [409, 500, 501]:
-            # "internal server error"
-            log(f'FOLIO response {response.status_code} details: ' + response.text)
-            raise FolioError('FOLIO server error: ' + response.text)
-        elif response.status_code == 422:
-            # Schema validation error, probably in JSON we tried to upload.
-            # 1st get the JSON 'errors' field; it's a list, ea w/ 'message'.
-            response_dict = json.loads(response.text)
-            if 'errors' in response_dict:
-                error_list = response_dict['errors']
-                log('code 422: schema errors')
-                for index, error in enumerate(error_list):
-                    log(f'error #{index}:' + error)
-            else:
-                log('got code 422 but response did not include errors')
-            raise FolioOpFailed('Foliage data format error – please report this')
-        else:
-            # A code that I didn't see in the FOLIO API documentation.
-            log(f'Unrecognized FOLIO response code {response.status_code}'
-                + ' details: ' + response.text)
-            raise FoliageException('Unexpected FOLIO response – please report this')
+        # Error from net() may be an exception object, but we have special
+        # understanding of FOLIO return codes, so handle most cases ourselves.
+        self._finish(response, error, f'{what}d record {record.id} using {url}')
 
 
 # Misc. utilities

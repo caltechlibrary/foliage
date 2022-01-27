@@ -36,7 +36,8 @@ from   foliage.exceptions import *
 from   foliage.export import export_data
 from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers, back_up_record
-from   foliage.ui import confirm, notify, user_file, STATUS_BOX_STYLE
+from   foliage.ui import confirm, notify, user_file
+from   foliage.ui import PROGRESS_BOX, PROGRESS_TEXT
 from   foliage.ui import tell_success, tell_warning, tell_failure, stop_processbar
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
@@ -214,7 +215,7 @@ def select_field_value(old_new):
     if not type_list:
         note_error(f'Could not retrieve the list of possible {fname} values')
         return
-    value_list = sorted(item['name'] for item in type_list)
+    value_list = sorted(item.data['name'] for item in type_list)
     if (val := selected(f'Select the {old_new} value for {fname}', value_list)):
         field = old_new + '_value'
         setattr(pin, field, val)
@@ -316,12 +317,12 @@ def do_change():
             done = 0
             put_grid([[
                 put_scope('current_activity', [
-                    put_markdown(f'_Gathering records ..._').style('margin: 0')]),
+                    put_markdown(f'_Gathering records ..._').style(PROGRESS_TEXT)]),
             ], [
                 put_processbar('bar', init = done/steps).style('margin-top: 11px'),
                 put_button('Stop', outline = True, color = 'danger',
                            onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style(STATUS_BOX_STYLE)
+            ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
 
             # Start by gathering all records & their types.
             records = []
@@ -339,7 +340,7 @@ def do_change():
 
             # 1st pass: apply changes to holdings records in the input (if any).
             with use_scope('current_activity', clear = True):
-                put_markdown(f'_Changing records ..._').style('margin: 0')
+                put_markdown(f'_Changing records ..._').style(PROGRESS_TEXT)
             holdings_done = []
             for record in filter(lambda r: r.kind is RecordKind.HOLDINGS, records):
                 done += 1
@@ -394,6 +395,8 @@ def change_holdings(record):
 
 
 def change_item(item, given_hrec = None, context = ''):
+    '''Change the item and also update its parent holdings.'''
+
     # Try to change the item but without saving it yet. If we fail, bail.
     if not change_record(item, context):
         return False
@@ -426,8 +429,8 @@ def change_item(item, given_hrec = None, context = ''):
     #    2b) The instance has other items => create new holdings record.
     location_id = item.data['permanentLocationId']
     folio = Folio()
-    item_hrec = folio.record(item.data['holdingsRecordId'])
-    if not item_hrec:
+    hrec = folio.record(item.data['holdingsRecordId'])
+    if not hrec:
         # This should never happen, but we always want to check everything.
         failed(item.id, f'cannot update {field_key} of {item.id} because its holdings'
                + f' record {item.data["holdingsRecordId"]} could not be retrieved')
@@ -435,14 +438,16 @@ def change_item(item, given_hrec = None, context = ''):
 
     # In practice, the only way we get to this point is if the operation is not
     # a deletion -- so either an add or a change.
-    inst_id = item_hrec.data['instanceId']
+    inst_id = hrec.data['instanceId']
     all_hrecs = folio.related_records(inst_id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
     hrec_items = None
-    for hrec in all_hrecs:
-        if item.data[field_key] == hrec.data[field_key]:
+    log(f'parent instance {inst_id} has {len(all_hrecs)} holdings records')
+    for h in all_hrecs:
+        log(f'checking location of holdings record {h.id}')
+        if item.data[field_key] == h.data[field_key]:
             # Found a holdings record that has the new location => case 1.
-            log(f'updating {item.id}\'s holdings record to be {hrec.id}')
-            item.data['holdingsRecordId'] = hrec.id
+            log(f'updating {item.id}\'s holdings record to be {h.id}')
+            item.data['holdingsRecordId'] = h.id
             if config('DEMO_MODE', cast = bool):
                 log(f'demo mode – pretending to save {item.id}')
             else:
@@ -451,20 +456,19 @@ def change_item(item, given_hrec = None, context = ''):
                 except FolioOpFailed as ex:
                     failed(item.id, str(ex), context)
                     return False
-            context = f'moving item to holdings record for destination location'
-            succeeded(item.id, f'changed item holdings record to {hrec.id}', context)
+            context = f'updating item\'s holdings record pointer'
+            succeeded(item.id, f'changed holdings record to be {h.id}', context)
             break
     else:
-        # No other existing holdings record has the new location => case 2.
-        # Does the instance have any other items?
+        log('none of the holdings record have the new location')
+        # We have case 2. Next check: does the instance have any other items?
         if len(all_hrecs) == 1:
-            hrec_items = folio.related_records(item_hrec.id, IdKind.HOLDINGS_ID,
-                                               RecordKind.ITEM)
+            hrec_items = folio.related_records(hrec.id, IdKind.HOLDINGS_ID, RecordKind.ITEM)
             if len(hrec_items) == 1:
                 context = f'holdings record for {item.id}'
                 # Case 2a: the instance has only 1 item.
-                if change_holdings(item_hrec):
-                    succeeded(item_hrec.id, f'field _{field_key}_ changed', context)
+                if change_holdings(hrec):
+                    succeeded(hrec.id, f'field _{field_key}_ changed', context)
                     return True
                 else:
                     failed(item.id, 'failed to change holdings record')
@@ -474,7 +478,7 @@ def change_item(item, given_hrec = None, context = ''):
         # record. Do it by copying the existing one & modifying it.
         log(f'need to create new holdings record for moving {item.id}')
         import copy
-        new_holdings = copy.deepcopy(item_hrec)
+        new_holdings = copy.deepcopy(hrec)
         # These next fields are assigned automatically the Folio server.
         del new_holdings.data['id']
         del new_holdings.data['hrid']
@@ -506,31 +510,29 @@ def change_item(item, given_hrec = None, context = ''):
                 failed(item.id, str(ex), context)
                 return False
         succeeded(item.id, f'attached item to holdings record {new_id}', context)
-        return True
 
-    # If we get here, we have a case 1a or 1b. To figure out which, check if
-    # there are any other items on the current holdings record.
+    # We've moved the item. Do we need to delete the holdings record it came
+    # from? Check if there are any other items on it.
     if hrec_items is None:
-        hrec_items = folio.related_records(item_hrec.id, IdKind.HOLDINGS_ID,
-                                           RecordKind.ITEM)
-    for other in hrec_items:
+        hrec_items = folio.related_records(hrec.id, IdKind.HOLDINGS_ID, RecordKind.ITEM)
+    for other in filter(lambda record: record.id != item.id, hrec_items):
         if other.id != item.id:
-            # The holdings rec has another item => case 1a. We're done.
+            log('holdings record has other items, therefore not deleting it')
             return True
 
     # It's 1b (orig holdings rec is now empty). Need delete the holdings rec.
-    id = item_hrec.id
+    id = hrec.id
     context = 'moved last or only item to another holdings record'
     if config('DEMO_MODE', cast = bool):
         log(f'demo mode – pretending to delete {id}')
     else:
         try:
-            back_up_record(item_hrec)
-            folio.delete_record(item_hrec)
+            back_up_record(hrec)
+            folio.delete_record(hrec)
         except FolioOpFailed as ex:
             failed(id, str(ex), context = context)
             return False
-    succeeded(id, f'deleted empty holdings record {id}', context)
+    succeeded(item.id, f'deleted empty holdings record {id}', context)
     return True
 
 
@@ -544,7 +546,7 @@ def change_record(record, context = ''):
     # Get the list of known values for this type (folio.py will have cached
     # it) and create a mapping of value names to value objects.
     value_type = known_fields[pin.chg_field].type
-    values = {x['name']:x for x in folio.types(value_type)}
+    values = {x.data['name']:x.data for x in folio.types(value_type)}
 
     field_key = known_fields[pin.chg_field].key
     if (current_value := record.data.get(field_key, None)):
