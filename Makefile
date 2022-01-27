@@ -136,7 +136,7 @@ binary: | vars extra-files $(distdir)/$(appname) dmg
 dependencies:;
 	pip3 install -r requirements.txt
 
-extra-files: $(macreadme) # $(aboutfile)
+extra-files: $(macreadme) $(aboutfile)
 
 $(aboutfile): README.md
 	pandoc --standalone --quiet -f gfm -H $(githubcss) -o tmp.html $<
@@ -304,7 +304,7 @@ clean-release:;
 	rm -rf $(name).egg-info codemeta.json.bak $(initfile).bak README.md.bak
 
 clean-other:;
-	rm -f $(aboutfile)
+	rm -f $(aboutfile) $(macreadme)
 	rm -fr __pycache__ $(name)/__pycache__ .eggs
 	rm -rf .cache
 
