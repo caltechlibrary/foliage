@@ -36,7 +36,7 @@ from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
-from   foliage.ui import note_info, note_warn, note_error, STATUS_BOX_STYLE
+from   foliage.ui import note_info, note_warn, note_error, PROGRESS_BOX
 
 
 # Tab definition class.
@@ -177,13 +177,13 @@ def do_find():
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style(STATUS_BOX_STYLE)
+            ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         for count, id in enumerate(identifiers, start = 2):
             try:
                 # Figure out what kind of identifier we were given.
                 id_kind = folio.id_kind(id)
                 if id_kind is IdKind.UNKNOWN:
-                    tell_failure(f'Unrecognized identifier kind: {id}.')
+                    tell_failure(f'Unrecognized identifier kind: **{id}**.')
                     continue
                 if reuse_results:
                     records = _last_results.get(id)
@@ -192,7 +192,7 @@ def do_find():
                                                     pin.inventory_api, pin.open_loans)
                     _last_results[id] = records
                 if not records or len(records) == 0:
-                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} "{id}".')
+                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} **{id}**')
                     continue
 
                 # Report the results & how we got them.
