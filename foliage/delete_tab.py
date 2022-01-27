@@ -23,7 +23,7 @@ from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
 from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column
+from   pywebio.output import put_column, put_scope
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
@@ -35,7 +35,8 @@ from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
-from   foliage.ui import note_info, note_warn, note_error, STATUS_BOX_STYLE
+from   foliage.ui import note_info, note_warn, note_error
+from   foliage.ui import PROGRESS_BOX, PROGRESS_TEXT
 
 
 # Tab definition class.
@@ -56,9 +57,12 @@ def tab_contents():
     log(f'generating delete tab contents')
     return [
         put_grid([[
-            put_markdown('Input one or more item or holdings identifiers'
-                         + ' (which can be id\'s, barcodes, or hrid\'s),'
-                         + ' then press the button to delete the records.'),
+            put_markdown('Input one or more item, holdings, or instance'
+                         + ' identifiers (in the form of id\'s, barcodes, hrid\'s,'
+                         + ' or accession numbers), or upload a file containing'
+                         + ' the identifiers. **Warning**: Deleting holdings'
+                         + ' **will delete all their items**, and deleting'
+                         + ' instances **will delete all their holdings _and_ items**.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -99,7 +103,7 @@ def succeeded(id, msg, why = ''):
     global results
     comment = (' (' + why + ')') if why else ''
     results.append({'id': id, 'success': True, 'notes': msg + comment})
-    tell_success(f'Succeeded: ' + msg + comment + '.')
+    tell_success('Success: ' + msg + comment + '.')
 
 
 def failed(id, msg, why = ''):
@@ -124,31 +128,56 @@ def do_delete():
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
         return
-    if not confirm('Proceed with deleting records from FOLIO?', danger = True):
+    if not confirm('Warning: if the deletions include holdings and/or instance'
+                   ' records, all their associated items and holdings will'
+                   ' also be deleted. Only do this if you have verified the'
+                   ' implications first. Proceed?', danger = True):
         log(f'user declined to proceed')
         return
     reset_interrupts()
-    steps = len(identifiers) + 1
+    steps = 2*len(identifiers)       # Count getting records, for more action.
     folio = Folio()
     with use_scope('output', clear = True):
         put_grid([[
-            put_markdown(f'_Performing deletions_ ...').style('margin-bottom: 0')
+            put_scope('current_activity', [
+                put_markdown('_Getting records ..._').style(PROGRESS_TEXT)]),
         ], [
-            put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
+            put_processbar('bar', init = 0/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right')
-        ]], cell_widths = '85% 15%').style(STATUS_BOX_STYLE)
+        ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         try:
-            for count, id in enumerate(identifiers, start = 2):
+            done = 0
+            for id in identifiers:
+                with use_scope('current_activity', clear = True):
+                    text = f'_Looking up {id} ..._'
+                    put_markdown(text).style(PROGRESS_TEXT)
                 record = folio.record(id)
                 if not record:
                     failed(id, f'unrecognized identifier **{id}**')
                     continue
+                done += 1
+                set_processbar('bar', done/steps)
                 if record.kind not in _HANDLERS.keys():
                     skipped(id, f'deleting {record.kind} records is not supported')
                     continue
+                with use_scope('current_activity', clear = True):
+                    text = '_Deleting '
+                    if record.kind is RecordKind.ITEM:
+                        text += f'item {id} ..._'
+                    elif record.kind is RecordKind.HOLDINGS:
+                        text += f'holdings {id} and associated items ..._'
+                    elif record.kind is RecordKind.INSTANCE:
+                        text += f'instance {id} and associated holdings and items ..._'
+                    elif record.kind is RecordKind.USER:
+                        text += f'user {id} and associated holdings and items ..._'
+                    put_markdown(text).style(PROGRESS_TEXT)
                 _HANDLERS[record.kind](record)
-                set_processbar('bar', count/steps)
+                done += 1
+                set_processbar('bar', done/steps)
+            set_processbar('bar', 1)
+            with use_scope('current_activity', clear = True):
+                put_markdown('').style(PROGRESS_TEXT)
         except Interrupted as ex:
             tell_warning('**Stopped**.')
             return
@@ -160,9 +189,8 @@ def do_delete():
         finally:
             stop_processbar()
 
-        what = pluralized('record', identifiers, True)
         put_grid([[
-            put_markdown(f'Finished deleting {what}.').style('margin-top: 6px'),
+            put_markdown('Finished deletions.').style('margin-top: 6px'),
             put_button('Export summary', outline = True,
                        onclick = lambda: export_data(results, 'foliage-deletions.csv'),
                        ).style('text-align: right')
@@ -181,23 +209,71 @@ def delete(record, for_id = None):
             folio.delete_record(record)
         except FolioOpFailed as ex:
             failed(record.id, str(ex), why)
-            return
-    succeeded(record.id, f'deleted {record.kind} record {record.id}', why)
+            return False
+    succeeded(record.id, f'deleted {record.kind} record **{record.id}**', why)
+    return True
 
 
-def delete_holdings(record, for_id = None):
-    '''Delete the given holdings record.'''
-    # Does the holdings record have any items?
+def delete_holdings(holdings, for_id = None):
+    '''Delete the given holdings record and all its items.'''
+    # Deletions on holdings are not recursive. The items have to be deleted 1st
+    # and FOLIO will give a 400 error if you try to delete a holdings record
+    # while there's still an item somewhere pointing to it.
+    why = 'deleting item attached to holdings record {holdings.id}'
     folio = Folio()
-    if folio.related_records(record.id, IdKind.HOLDINGS_ID, RecordKind.ITEM):
-        failed(record.id, 'nonempty holdings records cannot be deleted at this time')
-        return
-    delete(record, for_id)
+    # Start at the bottom: delete its items 1st.
+    for item in folio.related_records(holdings.id, IdKind.HOLDINGS_ID, RecordKind.ITEM):
+        if not delete(item, for_id = holdings.id):
+            failed(holdings.id, f'unable to delete item {item.id} – stopping')
+            return False
+    # If we get this far, delete the holdings record.
+    return delete(holdings, for_id)
 
 
-def delete_instance(record, for_id = None):
+def delete_instance(instance, for_id = None):
     '''Delete the given instance record.'''
-    failed(record.id, 'instance records cannot be deleted at this time')
+    # Deletions on instances are not recursive regardless of which API you use.
+    # The following is based on Kyle Banerjee's script dated 2021-11-11 at
+    # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
+    # but whereas that script uses the instance-storage API endpoint, this uses
+    # the inventory API. (I'm told the latter will simply forward the request
+    # to the instance storage API, but I decided to use the inventory API in
+    # case it does more in the future.) Note that this also uses the source
+    # storage API, which is a 3rd API besides the inventory API and storage
+    # API used elsewhere in Foliage. (That part comes from Banerjee's script.)
+
+    # Start by using delete_holdings(), which will delete items too.
+    why = 'deleting all records attached to instance record {instance.id}'
+    folio = Folio()
+    for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
+                                          RecordKind.HOLDINGS):
+        if not delete_holdings(holdings, for_id = instance.id):
+            failed(instance.id, f'unable to delete all holdings records')
+            return False
+
+    # Next, get the matched id from source storage & delete the instance there.
+    def response_converter(response):
+        if not response or not response.text:
+            log('no response received from FOLIO')
+            return None
+        return json.loads(response.text)
+
+    folio = Folio()
+    srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
+    data_json = folio.request(srsget, converter = response_converter)
+    if not data_json:
+        failed(instance.id, 'unable to retrieve instance data from FOLIO SRS')
+        return
+    elif 'matchedId' not in data_json:
+        failed(instance.id, 'unexpected data from FOLIO SRS – please report this')
+        return
+    srs_id = data_json["matchedId"]
+    log(f'SRS id for {instance.id} is {srs_id}')
+    srsdel = f'/source-storage/records/{srs_id}'
+    folio.request(srsdel)
+
+    # If we didn't get an exception, finally delete the instance from inventory.
+    return delete(instance, for_id)
 
 
 def delete_user(record, for_id = None):
@@ -211,38 +287,3 @@ _HANDLERS = {
     RecordKind.INSTANCE : delete_instance,
     RecordKind.USER     : delete_user,
 }
-
-# The following is based on
-# https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
-
-# def delete_instance(folio, record, for_id = None):
-#     inst_id = record['id']
-
-#     # Starting at the bottom, delete the item records.
-#     items = folio.records(inst_id, IdKind.INSTANCE_ID, RecordKind.ITEM)
-#     for item in items:
-#         delete_item(folio, item, inst_id)
-
-#     # Now delete the holdings records.
-#     holdings = folio.records(inst_id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
-#     for hr in holdings:
-#         delete_holdings(folio, hr, inst_id)
-
-#     # Finally, the instance record. There are two parts to this.
-#     (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}/source-record')
-#     if success:
-#         if config('DEMO_MODE', cast = bool):
-#             log(f'demo mode in effect – pretending to delete {inst_id}')
-#             success = True
-#         else:
-#             (success, msg) = folio.operation('delete', f'/instance-storage/instances/{inst_id}')
-#         if success:
-#             why = " for request to delete " + for_id
-#             succeeded(inst_id, f'deleted instance record {inst_id}', why)
-#         else:
-#             failed(inst_id, f'error: {msg}')
-#     else:
-#         failed(inst_id, f'error: {msg}')
-
-    # FIXME
-    # Need to deal with EDS update.
