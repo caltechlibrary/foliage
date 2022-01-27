@@ -1,5 +1,24 @@
 # Change log for foliage
 
+## ★ Version 1.1.0 (2022-01-21) ★
+
+Changes:
+* Now automatically handles creation and deletion of holdings records as needed when changing the permanent locations of items.
+* Now supports deleting instance and holdings records.
+* Now supports uploading `.xslx` files in addition to text files, for uploading lists of identifiers.
+* Fix bug in Change tab: if the user supplied instance id's, Foliage didn't correctly detect it, and didn't complain.
+* Fix bug in exporting the UUID lists: Foliage would produce an error when attempting to export in CSV format. 
+* Fix the title of the Foliage page in web browsers; it should be "Foliage" but instead was an internal description of a function in the code.
+* Fix multiple internal bugs.
+* Removed splash screen on Windows because it fails to work outside of my development environment. I've [posted a question on the PyInstaller forums](https://github.com/pyinstaller/pyinstaller/discussions/6542) asking for help.
+* Add "read me first" file to mac installer.
+
+
+## ★ Version 1.0.2 (2022-01-20) ★
+
+This verion fixes some minor internal bugs.
+
+
 ## ★ Version 1.0.1 (2022-01-05) ★
 
 This version fixes a bug when retrieving user records.
