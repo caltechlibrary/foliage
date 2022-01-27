@@ -87,8 +87,6 @@ configuration = Analysis([r'foliage\__main__.py'],
                          # by our code. It causes the build to fail. Need to
                          # exclude it explicitly.
                          excludes = ['matplotlib'],
-                         win_no_prefer_redirects = False,
-                         win_private_assemblies = False,
                          cipher = None,
                         )
 
@@ -97,14 +95,13 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
-# splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
-#                          binaries = configuration.binaries,
-#                          datas = configuration.datas
-#                          )
+splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
+                         binaries = configuration.binaries,
+                         datas = configuration.datas
+                         )
 
 # Notes about the configuration below:
 # - "debug = True" produces output on the cmd line when you start the app.
-#
 # - "console = True" makes the app show a console window at run time.
 
 executable         = EXE(application_pyz,
@@ -112,13 +109,13 @@ executable         = EXE(application_pyz,
                          configuration.binaries,
                          configuration.zipfiles,
                          configuration.datas,
-                         # splash,
-                         # splash.binaries,
+                         splash,
+                         splash.binaries,
                          name = 'Foliage',
                          icon = r'dev/icon/foliage-icon.ico',
                          version = r'dev/installers/windows/version.py',
                          strip = False,
-                         upx = True,
+                         upx = False,
                          runtime_tmpdir = None,
                          # To debug run problems on Windows, first try setting
                          # console to True. If that doesn't reveal enough, then
