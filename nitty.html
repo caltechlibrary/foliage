@@ -442,9 +442,9 @@
 <figcaption>Illustration of changes to the hierarchical relationships of records for case 3.</figcaption>
 </figure>
 </section>
-<section id="case-4-moving-the-only-item-in-a-location-to-another-location">
-<h3 id="case-4-moving-the-only-item-in-a-location-to-another-location">Case 4: moving the only item in a location to another location<a class="headerlink" href="#case-4-moving-the-only-item-in-a-location-to-another-location" title="Permalink to this headline">¶</a></h3>
-<p>Suppose an instance has two items in two different locations, and we move one of the items between the locations. This leaves the original location without any items. Changes needed: item 1’s location is changed to the new location and its holdings record reference is changed to the other holdings record (<strong>h2</strong>). Since holdings record <strong>h1</strong> no longer has any items attached to it, we delete that holdings record.</p>
+<section id="case-4-moving-the-last-item-a-given-location-to-another-location">
+<h3 id="case-4-moving-the-last-item-a-given-location-to-another-location">Case 4: moving the last item a given location to another location<a class="headerlink" href="#case-4-moving-the-last-item-a-given-location-to-another-location" title="Permalink to this headline">¶</a></h3>
+<p>Suppose an instance has items in two different locations, and we move one of the items between the locations. Suppose the original location has no other items in it. The move leaves the original location without any items. Changes needed: item 1’s location is changed to the new location and its holdings record reference is changed to the other holdings record (<strong>h2</strong>). Since holdings record <strong>h1</strong> no longer has any items attached to it, we delete that holdings record.</p>
 <figure>
 <img src="_static/media/foliage-change-case-4.svg" width="500px"/>
 <figcaption>Illustration of changes to the hierarchical relationships of records for case 4.</figcaption>
@@ -500,7 +500,7 @@
               
           </div>
             Last updated on
-              Jan 26, 2022.
+              Jan 27, 2022.
             <br/>
             Created using
             <a href="http://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
