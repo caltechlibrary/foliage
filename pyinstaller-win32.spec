@@ -95,10 +95,10 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
-splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
-                         binaries = configuration.binaries,
-                         datas = configuration.datas
-                         )
+# splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
+#                          binaries = configuration.binaries,
+#                          datas = configuration.datas
+#                          )
 
 # Notes about the configuration below:
 # - "debug = True" produces output on the cmd line when you start the app.
@@ -109,8 +109,8 @@ executable         = EXE(application_pyz,
                          configuration.binaries,
                          configuration.zipfiles,
                          configuration.datas,
-                         splash,
-                         splash.binaries,
+                         # splash,
+                         # splash.binaries,
                          name = 'Foliage',
                          icon = r'dev/icon/foliage-icon.ico',
                          version = r'dev/installers/windows/version.py',
@@ -124,6 +124,15 @@ executable         = EXE(application_pyz,
                          console = False,
                          debug = False,
                         )
+
+# collected_files = COLLECT(executable,
+#                           configuration.binaries,
+#                           configuration.zipfiles,
+#                           configuration.datas,
+#                           strip = False,
+#                           upx = False,
+#                           upx_exclude = [],
+#                           name = 'foliage')
 
 app             = BUNDLE(executable,
                          name = 'Foliage.exe',
