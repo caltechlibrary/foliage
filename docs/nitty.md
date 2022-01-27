@@ -86,9 +86,9 @@ Suppose an instance has 3 items – two in one location, a third in another. We 
 </figure>
 
 
-### Case 4: moving the only item in a location to another location
+### Case 4: moving the last item a given location to another location
 
-Suppose an instance has two items in two different locations, and we move one of the items between the locations. This leaves the original location without any items. Changes needed: item 1's location is changed to the new location and its holdings record reference is changed to the other holdings record (**h2**). Since holdings record **h1** no longer has any items attached to it, we delete that holdings record.
+Suppose an instance has items in two different locations, and we move one of the items between the locations. Suppose the original location has no other items in it. The move leaves the original location without any items. Changes needed: item 1's location is changed to the new location and its holdings record reference is changed to the other holdings record (**h2**). Since holdings record **h1** no longer has any items attached to it, we delete that holdings record.
 
 <figure>
     <img width="500px" src="_static/media/foliage-change-case-4.svg">
