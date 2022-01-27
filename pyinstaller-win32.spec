@@ -95,6 +95,11 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
+# 2022-01-27 <mhucka@caltech.edu> PyInstaller's splash screen feature has a bug
+# described in https://github.com/pyinstaller/pyinstaller/issues/6284
+# that prevents it from working in one-file mode on other user's computers.
+# Currently waiting for a fix before restoring the splash screen code.
+
 # splash          = Splash(r'dev\splash-screen\foliage-splash-screen.png',
 #                          binaries = configuration.binaries,
 #                          datas = configuration.datas
