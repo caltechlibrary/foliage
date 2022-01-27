@@ -207,11 +207,16 @@ textarea.form-control[readonly] {
 }
 '''
 
-STATUS_BOX_STYLE = '''
+PROGRESS_BOX = '''
 padding: 17px;
 margin-bottom: 17px;
 border: 1px solid #ededed;
 border-radius: 0.25em
+'''
+
+PROGRESS_TEXT = '''
+margin: 0;
+font-size: 90%;
 '''
 
 
