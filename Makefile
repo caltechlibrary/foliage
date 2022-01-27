@@ -36,7 +36,7 @@ builddir  := build/$(os)
 zipfile   := $(distdir)/$(name)-$(version)-$(os).zip
 dmgfile   := $(distdir)/$(name)-$(version)-$(os).dmg
 aboutfile := ABOUT.html
-macreadme := "dev/installers/macos/READ THIS PLEASE.html"
+macreadme := dev/installers/macos/READ\ THIS\ PLEASE.html
 githubcss := dev/github-css/github-markdown-css.html
 branch	  := $(shell git rev-parse --abbrev-ref HEAD)
 
@@ -157,6 +157,7 @@ dmg: # $(distdir)/$(appname) $(macreadme)
 	$(eval srcfolder := $(distdir)/$(volname))
 	-mkdir -p $(srcfolder)
 	cp -a $(distdir)/$(appname) $(srcfolder)
+	cp -a $(aboutfile) $(srcfolder)
 	cp -a $(macreadme) $(srcfolder)
 	hdiutil create -volname $(volname) -srcfolder $(srcfolder) \
 	    -ov -format UDZO $(abspath $(dmgfile))
@@ -309,7 +310,8 @@ clean-other:;
 	rm -rf .cache
 
 .PHONY: release release-on-github update-init update-meta update-citation \
-	print-instructions packages clean test-pypi pypi
+	print-instructions packages clean test-pypi pypi extra-files dmg \
+	pyinstaller
 
 .SILENT: clean clean-dist clean-build clean-release clean-other really-clean \
 	really-clean-dist really-clean-build completely-clean
