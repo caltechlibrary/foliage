@@ -12,5 +12,6 @@ installation.md
 first-time-usage.md
 foliage-interface.md
 nitty.md
+glossary.md
 colophon.md
 ```
