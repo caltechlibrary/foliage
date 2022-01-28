@@ -30,15 +30,17 @@ license	  := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
 appname   := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
 platform  := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
 os	  := $(subst $(platform),darwin,macos)
+branch	  := $(shell git rev-parse --abbrev-ref HEAD)
 initfile  := $(name)/__init__.py
 distdir   := dist/$(os)
 builddir  := build/$(os)
 zipfile   := $(distdir)/$(name)-$(version)-$(os).zip
 dmgfile   := $(distdir)/$(name)-$(version)-$(os).dmg
-aboutfile := ABOUT.html
-macreadme := dev/installers/macos/READ\ THIS\ PLEASE.html
-githubcss := dev/github-css/github-markdown-css.html
-branch	  := $(shell git rev-parse --abbrev-ref HEAD)
+pagetmpl  := dev/one-page-docs/pandoc-template/template.html5
+pagecss   := dev/one-page-docs/sakura-css/sakura.css
+aboutfile := README.html
+macreadme := dev/one-page-docs/read-me-first-macos/read-me-first.html
+winreadme := dev/one-page-docs/read-me-first-windows/read-me-first.html
 
 
 # Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +91,10 @@ help:
 	@echo '  The ultimate in cleaning.'
 
 
-# Gather values that we need ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Gather additional values we sometimes need ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# These variables take longer to compute, and for some actions like "make help"
+# they are unnecessary and annoying to wait for.
 
 .SILENT: vars
 vars:
@@ -131,55 +136,34 @@ report: vars
 # Note: the actions in this section only work on non-Windows systems. For
 # building on Windows, see the file "make.bat" in this directory.
 
-binary: | vars extra-files $(distdir)/$(appname) dmg
+binary: | vars dist-dirs extra-files $(distdir)/$(appname) dmg
 
 dependencies:;
 	pip3 install -r requirements.txt
 
-extra-files: $(macreadme) $(aboutfile)
+dist-dirs:
+	-mkdir -p dist/macos dist/win
 
-$(aboutfile): README.md
-	pandoc --standalone --quiet -f gfm -H $(githubcss) -o tmp.html $<
-	inliner -n < tmp.html > $(aboutfile)
-	rm -f tmp.html
+extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme)
 
-$(macreadme): dev/installers/macos/read-first.md
-	pandoc --standalone --quiet -f gfm -H $(githubcss) -o tmp.html $<
-	inliner -n < tmp.html > $(macreadme)
+%.html: %.md
+	pandoc --metadata title="Foliage" --template=$(pagetmpl) -c $(pagecss) -o tmp.html $<
+	inliner -n < tmp.html > $@
 	rm -f tmp.html
 
 pyinstaller $(distdir)/$(appname): | vars dependencies
 	@mkdir -p $(distdir)
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
 
-dmg: # $(distdir)/$(appname) $(macreadme)
-	$(eval volname	 := Foliage_$(version))
-	$(eval srcfolder := $(distdir)/$(volname))
-	-mkdir -p $(srcfolder)
-	cp -a $(distdir)/$(appname) $(srcfolder)
-	cp -a $(aboutfile) $(srcfolder)
-	cp -a $(macreadme) $(srcfolder)
-	hdiutil create -volname $(volname) -srcfolder $(srcfolder) \
+dmg: dist-dirs $(macreadme) $(aboutfile) $(distdir)/$(appname)
+	$(eval volname := Foliage_$(version))
+	$(eval folder  := $(distdir)/$(volname))
+	-mkdir -p $(folder)
+	cp -a $(distdir)/$(appname) $(folder)
+	cp -a $(aboutfile) $(folder)/ABOUT.html
+	cp -a $(macreadme) $(folder)/"READ ME FIRST.html"
+	hdiutil create -volname $(volname) -srcfolder $(folder) \
 	    -ov -format UDZO $(abspath $(dmgfile))
-
-# zip-archive: pyinstaller
-# 	$(eval tmp_file := $(shell mktemp /tmp/comments-$(name).XXXX))
-# 	@cat <<- EOF > $(tmp_file)
-# 	┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-# 	┃ This Zip archive file includes a self-contained, runnable ┃
-# 	┃ version of the program Foliage for macOS. To learn        ┃
-# 	┃ more about Foliage, please visit the following site:      ┃
-# 	┃                                                           ┃
-# 	┃         https://github.com/$(repo)         ┃
-# 	┃                                                           ┃
-# 	┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-# 	EOF
-# 	$(eval abs_zipfile := $(shell /bin/pwd)/$(zipfile))
-# 	pushd $(distdir)
-# 	zip -r $(abs_zipfile) $(appname)
-# 	popd
-# 	zip -z $(abs_zipfile) < $(tmp_file)
-# 	-rm -f $(tmp_file)
 
 
 # make release ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -229,7 +213,7 @@ release-on-github: | vars update-init update-meta update-citation commit-updates
 print-instructions: vars
 	@$(info ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓)
 	@$(info ┃ Next steps:                                                ┃)
-	@$(info ┃ 1. Check https://github.com/@$(repo)/releases )
+	@$(info ┃ 1. Check https://github.com/$(repo)/releases )
 	@$(info ┃ 2. Wait a few seconds to let web services do their work    ┃)
 	@$(info ┃ 3. Run "make update-doi" to update the DOI in README.md    ┃)
 	@$(info ┃ 4. Run "make packages" & check the results                 ┃)
