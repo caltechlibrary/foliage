@@ -32,27 +32,6 @@ $for(include-before)$
 $include-before$
 $endfor$
 
-<header>
-<h1 class="title">$title$</h1>
-<blockquote class="metadata">
-$if(subtitle)$
-<p class="subtitle">$subtitle$</p>
-$endif$
-$if(author)$
-<p class="author">
-  $if(author-url)$
-    <a href="$author-url$">$author$</a>
-  $else$
-    $author$
-  $endif$
-</p>
-$endif$
-$if(date)$
-<p class="date $if(toc)$before-toc$endif$"><time datetime="$date$">$date$</time></p>
-$endif$
-</blockquote>
-</header>
-
 $if(toc)$
 <nav id="$idprefix$TOC" role="doc-toc">
   $if(return-url)$
