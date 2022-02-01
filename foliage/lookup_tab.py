@@ -75,9 +75,10 @@ def tab_contents():
                                   ('User', RecordKind.USER)]),
             put_checkbox("open_loans", inline = True,
                          options = [('Search open loans only', True, True)],
-                         help_text = ('When searching for loans, selecting'
-                                      + ' this option limits searches to loans'
-                                      + ' marked "open".')),
+                         help_text = ('When searching for loans (and for users,'
+                                      + ' based on loans), limit consideration'
+                                      + ' to open loans only. Deselect to use'
+                                      + ' all loans.')),
         ]], cell_widths = '55% 45%'),
         put_grid([[
             put_grid([[
@@ -90,7 +91,9 @@ def tab_contents():
             put_checkbox("inventory_api", inline = True,
                          options = [('Use inventory API for items and instances',
                                      True, True)],
-                         help_text = 'When deselected, the FOLIO storage API is used.'),
+                         help_text = ('The inventory API shows more fields but'
+                                      + ' with derived values. Deselect to see'
+                                      + ' the pure records from the storage API.')),
         ]], cell_widths = '55% 45%'),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
