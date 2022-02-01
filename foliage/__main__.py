@@ -349,8 +349,8 @@ Command-line arguments summary
     # Try to deal with exceptions gracefully ----------------------------------
 
     if widget:
-        # Stop the widget explicit now, in case we have an exception and end up
-        # calling os._exit, b/c doing that would not kill the widget subprocess.
+        # Stop the widget explicitly now, in case have an exception and end up
+        # calling os._exit, b/c doing *that* would not kill the widget subproc.
         widget.stop()
 
     if exception:
@@ -389,14 +389,12 @@ def foliage_page(widget):
     '''
     os.environ['FOLIAGE_GUI_STARTED'] = 'True'   # Used by ui.py functions.
     log('generating main Foliage page')
-    put_image(image_data('foliage-icon.png'), width='85px').style('float: left')
-    put_image(image_data('foliage-icon-r.png'), width='85px').style('float: right')
+    put_image(image_data('foliage-icon.png'), width='70px').style('float: left')
+    put_image(image_data('foliage-icon-r.png'), width='70px').style('float: right')
     put_html('<h1 class="text-center">Foliage</h1>')
     put_html('<div class="font-italic text-muted font-weight-light text-center mx-auto">'
-             ' Foliage ("FOLIo chAnGe Editor") is an app that runs'
-             ' on your computer and lets you perform FOLIO operations over'
-             ' the network. This web page is its user interface.'
-             '</div>').style('width: 85%')
+             '<b>FOLIo chAnGe Editor</b> runs on your computer and interacts'
+             ' with FOLIO over the network.').style('width: 85%')
     put_tabs([tab.contents() for tab in _TABS]).style('padding-bottom: 16px')
     put_actions('quit',
                 buttons = [{'label': 'Quit', 'value': True, 'color': 'warning'}]
