@@ -57,6 +57,10 @@ class OtherTab(FoliageTab):
 def tab_contents():
     log(f'generating other tab contents')
     return [
+        put_html(f'<i><b>Help for Foliage</b> is <a target="_blank"'
+                 + ' href="https://caltechlibrary.github.io/foliage"'
+                 + '>available online</a></i>.'
+                     ).style('text-align: center; margin-bottom: 1em'),
         put_grid([[
             put_markdown('Foliage stores the FOLIO credentials you provide the'
                          + ' first time it runs, so that you don\'t have to'
