@@ -108,6 +108,14 @@ body {
     padding-bottom: 66px;
 }
 
+h1 {
+    font-size: 26pt;
+}
+
+.text-muted b {
+    color: #555;
+}
+
 pre {
     background-color: #f8f8f8;
     padding: 5px;
