@@ -13,7 +13,7 @@
 # The following is based on the approach posted by Jonathan Ben-Avraham to
 # Stack Overflow in 2014 at https://stackoverflow.com/a/25668869
 
-PROGRAMS_NEEDED = curl gh git jq sed pyinstaller pandoc inliner
+PROGRAMS_NEEDED = curl gh git jq sed pyinstaller pandoc inliner create-dmg
 TEST := $(foreach p,$(PROGRAMS_NEEDED),\
 	  $(if $(shell which $(p)),_,$(error Cannot find program "$(p)")))
 
@@ -38,8 +38,9 @@ zipfile   := $(distdir)/$(name)-$(version)-$(os).zip
 dmgfile   := $(distdir)/$(name)-$(version)-$(os).dmg
 pagetmpl  := dev/one-page-docs/pandoc-template/template.html5
 pagecss   := dev/one-page-docs/sakura-css/sakura.css
+# These next ones are for the Windows installer, but I have to create them
+# using this Makefile.
 aboutfile := README.html
-macreadme := dev/one-page-docs/read-me-first-macos/read-me-first.html
 winreadme := dev/one-page-docs/read-me-first-windows/read-me-first.html
 
 
@@ -154,16 +155,17 @@ extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme)
 pyinstaller $(distdir)/$(appname): | vars dependencies
 	@mkdir -p $(distdir)
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
+	-rm -rf $(distdir)/foliage $(distdir)/Foliageapp
 
-dmg: dist-dirs $(macreadme) $(aboutfile) $(distdir)/$(appname)
-	$(eval volname := Foliage_$(version))
-	$(eval folder  := $(distdir)/$(volname))
-	-mkdir -p $(folder)
-	cp -a $(distdir)/$(appname) $(folder)
-	cp -a $(aboutfile) $(folder)/ABOUT.html
-	cp -a $(macreadme) $(folder)/"READ ME FIRST.html"
-	hdiutil create -volname $(volname) -srcfolder $(folder) \
-	    -ov -format UDZO $(abspath $(dmgfile))
+dmg: dist-dirs $(distdir)/$(appname)
+	# Unwrap the text file so it looks nicer in the installer's window.
+	awk 'BEGIN {RS="\n\n"; FS="\n"} \
+	    {for (i=1;i<=NF;i++) printf $$i " "; printf "\n\n"}' LICENSE \
+	     > $(distdir)/license.txt
+	pushd $(distdir)
+	create-dmg --overwrite $(appname)
+	popd
+	-rm -f $(distdir)/license.txt
 
 
 # make release ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -289,7 +291,7 @@ clean-release:;
 	rm -rf $(name).egg-info codemeta.json.bak $(initfile).bak README.md.bak
 
 clean-other:;
-	rm -f $(aboutfile) $(macreadme)
+	rm -f $(aboutfile) $(macreadme) $(winreadme) $(distdir)/license.txt
 	rm -fr __pycache__ $(name)/__pycache__ .eggs
 	rm -rf .cache
 
