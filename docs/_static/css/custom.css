@@ -7,13 +7,14 @@ body, input {
     font-family: "Atkinson Hyperlegible", "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+.md-typeset {
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
 .md-typeset p, .md-typeset ol {
     margin-top: 0.75em;;
     margin-bottom: 0.75em;;
-}
-
-.md-typeset {
-  line-height: 1.5;
 }
 
 .md-typeset ol li,.md-typeset ul li{
