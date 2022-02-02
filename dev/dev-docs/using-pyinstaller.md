@@ -35,13 +35,22 @@ A typical Python application will have a directory structure somewhat like this:
 └── setup.py
 ```
 
-The procedure for using PyInstaller involves creating a configuration file (described below) and then running pyinstaller in the project directory. The configuration file references other files such as the source files in the application subdirectory. I write `Makefile` (for macOS) and `make.bat` (for Windows) rules to run `pyinstaller` with suitable arguments. The basic command line is (showing the case for Windows):
+The procedure for using PyInstaller involves creating a configuration file (described below) and then running pyinstaller in the project directory. The configuration file references other files such as the source files in the application subdirectory. I write `Makefile` (for macOS) and `make.bat` (for Windows) rules to run `pyinstaller` with suitable arguments to run PyInstaller with the appropriate configuration file (for macOS or Windows, depending). An example of the basic command line for is:
 
 ```sh
 pyinstaller --distpath dist/win --clean --noconfirm pyinstaller-win32.spec
 ```
 
 The `--distpath` argument tells PyInstaller to put the output in the subdirectory `dist/win`; the `--clean` argument tells PyInstaller to remove temporary build files from previous runs.
+
+
+## The two types of applications that can be built by PyInstaller
+
+PyInstaller can build applications in two "modes": a so-called "one-dir" mode and a "one-file" mode. Foliage uses one mode for macOS and the other for Windows. The reasons for this are as follows.
+
+In "one-file" mode, PyInstaller creates a compressed single-file archive of the application plus all the Python libraries and necessary system libraries (`.dll`'s on Windows) to create a self-contained, single-file application. This single-file app contains a bootloader program that is the thing actually executed when the user runs the app. This bootloader unpacks everything at run time into a temporary directory, and after that, starts the real Foliage application (all behind the scenes -- the user doesn't see any of this happening). However, this unpacking step takes time, during which nothing seems to be happening. Not only is this long startup time annoying for the user, but the lack of feedback can be very confusing ("did Foliage actually start? how long should I wait?"). The one-file app is great for packaging and distribution (because the result looks like any other application), but not for the user experience.
+
+In "one-dir" mode, PyInstaller does not create a single-file archive; it leaves the files (the dependencies, dynamic libraries, data files, etc.) in a single folder, unpacked. Within this folder, there's a binary that is the program you actually run. The result is faster startup at run time because the unpacking step is unnecessary, _but_ the user has to know to find the right binary file inside that folder &ndash; a folder that contains dozens upon dozens of other files and folders. This is an even more confusing user experience. However, on macOS, unlike Windows, there's a feature we can use to advantage here. MacOS apps are _already_ folders: in the Finder, a program that looks like it's named `Foliage` is actually a folder named `Foliage.app`, and inside this folder are various files and subfolders. So it doesn't matter if we use PyInstaller's one-dir mode, because we can hide the results in the Foliage.app folder and the user doesn't need to know about these details. As a result, we take advantage of one-dir mode for its faster start times without compromising the user experience.
 
 
 ## The PyInstaller configuration file
