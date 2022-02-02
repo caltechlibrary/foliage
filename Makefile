@@ -155,7 +155,8 @@ extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme)
 pyinstaller $(distdir)/$(appname): | vars dependencies
 	@mkdir -p $(distdir)
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
-	-rm -rf $(distdir)/foliage $(distdir)/Foliageapp
+	# PyInstaller creates this but we don't use it.
+	-rm -rf $(distdir)/foliage
 
 dmg: dist-dirs $(distdir)/$(appname)
 	# Unwrap the text file so it looks nicer in the installer's window.
