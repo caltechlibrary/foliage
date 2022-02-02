@@ -147,9 +147,7 @@ application_pyz    = PYZ(configuration.pure,
 
 executable         = EXE(application_pyz,
                          configuration.scripts,
-                         configuration.binaries,
-                         configuration.zipfiles,
-                         configuration.datas,
+                         exclude_binaries = True,
                          # Make sure the following 'name' field value is
                          # different from the one defined in COLLECT below.
                          name = 'Foliageapp',
