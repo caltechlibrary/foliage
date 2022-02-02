@@ -1,5 +1,13 @@
 # Change log for foliage
 
+## ★ Version 1.1.1 (tbd) ★
+
+Changes:
+* The macOS app now starts much faster, and the installation `.dmg` file is slightly nicer.
+* The description of the checkboxes on the _Look up records_ tab are hopefully more clear.
+* The _Other_ tab provides a link to the online help pages.
+
+
 ## ★ Version 1.1.0 (2022-01-21) ★
 
 Changes:
