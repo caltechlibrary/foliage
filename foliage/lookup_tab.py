@@ -112,6 +112,14 @@ _last_results = {}
 _last_kind = None
 _last_inventory_api = True
 _last_open_loans = True
+_location_map = None
+
+def init_location_map():
+    global _location_map
+    if _location_map is None:
+        folio = Folio()
+        _location_map = {x.data['id']:x.data['name']
+                         for x in folio.types(TypeKind.LOCATION)}
 
 
 def inputs_are_unchanged():
@@ -157,6 +165,7 @@ def do_find():
     global _last_kind
     global _last_inventory_api
     global _last_open_loans
+    global _location_map
     log(f'do_find invoked')
     # Normally we'd want to find out if they input any identifiers, but I want
     # to detect *any* change to the input box, so this is a lower-level test.
@@ -180,16 +189,18 @@ def do_find():
     steps = len(identifiers) + 1
     folio = Folio()
     reset_interrupts()
+    init_location_map()
     with use_scope('output', clear = True):
         put_grid([[
             put_scope('current_activity', [
-                put_markdown(f'_Certain lookups take a long time. Please be patient.'
+                put_markdown(f'_Certain lookups take a long time. Please be patient._'
                              ).style('color: DarkOrange; margin-bottom: 0')]),
         ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
                        onclick = lambda: stop()).style('text-align: right'),
         ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
+        # The staff want to see location names, so we need to get the mapping.
         for count, id in enumerate(identifiers, start = 2):
             try:
                 # Figure out what kind of identifier we were given.
@@ -244,6 +255,20 @@ def do_find():
             ]]).style('margin: 1.5em 17px auto 17px')
 
 
+def location(location_data):
+    global _location_map
+    if isinstance(location_data, dict):
+        if 'name' in location_data:
+            return f'{location_data["name"]}  ({location_data["id"]})'
+        else:
+            return location_data["id"]
+    else:
+        if location_data in _location_map:
+            return f'{_location_map[location_data]}  ({location_data})'
+        else:
+            return '(unknown location)'
+
+
 def print_record(record, identifier, index, show_index, show_raw):
     log(f'printing {record.kind} record {record.id}')
     if show_index:
@@ -260,8 +285,8 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Barcode'                   , record.data['barcode']],
                 ['Call number'               , record.data['callNumber']],
                 [f'{record.kind.title()} id' , record.data['id']],
-                ['Effective location'        , record.data['effectiveLocation']['name']],
-                ['Permanent location'        , record.data['permanentLocation']['name']],
+                ['Effective location'        , location(record.data['effectiveLocation'])],
+                ['Permanent location'        , location(record.data['permanentLocation'])],
                 ['Status'                    , record.data['status']['name']],
                 ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
                 ['Notes'                     , '\n'.join(record.data['notes'])],
@@ -275,8 +300,8 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Barcode'                   , record.data['barcode']],
                 ['Call number'               , record.data['itemLevelCallNumber']],
                 [f'{record.kind.title()} id' , record.data['id']],
-                ['Effective location'        , record.data['effectiveLocationId']],
-                ['Permanent location'        , record.data['permanentLocationId']],
+                ['Effective location'        , location(record.data['effectiveLocationId'])],
+                ['Permanent location'        , location(record.data['permanentLocationId'])],
                 ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
                 ['Notes'                     , '\n'.join(record.data['notes'])],
                 ['HRID'                      , record.data['hrid']],
@@ -300,14 +325,28 @@ def print_record(record, identifier, index, show_index, show_raw):
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.HOLDINGS:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
-        put_table([
-            [f'{record.kind.title()} id' , record.data['id']],
-            ['HRID'                      , record.data['hrid']],
-            ['Holdings type id'          , record.data['holdingsTypeId']],
-            ['Instance id'               , record.data['instanceId']],
-            ['Created'                   , record.data['metadata']['createdDate']],
-            ['Updated'                   , record.data['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        if 'effectiveLocationId' in record.data:
+            put_table([
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['HRID'                      , record.data['hrid']],
+                ['Holdings type id'          , record.data['holdingsTypeId']],
+                ['Instance id'               , record.data['instanceId']],
+                ['Effective location'        , location(record.data['effectiveLocationId'])],
+                ['Permanent location'        , location(record.data['permanentLocationId'])],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        else:
+            put_table([
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['HRID'                      , record.data['hrid']],
+                ['Holdings type id'          , record.data['holdingsTypeId']],
+                ['Instance id'               , record.data['instanceId']],
+                ['Effective location'        , ''],
+                ['Permanent location'        , location(record.data['permanentLocationId'])],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.USER:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
