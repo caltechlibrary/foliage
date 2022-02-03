@@ -114,6 +114,17 @@ _last_inventory_api = True
 _last_open_loans = True
 
 
+def inputs_are_unchanged():
+    global _last_textbox
+    global _last_kind
+    global _last_inventory_api
+    global _last_open_loans
+    return (pin.textbox_find == _last_textbox
+            and pin.select_kind == _last_kind
+            and pin.inventory_api == _last_inventory_api
+            and pin.open_loans == _last_open_loans)
+
+
 def clear_tab():
     global _last_textbox
     global _last_inventory_api
@@ -157,13 +168,10 @@ def do_find():
         note_error('The input does not appear to contain FOLIO identifiers.')
         return
     reuse_results = False
-    if (pin.textbox_find == _last_textbox and pin.select_kind == _last_kind
-        and pin.inventory_api == _last_inventory_api
-        and pin.open_loans == _last_open_loans):
-        if user_wants_reuse():
-            reuse_results = True
-        else:
-            _last_results = {}
+    if inputs_are_unchanged() and user_wants_reuse():
+        reuse_results = True
+    else:
+        _last_results = {}
     _last_textbox = pin.textbox_find
     _last_kind = pin.select_kind
     _last_inventory_api = pin.inventory_api
