@@ -75,26 +75,26 @@ def tab_contents():
                                   ('User', RecordKind.USER)]),
             put_checkbox("open_loans", inline = True,
                          options = [('Search open loans only', True, True)],
-                         help_text = ('When searching for loans (and for users,'
-                                      + ' based on loans), limit consideration'
-                                      + ' to open loans only. Deselect to use'
-                                      + ' all loans.')),
-        ]], cell_widths = '55% 45%'),
+                         help_text = ('When searching for loans (and users,'
+                                      + ' based on loans), limit searches to'
+                                      + ' open loans only. Deselect'
+                                      + ' to search all loans.')),
+        ]], cell_widths = '54% 46%'),
         put_grid([[
             put_grid([[
-                put_text('Output format:'),
+                put_text('Format in which to display records:'),
             ],[
                 put_radio('show_raw', inline = True,
-                          options = [('Summary format', 'summary', True),
-                                     ('Raw data format', 'json')]),
+                          options = [('Summary', 'summary', True),
+                                     ('Raw data', 'json')]),
             ]]),
             put_checkbox("inventory_api", inline = True,
                          options = [('Use inventory API for items and instances',
                                      True, True)],
-                         help_text = ('The inventory API shows more fields but'
-                                      + ' with derived values. Deselect to see'
-                                      + ' the pure records from the storage API.')),
-        ]], cell_widths = '55% 45%'),
+                         help_text = ("FOLIO's Inventory API shows more fields but"
+                                      + ' some values are computed. Deselect to'
+                                      + ' get pure records from the storage API.')),
+        ]], cell_widths = '54% 46%'),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
             put_text(''),    # Adds a column, pushing next item to the right.
