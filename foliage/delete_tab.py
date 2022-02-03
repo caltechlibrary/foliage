@@ -23,7 +23,7 @@ from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
 from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column, put_scope
+from   pywebio.output import put_column, put_scope, clear_scope, put_loading
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   sidetrack import set_debug, log
@@ -31,7 +31,7 @@ from   sidetrack import set_debug, log
 from   foliage.base_tab import FoliageTab
 from   foliage.exceptions import *
 from   foliage.export import export_data
-from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind, Record
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
@@ -97,33 +97,42 @@ def stop():
     stop_processbar()
 
 
-results = []
+_results = []
 
-def succeeded(id, msg, why = ''):
-    global results
+def clear_results():
+    global _results
+    _results = []
+
+
+def record_result(record_or_id, success, notes):
+    global _results
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    rec = record_or_id if isinstance(record_or_id, Record) else None
+    _results.append({'id': id, 'success': success, 'notes': notes, 'record': rec})
+
+
+def succeeded(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
-    results.append({'id': id, 'success': True, 'notes': msg + comment})
+    record_result(record_or_id, True, msg + comment)
     tell_success('Success: ' + msg + comment + '.')
 
 
-def failed(id, msg, why = ''):
-    global results
+def failed(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
-    results.append({'id': id, 'success': False, 'notes': msg + comment})
+    record_result(record_or_id, False, msg + comment)
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     tell_failure(f'Failed to delete **{id}**{comment}: ' + msg + '.')
 
 
-def skipped(id, msg, why = ''):
-    global results
+def skipped(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
-    results.append({'id': id, 'success': False, 'notes': msg + comment})
+    record_result(record_or_id, False, msg + comment)
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
 
 
 def do_delete():
     log(f'do_delete invoked')
-    global results
-    results = []
     identifiers = unique_identifiers(pin.textbox_delete)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
@@ -134,6 +143,7 @@ def do_delete():
                    ' implications first. Proceed?', danger = True):
         log(f'user declined to proceed')
         return
+    clear_results()
     reset_interrupts()
     steps = 2*len(identifiers)       # Count getting records, for more action.
     folio = Folio()
@@ -150,8 +160,7 @@ def do_delete():
             done = 0
             for id in identifiers:
                 with use_scope('current_activity', clear = True):
-                    text = f'_Looking up {id} ..._'
-                    put_markdown(text).style(PROGRESS_TEXT)
+                    put_markdown(f'_Looking up {id} ..._').style(PROGRESS_TEXT)
                 record = folio.record(id)
                 if not record:
                     failed(id, f'unrecognized identifier **{id}**')
@@ -176,8 +185,7 @@ def do_delete():
                 done += 1
                 set_processbar('bar', done/steps)
             set_processbar('bar', 1)
-            with use_scope('current_activity', clear = True):
-                put_markdown('').style(PROGRESS_TEXT)
+            clear_scope('current_activity')
         except Interrupted as ex:
             tell_warning('**Stopped**.')
             return
@@ -192,7 +200,7 @@ def do_delete():
         put_grid([[
             put_markdown('Finished deletions.').style('margin-top: 6px'),
             put_button('Export summary', outline = True,
-                       onclick = lambda: export_data(results, 'foliage-deletions.csv'),
+                       onclick = lambda: do_export('foliage-deletions.csv'),
                        ).style('text-align: right')
         ]]).style('margin: 1.5em 17px auto 17px')
 
@@ -208,9 +216,9 @@ def delete(record, for_id = None):
             folio = Folio()
             folio.delete_record(record)
         except FolioOpFailed as ex:
-            failed(record.id, str(ex), why)
+            failed(record, str(ex), why)
             return False
-    succeeded(record.id, f'deleted {record.kind} record **{record.id}**', why)
+    succeeded(record, f'deleted {record.kind} record **{record.id}**', why)
     return True
 
 
@@ -224,7 +232,7 @@ def delete_holdings(holdings, for_id = None):
     # Start at the bottom: delete its items 1st.
     for item in folio.related_records(holdings.id, IdKind.HOLDINGS_ID, RecordKind.ITEM):
         if not delete(item, for_id = holdings.id):
-            failed(holdings.id, f'unable to delete item {item.id} – stopping')
+            failed(holdings, f'unable to delete item {item.id} – stopping')
             return False
     # If we get this far, delete the holdings record.
     return delete(holdings, for_id)
@@ -248,7 +256,7 @@ def delete_instance(instance, for_id = None):
     for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
                                           RecordKind.HOLDINGS):
         if not delete_holdings(holdings, for_id = instance.id):
-            failed(instance.id, f'unable to delete all holdings records')
+            failed(instance, f'unable to delete all holdings records')
             return False
 
     # Next, get the matched id from source storage & delete the instance there.
@@ -262,10 +270,10 @@ def delete_instance(instance, for_id = None):
     srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
     data_json = folio.request(srsget, converter = response_converter)
     if not data_json:
-        failed(instance.id, 'unable to retrieve instance data from FOLIO SRS')
+        failed(instance, 'unable to retrieve instance data from FOLIO SRS')
         return
     elif 'matchedId' not in data_json:
-        failed(instance.id, 'unexpected data from FOLIO SRS – please report this')
+        failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
     srs_id = data_json["matchedId"]
     log(f'SRS id for {instance.id} is {srs_id}')
@@ -278,7 +286,63 @@ def delete_instance(instance, for_id = None):
 
 def delete_user(record, for_id = None):
     '''Delete the given user record.'''
-    failed(record.id, 'user records cannot be deleted at this time')
+    failed(record, 'user records cannot be deleted at this time')
+
+
+_location_map = None
+
+def init_location_map():
+    global _location_map
+    if _location_map is None:
+        folio = Folio()
+        _location_map = {x.data['id']:x.data['name']
+                         for x in folio.types(TypeKind.LOCATION)}
+
+
+def location(location_data):
+    global _location_map
+    if isinstance(location_data, dict):
+        if 'name' in location_data:
+            return f'{location_data["name"]} ({location_data["id"]})'
+        else:
+            return location_data["id"]
+    elif location_data and location_data in _location_map:
+        return f'{_location_map[location_data]} ({location_data})'
+    return '(unknown location)'
+
+
+def do_export(file_name):
+    global _results
+    init_location_map()
+    # Output fields requested
+    #   id
+    #   success
+    #   notes
+    #   record hrid
+    #   record barcode (if present)
+    #   record location
+    #   record title
+    #   record publication year
+    #   record publisher
+
+    # People want to see titles, dates, locations. We need to do lookups to
+    # get them.
+    values = []
+    folio = Folio()
+    for result in _results:
+        entry = {'Record ID'          : result['id'],
+                 'Operation success'  : result['success'],
+                 'Notes'              : result['notes'],
+                 'Effective location' : '',
+                 'Permanent location' : ''}
+        if result['record']:
+            rec = result['record']
+            if rec.kind == RecordKind.ITEM:
+                entry['Permanent location'] = location(rec.data['permanentLocationId'])
+                if 'effectiveLocationId' in rec.data:
+                    entry['Effective location'] = location(rec.data['effectiveLocationId'])
+        values.append(entry)
+    export_data(values, file_name)
 
 
 _HANDLERS = {

@@ -34,7 +34,7 @@ import threading
 from   foliage.base_tab import FoliageTab
 from   foliage.exceptions import *
 from   foliage.export import export_data
-from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind, Record
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, user_file
 from   foliage.ui import PROGRESS_BOX, PROGRESS_TEXT
@@ -267,26 +267,37 @@ def stop():
     stop_processbar()
 
 
-results = []
+_results = []
 
-def succeeded(id, msg, context = ''):
-    global results
+def clear_results():
+    global _results
+    _results = []
+
+
+def record_result(record_or_id, success, notes):
+    global _results
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    rec = record_or_id if isinstance(record_or_id, Record) else None
+    _results.append({'id': id, 'success': success, 'notes': notes, 'record': rec})
+
+
+def succeeded(record_or_id, msg, context = ''):
     comment = (' (' + context + ')') if context else ''
-    results.append({'id': id, 'success': True, 'notes': msg + comment})
+    record_result(record_or_id, True, msg + comment)
     tell_success(f'Success for **{id}**{comment}: ' + msg + '.')
 
 
-def failed(id, msg, context = ''):
-    global results
+def failed(record_or_id, msg, context = ''):
     comment = (' (' + context + ')') if context else ''
-    results.append({'id': id, 'success': False, 'notes': msg + comment})
+    record_result(record_or_id, False, msg + comment)
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     tell_failure(f'Failure for **{id}**{comment}: ' + msg + '.')
 
 
-def skipped(id, msg, context = ''):
-    global results
+def skipped(record_or_id, msg, context = ''):
     comment = (' (' + context + ')') if context else ''
-    results.append({'id': id, 'success': False, 'notes': msg + comment})
+    record_result(record_or_id, False, msg + comment)
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
 
 
@@ -297,8 +308,6 @@ _SUPPORTED_KINDS = [
 
 def do_change():
     log(f'do_change invoked')
-    global results
-    results = []
     identifiers = unique_identifiers(pin.textbox_ids)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
@@ -309,6 +318,7 @@ def do_change():
     if not confirm('Proceed with changes to records in FOLIO?', danger = True):
         log(f'user declined to proceed')
         return
+    clear_results()
     reset_interrupts()
     steps = 2*len(identifiers)         # We need 2 passes => 2x number of items
     folio = Folio()
@@ -381,7 +391,7 @@ def do_change():
         put_grid([[
             put_markdown(f'Finished changing {what}.').style('margin-top: 6px'),
             put_button('Export summary', outline = True,
-                       onclick = lambda: export_data(results, 'foliage-changes.csv'),
+                       onclick = lambda: do_export('foliage-changes.csv'),
                        ).style('text-align: right')
         ]]).style('margin: auto 17px auto 17px')
 
@@ -602,6 +612,17 @@ def save_changes(record, context = ''):
     succeeded(record.id, f'{field} {action} {record.kind} record', context)
     return True
 
+
+def do_export(file_name):
+    global _results
+    values = []
+    # WIP need to add more fields, but that requires more changes.
+    for result in _results:
+        entry = {'Record ID'          : result['id'],
+                 'Operation success'  : result['success'],
+                 'Notes'              : result['notes']}
+        values.append(entry)
+    export_data(values, file_name)
 
 
 Field = namedtuple('Field', 'type key delete_ok')
