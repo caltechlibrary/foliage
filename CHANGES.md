@@ -1,10 +1,14 @@
 # Change log for foliage
 
-## ★ Version 1.1.1 (tbd) ★
+## ★ Version 1.2.0 (2022-02-03) ★
 
 Changes:
-* The macOS app now starts much faster, and the installation `.dmg` file is slightly nicer.
+* Fixed: it was too easy to cause the initial credentials screen to disappear by accident, and on Windows, simply switching away from Foliage and switching back would cause it to disappear, leaving the user in a lurch.
+* Fixed: exporting from the _Look up records_ tab would export all searches done in a session, not just the most recent search. It now exports only the last search done.
+* The summary table format in _Look up records_ now shows the location names, not just location identifiers, for records that have locations (items and holdings).
+* The exported results from _Change records_ and _Delete records_ can now optionally include additional record fields beyond just the record identifiers.
 * The description of the checkboxes on the _Look up records_ tab are hopefully more clear.
+* The macOS app now starts faster, and the installation `.dmg` file is slightly nicer.
 * The _Other_ tab provides a link to the online help pages.
 
 
