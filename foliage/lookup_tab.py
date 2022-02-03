@@ -262,11 +262,9 @@ def location(location_data):
             return f'{location_data["name"]}  ({location_data["id"]})'
         else:
             return location_data["id"]
-    else:
-        if location_data in _location_map:
-            return f'{_location_map[location_data]}  ({location_data})'
-        else:
-            return '(unknown location)'
+    elif location_data and location_data in _location_map:
+        return f'{_location_map[location_data]}  ({location_data})'
+    return '(unknown location)'
 
 
 def print_record(record, identifier, index, show_index, show_raw):
@@ -314,15 +312,25 @@ def print_record(record, identifier, index, show_index, show_raw):
             call_number = record.data['classifications'][0]['classificationNumber']
         else:
             call_number = ''
-        put_table([
-            ['Title'                     , record.data['title']],
-            ['Call number'               , call_number],
-            [f'{record.kind.title()} id' , record.data['id']],
-            ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
-            ['HRID'                      , record.data['hrid']],
-            ['Created'                   , record.data['metadata']['createdDate']],
-            ['Updated'                   , record.data['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        if 'tags' in record.data:
+            put_table([
+                ['Title'                     , record.data['title']],
+                ['Call number'               , call_number],
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
+                ['HRID'                      , record.data['hrid']],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        else:
+            put_table([
+                ['Title'                     , record.data['title']],
+                ['Call number'               , call_number],
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['HRID'                      , record.data['hrid']],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.HOLDINGS:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         if 'effectiveLocationId' in record.data:
