@@ -23,7 +23,7 @@ from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
 from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column
+from   pywebio.output import put_column, put_scope, clear_scope
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
@@ -182,13 +182,14 @@ def do_find():
     reset_interrupts()
     with use_scope('output', clear = True):
         put_grid([[
-            put_markdown(f'_Certain lookups can take a long time. Please'
-                     + ' be patient._').style('color: DarkOrange; margin-bottom: 0')
-            ], [
+            put_scope('current_activity', [
+                put_markdown(f'_Certain lookups take a long time. Please be patient.'
+                             ).style('color: DarkOrange; margin-bottom: 0')]),
+        ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
             put_button('Stop', outline = True, color = 'danger',
-                       onclick = lambda: stop()).style('text-align: right')
-            ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
+                       onclick = lambda: stop()).style('text-align: right'),
+        ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         for count, id in enumerate(identifiers, start = 2):
             try:
                 # Figure out what kind of identifier we were given.
@@ -229,6 +230,7 @@ def do_find():
                 if not interrupted():
                     set_processbar('bar', count/steps)
         stop_processbar()
+        clear_scope('current_activity')
         if interrupted():
             tell_warning('**Stopped**.')
         else:
