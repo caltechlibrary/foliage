@@ -82,14 +82,16 @@ def export_data(data_list, filename):
         return
 
     # Assume all the items have the same structure and it is flat.
-    columns = [name.lower() for name in data_list[0].keys()]
+    columns = list(data_list[0].keys())
     # Try to find a good sort key, else default to 1st key found.
     if 'id' in columns:
         sort_key = 'id'
+    elif 'record id' in columns:
+        sort_key = 'Record ID'
     elif 'name' in columns:
         sort_key = 'name'
     else:
-        sort_key = data_list[0].keys()[0]
+        sort_key = list(data_list[0].keys())[0]
 
     # Write into an in-memory, file-like object & tell PyWebIO to download it.
     with StringIO() as tmp:
