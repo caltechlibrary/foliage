@@ -853,9 +853,12 @@ class Folio():
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
-                user_id = records[0].data['userId']
-                return self.related_records(user_id, IdKind.USER_ID, 'user',
-                                            use_inventory, open_loans_only)
+                if 'userId' in records[0].data:
+                    user_id = records[0].data['userId']
+                    return self.related_records(user_id, IdKind.USER_ID, 'user',
+                                                use_inventory, open_loans_only)
+                else:
+                    return []
             elif id_kind == IdKind.ITEM_HRID:
                 records = self.related_records(id, IdKind.ITEM_HRID, 'item',
                                                use_inventory, open_loans_only)
