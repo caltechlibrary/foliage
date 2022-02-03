@@ -148,6 +148,9 @@ dist-dirs:
 
 extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme)
 
+ABOUT.html: $(aboutfile)
+	mv $(aboutfile) ABOUT.html
+
 %.html: %.md
 	pandoc --metadata title="Foliage" --template=$(pagetmpl) -c $(pagecss) -o tmp.html $<
 	inliner -n < tmp.html > $@
