@@ -141,7 +141,8 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             {'label': 'Cancel', 'value': False, 'color': 'danger'},
         ], onclick = clk).style('float: right')
     ]
-    popup(title = 'FOLIO credentials', content = pins, size = 'medium')
+    popup(title = 'FOLIO credentials', content = pins, size = 'medium',
+          closable = False)
 
     event.wait()
     close_popup()
