@@ -217,6 +217,12 @@ textarea.form-control[readonly] {
 .modal-lg {
     max-width: 90%;
 }
+
+.disabled-button {
+    pointer-events: none;
+    color: #ccc;
+    border-color: #ccc;
+}
 '''
 
 PROGRESS_BOX = '''
@@ -315,6 +321,9 @@ def stop_processbar():
     # find the processbar via its id (which is set by PyWebIO) and remove the
     # Bootsrap class that controls the animation state.
     eval_js('''$("#webio-processbar-bar").removeClass("progress-bar-animated");''')
+    # In all the Foliage pages with process bars, there's also a stop button.
+    # When we stop the process bar, mute the button too.
+    eval_js('''$("button:contains('Stop')").addClass("disabled-button");''')
 
 
 def quit_app(ask_confirm = True):
