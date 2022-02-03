@@ -42,6 +42,7 @@ pagecss   := dev/one-page-docs/sakura-css/sakura.css
 # using this Makefile.
 aboutfile := README.html
 winreadme := dev/one-page-docs/read-me-first-windows/read-me-first.html
+macreadme := dev/one-page-docs/read-me-first-macos/read-me-first.html
 
 
 # Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
