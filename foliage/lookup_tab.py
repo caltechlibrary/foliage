@@ -215,7 +215,7 @@ def do_find():
                                                     pin.inventory_api, pin.open_loans)
                     _last_results[id] = records
                 if not records or len(records) == 0:
-                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} **{id}**')
+                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} **{id}**.')
                     continue
 
                 # Report the results & how we got them.
@@ -366,15 +366,28 @@ def print_record(record, identifier, index, show_index, show_raw):
             ['Updated'                   , record.data['metadata']['updatedDate']],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.LOAN:
-        put_table([
-            [f'{record.kind.title()} id' , record.data['id']],
-            ['User id'                   , record.data['userId']],
-            ['Item id'                   , record.data['itemId']],
-            ['Loan date'                 , record.data['loanDate']],
-            ['Due date'                  , record.data['dueDate']],
-            ['Created'                   , record.data['metadata']['createdDate']],
-            ['Updated'                   , record.data['metadata']['updatedDate']],
-        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        if 'userId' in record.data:
+            put_table([
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['Status',                     record.data['status']['name']],
+                ['User id'                   , record.data['userId']],
+                ['Item id'                   , record.data['itemId']],
+                ['Loan date'                 , record.data['loanDate']],
+                ['Due date'                  , record.data['dueDate']],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        else:
+            put_table([
+                [f'{record.kind.title()} id' , record.data['id']],
+                ['Status',                     record.data['status']['name']],
+                ['User id'                   , ''],
+                ['Item id'                   , record.data['itemId']],
+                ['Loan date'                 , record.data['loanDate']],
+                ['Due date'                  , record.data['dueDate']],
+                ['Created'                   , record.data['metadata']['createdDate']],
+                ['Updated'                   , record.data['metadata']['updatedDate']],
+            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
 
 def user_wants_reuse():
