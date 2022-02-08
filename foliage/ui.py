@@ -154,6 +154,10 @@ footer {
     padding-right: 6px;
 }
 
+table tbody tr {
+    border-bottom: 1px dotted #e0e0e0;
+}
+
 .alert p {
     margin-bottom: 0
 }
