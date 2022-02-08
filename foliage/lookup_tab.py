@@ -267,6 +267,20 @@ def location(location_data):
     return '(unknown location)'
 
 
+def notes(notes):
+    if isinstance(notes, str):
+        return notes
+    elif isinstance(notes, list):
+        if len(notes) == 0:
+            return ''
+        elif isinstance(notes[0], dict):
+            return '\n'.join(n['note'] for n in notes)
+        else:
+            return '\n'.join(str(note) for note in notes)
+    else:
+        return notes
+
+
 def print_record(record, identifier, index, show_index, show_raw):
     log(f'printing {record.kind} record {record.id}')
     if show_index:
@@ -287,7 +301,7 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Permanent location'        , location(record.data['permanentLocation'])],
                 ['Status'                    , record.data['status']['name']],
                 ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
-                ['Notes'                     , '\n'.join(record.data['notes'])],
+                ['Notes'                     , notes(record.data['notes'])],
                 ['HRID'                      , record.data['hrid']],
                 ['Created'                   , record.data['metadata']['createdDate']],
                 ['Updated'                   , record.data['metadata']['updatedDate']],
@@ -301,7 +315,7 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Effective location'        , location(record.data['effectiveLocationId'])],
                 ['Permanent location'        , location(record.data['permanentLocationId'])],
                 ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
-                ['Notes'                     , '\n'.join(record.data['notes'])],
+                ['Notes'                     , notes(record.data['notes'])],
                 ['HRID'                      , record.data['hrid']],
                 ['Created'                   , record.data['metadata']['createdDate']],
                 ['Updated'                   , record.data['metadata']['updatedDate']],
@@ -318,6 +332,7 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Call number'               , call_number],
                 [f'{record.kind.title()} id' , record.data['id']],
                 ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
+                ['Notes'                     , notes(record.data['notes'])],
                 ['HRID'                      , record.data['hrid']],
                 ['Created'                   , record.data['metadata']['createdDate']],
                 ['Updated'                   , record.data['metadata']['updatedDate']],
@@ -328,6 +343,7 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Call number'               , call_number],
                 [f'{record.kind.title()} id' , record.data['id']],
                 ['HRID'                      , record.data['hrid']],
+                ['Notes'                     , notes(record.data['notes'])],
                 ['Created'                   , record.data['metadata']['createdDate']],
                 ['Updated'                   , record.data['metadata']['updatedDate']],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
