@@ -1,5 +1,12 @@
 # Change log for foliage
 
+## ★ Version 1.2.1 (2022-02-08) ★
+
+Changes:
+* Fix bug in printing item summary with notes, in the _Look up records_ tab.
+* Print notes for instance records in the summary view in the _Look up records_ tab.
+
+
 ## ★ Version 1.2.0 (2022-02-03) ★
 
 Changes:
