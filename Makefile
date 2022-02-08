@@ -167,6 +167,11 @@ dmg: dist-dirs $(distdir)/$(appname)
 	awk 'BEGIN {RS="\n\n"; FS="\n"} \
 	    {for (i=1;i<=NF;i++) printf $$i " "; printf "\n\n"}' LICENSE \
 	     > $(distdir)/license.txt
+	# If you see an error like the following from create-dmg on macOS, it
+	# means ImageMagick failed because it can't find the dynamic library.
+	#    Error: write EPIPE
+	#    at WriteWrap.onWriteComplete [as oncomplete]
+	# To fix it, set DYLD_LIBRARY_PATH appropriately in your shell.
 	pushd $(distdir)
 	create-dmg --overwrite $(appname)
 	popd
