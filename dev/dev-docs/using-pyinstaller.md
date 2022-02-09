@@ -4,6 +4,12 @@ PyInstaller is a tool that bundles a Python application and all its dependencies
 
 What follows is an attempt at describing everything I know about using PyInstaller. I will use Foliage as the example because that application makes use of some newer and advanced PyInstaller features.
 
+
+## Preliminary notes
+
+I was unable to get this to work in Python 3.9.8 on Windows; I had to downgrade to Python 3.9.7.
+
+
 ## PyInstaller resources
 
 Here is where I look for information when I need it:
