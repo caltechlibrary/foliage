@@ -1080,7 +1080,7 @@ def unique_identifiers(text):
     '''Return a list of identifiers found in the text after some cleanup.'''
     lines = text.splitlines()
     ids = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
-    ids = [id.strip(r'''.'":''') for id in ids]
+    ids = [id.strip(r'''.'":?!/''') for id in ids]
     ids = [id for id in ids if not any(c in id for c in r'!@#$%^&*=\/')]
     ids = [id for id in ids if any(c.isnumeric() for c in id)]
     return unique(filter(None, ids))
