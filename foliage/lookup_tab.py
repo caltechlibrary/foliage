@@ -50,7 +50,7 @@ class LookupTab(FoliageTab):
         return {}
 
 
-# Tab body.
+# Tab layout.
 # .............................................................................
 
 def tab_contents():
@@ -107,12 +107,14 @@ def tab_contents():
 # Tab implementation.
 # .............................................................................
 
+_interrupted = False
 _last_textbox = ''
 _last_results = {}
 _last_kind = None
 _last_inventory_api = True
 _last_open_loans = True
 _location_map = None
+
 
 def init_location_map():
     global _location_map
@@ -147,10 +149,21 @@ def clear_tab():
 
 def stop():
     global _last_textbox
+    global _interrupted
     log(f'stopping')
-    interrupt()
+    _interrupted = True
     stop_processbar()
     _last_textbox = ''
+
+
+def reset():
+    # Stop any ongoing operations.
+    stop()
+    wait(0.5)
+    # Reset to state where we can run new operations.
+    global _interrupted
+    _interrupted = False
+    reset_interrupts()
 
 
 def load_file():
@@ -166,7 +179,9 @@ def do_find():
     global _last_inventory_api
     global _last_open_loans
     global _location_map
+    global _interrupted
     log(f'do_find invoked')
+    reset()
     # Normally we'd want to find out if they input any identifiers, but I want
     # to detect *any* change to the input box, so this is a lower-level test.
     if not pin.textbox_find.strip():
@@ -188,7 +203,6 @@ def do_find():
     kind_wanted = pin.select_kind
     steps = len(identifiers) + 1
     folio = Folio()
-    reset_interrupts()
     init_location_map()
     with use_scope('output', clear = True):
         put_grid([[
@@ -202,11 +216,13 @@ def do_find():
         ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         # The staff want to see location names, so we need to get the mapping.
         for count, id in enumerate(identifiers, start = 2):
+            if _interrupted:
+                break
             try:
                 # Figure out what kind of identifier we were given.
                 id_kind = folio.id_kind(id)
                 if id_kind is IdKind.UNKNOWN:
-                    tell_failure(f'Unrecognized identifier kind: **{id}**.')
+                    tell_failure(f'Unrecognized identifier: **{id}**.')
                     continue
                 if reuse_results:
                     records = _last_results.get(id)
@@ -230,7 +246,7 @@ def do_find():
                     print_record(record, id, index, show_index, pin.show_raw == 'json')
             except Interrupted as ex:
                 log('stopping due to interruption')
-                break
+                _interrupted = True
             except Exception as ex:
                 import traceback
                 log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
@@ -238,11 +254,11 @@ def do_find():
                 stop_processbar()
                 return
             finally:
-                if not interrupted():
+                if not _interrupted:
                     set_processbar('bar', count/steps)
         stop_processbar()
         clear_scope('current_activity')
-        if interrupted():
+        if _interrupted:
             tell_warning('**Stopped**.')
         else:
             summary = (f'Finished looking for {kind_wanted} records given '
@@ -255,8 +271,26 @@ def do_find():
             ]]).style('margin: 1.5em 17px auto 17px')
 
 
-def location(location_data):
+def field(record, field_name, subfield_name = None, list_joiner = ', '):
+    if field_name not in record.data:
+        return ''
+    if subfield_name:
+        if subfield_name not in record.data[field_name]:
+            return ''
+        value = record.data[field_name][subfield_name]
+    else:
+        value = record.data[field_name]
+    if isinstance(value, list) and list_joiner:
+        return list_joiner.join(str(x) for x in value)
+    else:
+        return str(value)
+
+
+def location(record, field_name):
     global _location_map
+    if field_name not in record.data:
+        return ''
+    location_data = record.data[field_name]
     if isinstance(location_data, dict):
         if 'name' in location_data:
             return f'{location_data["name"]}  ({location_data["id"]})'
@@ -267,7 +301,10 @@ def location(location_data):
     return '(unknown location)'
 
 
-def notes(notes):
+def notes(record, field_name):
+    if field_name not in record.data:
+        return ''
+    notes = record.data[field_name]
     if isinstance(notes, str):
         return notes
     elif isinstance(notes, list):
@@ -293,116 +330,116 @@ def print_record(record, identifier, index, show_index, show_raw):
         if 'title' in record.data:
             # Inventory record version.
             put_table([
-                ['Title'                     , record.data['title']],
-                ['Barcode'                   , record.data['barcode']],
-                ['Call number'               , record.data['callNumber']],
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['Effective location'        , location(record.data['effectiveLocation'])],
-                ['Permanent location'        , location(record.data['permanentLocation'])],
-                ['Status'                    , record.data['status']['name']],
-                ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
-                ['Notes'                     , notes(record.data['notes'])],
-                ['HRID'                      , record.data['hrid']],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                ['Title'                     , field(record, 'title')],
+                ['Barcode'                   , field(record, 'barcode')],
+                ['Call number'               , field(record, 'callNumber')],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['Effective location'        , location(record, 'effectiveLocation')],
+                ['Permanent location'        , location(record, 'permanentLocation')],
+                ['Status'                    , field(record, 'status', 'name')],
+                ['Tags'                      , field(record, 'tags', 'tagsList')],
+                ['Notes'                     , notes(record, 'notes')],
+                ['HRID'                      , field(record, 'hrid')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
         else:
             # Storage record version.
             put_table([
-                ['Barcode'                   , record.data['barcode']],
-                ['Call number'               , record.data['itemLevelCallNumber']],
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['Effective location'        , location(record.data['effectiveLocationId'])],
-                ['Permanent location'        , location(record.data['permanentLocationId'])],
-                ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
-                ['Notes'                     , notes(record.data['notes'])],
-                ['HRID'                      , record.data['hrid']],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                ['Barcode'                   , field(record, 'barcode')],
+                ['Call number'               , field(record, 'itemLevelCallNumber')],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['Effective location'        , location(record, 'effectiveLocationId')],
+                ['Permanent location'        , location(record, 'permanentLocationId')],
+                ['Tags'                      , field(record, 'tags', 'tagsList')],
+                ['Notes'                     , notes(record, 'notes')],
+                ['HRID'                      , field(record, 'hrid')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.INSTANCE:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
-        if record.data['classifications']:
+        if field(record, 'classifications'):
             call_number = record.data['classifications'][0]['classificationNumber']
         else:
             call_number = ''
         if 'tags' in record.data:
             put_table([
-                ['Title'                     , record.data['title']],
+                ['Title'                     , field(record, 'title')],
                 ['Call number'               , call_number],
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['Tags'                      , ', '.join(t for t in record.data['tags']['tagList'])],
-                ['Notes'                     , notes(record.data['notes'])],
-                ['HRID'                      , record.data['hrid']],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['Tags'                      , field(record, 'tags', 'tagsList')],
+                ['Notes'                     , notes(record, 'notes')],
+                ['HRID'                      , field(record, 'hrid')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
         else:
             put_table([
-                ['Title'                     , record.data['title']],
+                ['Title'                     , field(record, 'title')],
                 ['Call number'               , call_number],
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['HRID'                      , record.data['hrid']],
-                ['Notes'                     , notes(record.data['notes'])],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['HRID'                      , field(record, 'hrid')],
+                ['Notes'                     , notes(record, 'notes')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.HOLDINGS:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         if 'effectiveLocationId' in record.data:
             put_table([
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['HRID'                      , record.data['hrid']],
-                ['Holdings type id'          , record.data['holdingsTypeId']],
-                ['Instance id'               , record.data['instanceId']],
-                ['Effective location'        , location(record.data['effectiveLocationId'])],
-                ['Permanent location'        , location(record.data['permanentLocationId'])],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['HRID'                      , field(record, 'hrid')],
+                ['Holdings type id'          , field(record, 'holdingsTypeId')],
+                ['Instance id'               , field(record, 'instanceId')],
+                ['Effective location'        , location(record, 'effectiveLocationId')],
+                ['Permanent location'        , location(record, 'permanentLocationId')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
         else:
             put_table([
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['HRID'                      , record.data['hrid']],
-                ['Holdings type id'          , record.data['holdingsTypeId']],
-                ['Instance id'               , record.data['instanceId']],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['HRID'                      , field(record, 'hrid')],
+                ['Holdings type id'          , field(record, 'holdingsTypeId')],
+                ['Instance id'               , field(record, 'instanceId')],
                 ['Effective location'        , ''],
-                ['Permanent location'        , location(record.data['permanentLocationId'])],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                ['Permanent location'        , location(record, 'permanentLocationId')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.USER:
         # Caution: left-hand values contain nonbreaking spaces (invisible here).
         put_table([
-            ['Username'                  , record.data['username']],
-            ['Barcode'                   , record.data['barcode']],
-            [f'{record.kind.title()} id' , record.data['id']],
-            ['Patron group'              , record.data['patronGroup']],
-            ['Created'                   , record.data['metadata']['createdDate']],
-            ['Updated'                   , record.data['metadata']['updatedDate']],
+            ['Username'                  , field(record, 'username')],
+            ['Barcode'                   , field(record, 'barcode')],
+            [f'{record.kind.title()} id' , field(record, 'id')],
+            ['Patron group'              , field(record, 'patronGroup')],
+            ['Created'                   , field(record, 'metadata', 'createdDate')],
+            ['Updated'                   , field(record, 'metadata', 'updatedDate')],
         ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
     elif record.kind is RecordKind.LOAN:
         if 'userId' in record.data:
             put_table([
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['Status',                     record.data['status']['name']],
-                ['User id'                   , record.data['userId']],
-                ['Item id'                   , record.data['itemId']],
-                ['Loan date'                 , record.data['loanDate']],
-                ['Due date'                  , record.data['dueDate']],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['Status',                     field(record, 'status', 'name')],
+                ['User id'                   , field(record, 'userId')],
+                ['Item id'                   , field(record, 'itemId')],
+                ['Loan date'                 , field(record, 'loanDate')],
+                ['Due date'                  , field(record, 'dueDate')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
         else:
             put_table([
-                [f'{record.kind.title()} id' , record.data['id']],
-                ['Status',                     record.data['status']['name']],
+                [f'{record.kind.title()} id' , field(record, 'id')],
+                ['Status',                     field(record, 'status', 'name')],
                 ['User id'                   , ''],
-                ['Item id'                   , record.data['itemId']],
-                ['Loan date'                 , record.data['loanDate']],
-                ['Due date'                  , record.data['dueDate']],
-                ['Created'                   , record.data['metadata']['createdDate']],
-                ['Updated'                   , record.data['metadata']['updatedDate']],
+                ['Item id'                   , field(record, 'itemId')],
+                ['Loan date'                 , field(record, 'loanDate')],
+                ['Due date'                  , field(record, 'dueDate')],
+                ['Created'                   , field(record, 'metadata', 'createdDate')],
+                ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
 
