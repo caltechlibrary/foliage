@@ -109,6 +109,9 @@ def export_data(data_list, filename):
 
 def export_records_csv(records, kind):
     log(f'exporting {pluralized("record", records, True)} to CSV')
+    if len(records) == 0:
+        note_warn('List of records is empty.')
+
     # We have nested dictionaries, which can't be stored directly in CSV, so
     # first we have to flatten the dictionaries inside the list.
     records = [flattened(r.data) for r in records]
@@ -124,6 +127,11 @@ def export_records_csv(records, kind):
 
     # Sort the column names to move the name & id fields to the front.
     name_key = RecordKind.name_key(kind)
+    # FIXME storage records don't have the same fields as inventory records.
+    # RecordKind.name_key needs a way to make that distinction.
+    if name_key not in records[0]:
+        name_key = 'id'
+
     def name_id_key(column_name):
         return (column_name != name_key, column_name != 'id', column_name)
     columns = sorted(list(columns), key = lambda x: name_id_key(x))
@@ -141,6 +149,8 @@ def export_records_csv(records, kind):
 
 def export_records_json(records, kind):
     log(f'exporting {pluralized("record", records, True)} to JSON')
+    if len(records) == 0:
+        note_warn('List of records is empty.')
     records_json = [r.data for r in records]
     with StringIO() as tmp:
         json.dump(records_json, tmp)
