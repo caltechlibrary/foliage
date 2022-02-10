@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.2.3 (2022-02-10) ★
+
+This version fixes a bug in exporting storage (rather than inventory) records.
+
+
 ## ★ Version 1.2.2 (2022-02-10) ★
 
 This version fixes a bug in printing inventory records in summary form in the _Look up records_ tab.
