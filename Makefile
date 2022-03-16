@@ -146,7 +146,7 @@ dependencies:;
 dist-dirs:
 	-mkdir -p dist/macos dist/win
 
-extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme)
+extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme) ABOUT.html
 
 ABOUT.html: $(aboutfile)
 	mv $(aboutfile) ABOUT.html
@@ -161,6 +161,12 @@ pyinstaller $(distdir)/$(appname): | vars dependencies
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
 	# PyInstaller creates this but we don't use it.
 	-rm -rf $(distdir)/foliage
+
+codesign: pyinstaller
+	@$(if $(CODESIGN_IDENTITY),,$(error CODESIGN_IDENTITY is not set))
+	codesign -s $(CODESIGN_IDENTITY) \
+	     -v --deep --timestamp --entitlements entitlements.plist \
+	     -o runtime $(distdir)/$(appname)
 
 dmg: dist-dirs $(distdir)/$(appname)
 	# Unwrap the text file so it looks nicer in the installer's window.
