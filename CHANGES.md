@@ -1,5 +1,13 @@
 # Change log for foliage
 
+## ★ Version 1.2.4 (2022-04-01) ★
+
+Changes in this version:
+* If the FOLIO token is invalidated by EBSCO, then when Foliage starts up, the only option given to the user is to quit. If the user couldn't run the command-line version with `-K`, then they were unable to ever cause Foliage to regenerate the token. Fixed. The new code gives the user the option of editing the credentials and trying again.
+* On Windows, Excel files might not have been recognized because Foliage didn't consider enough candidate MIME types. Fixed.
+* Changed the Lookup tab to print the total number of records found (in addition to the number looked up).
+
+
 ## ★ Version 1.2.3 (2022-02-10) ★
 
 This version fixes a bug in exporting storage (rather than inventory) records.
