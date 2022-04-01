@@ -408,16 +408,8 @@ def foliage_page(widget):
         notify('No network -- cannot proceed.')
         quit_app(ask_confirm = False)
 
-    # Work through our options to get (or ask for) credentials.
-    if not credentials_complete(credentials_from_env()):
-        creds = credentials_from_user(initial_creds = credentials_from_env())
-        if not credentials_complete(creds):
-            notify('Unable to proceed without complete credentials. Quitting.')
-            quit_app(ask_confirm = False)
-        use_credentials(creds)
-    if not Folio().credentials_valid():
-        notify('Invalid FOLIO credentials. Quitting.')
-        quit_app(ask_confirm = False)
+    # Make sure we have valid FOLIO credentials.
+    check_credentials()
 
     # Create a single dict from all the separate pin_watchers dicts.
     watchers  = dict(ChainMap(*[tab.pin_watchers() for tab in _TABS]))
@@ -627,6 +619,32 @@ def warn_if_demo_mode():
             + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
     else:
         log('Demo mode not in effect')
+
+
+def check_credentials():
+    '''Check that the credentials we have are complete and valid.
+    If they are not, ask the user if they want to edit them.
+    '''
+    def edit_and_use_credentials():
+        creds = credentials_from_user(initial_creds = credentials_from_env())
+        if not credentials_complete(creds):
+            notify('Unable to proceed without complete credentials. Quitting.')
+            quit_app(ask_confirm = False)
+        use_credentials(creds)
+
+    if not credentials_complete(credentials_from_env()):
+        edit_and_use_credentials()
+    if not Folio().credentials_valid():
+        # FOLIO might have invalidated users' tokens.
+        if confirm('The FOLIO token may have expired, or else the given '
+                   + ' credentials are invalid. Click "OK" to review the '
+                   + ' credentials and try to regenerate the token, or click '
+                   + ' "Cancel" to quit Foliage now.'):
+            edit_and_use_credentials()
+        else:
+            notify('Invalid FOLIO credentials, or expired token.')
+            quit_app(ask_confirm = False)
+
 
 
 # Main entry point.
