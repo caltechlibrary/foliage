@@ -241,6 +241,11 @@ margin: 0;
 font-size: 90%;
 '''
 
+EXCEL_MIME_TYPES = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel'
+]
+
 
 # Exported functions
 # .............................................................................
@@ -370,8 +375,8 @@ def user_file(instructions):
     if result and result['filename'] != UPLOAD_CANCEL_MARKER:
         if result['mime_type'] in ['text/plain', 'text/csv']:
             return result['content'].decode()
-        elif result['mime_type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-            # It's an excel .xslx file.
+        elif result['mime_type'] in EXCEL_MIME_TYPES:
+            # It's an excel .xsl or .xslx file.
             import io
             from openpyxl import load_workbook
             content = io.BytesIO(result['content'])
