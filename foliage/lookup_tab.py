@@ -204,6 +204,7 @@ def do_find():
     steps = len(identifiers) + 1
     folio = Folio()
     init_location_map()
+    total_found = 0
     with use_scope('output', clear = True):
         put_grid([[
             put_scope('current_activity', [
@@ -244,6 +245,7 @@ def do_find():
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
                     print_record(record, id, index, show_index, pin.show_raw == 'json')
+                total_found += len(records)
             except Interrupted as ex:
                 log('stopping due to interruption')
                 _interrupted = True
@@ -261,8 +263,9 @@ def do_find():
         if _interrupted:
             tell_warning('**Stopped**.')
         else:
-            summary = (f'Finished looking for {kind_wanted} records given '
-                       + pluralized('unique identifier', identifiers, True))
+            summary = (f'Found {total_found} {kind_wanted} records by looking up '
+                       + pluralized('unique identifier', identifiers, True)
+                       + '.')
             put_grid([[
                 put_markdown(summary).style('margin-top: 6px'),
                 put_button('Export', outline = True,
