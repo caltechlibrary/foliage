@@ -40,7 +40,7 @@ pagetmpl  := dev/one-page-docs/pandoc-template/template.html5
 pagecss   := dev/one-page-docs/sakura-css/sakura.css
 # These next ones are for the Windows installer, but I have to create them
 # using this Makefile.
-aboutfile := README.html
+aboutfile := ABOUT.html
 winreadme := dev/one-page-docs/read-me-first-windows/read-me-first.html
 macreadme := dev/one-page-docs/read-me-first-macos/read-me-first.html
 
@@ -148,8 +148,8 @@ dist-dirs:
 
 extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme) ABOUT.html
 
-ABOUT.html: $(aboutfile)
-	mv $(aboutfile) ABOUT.html
+$(aboutfile): README.html
+	mv README.html ABOUT.html
 
 %.html: %.md
 	pandoc --metadata title="Foliage" --template=$(pagetmpl) -c $(pagecss) -o tmp.html $<
@@ -287,7 +287,7 @@ clean: clean-dist clean-build clean-release clean-other
 
 really-clean: clean really-clean-dist really-clean-build
 
-completely-clean: really-clean
+completely-clean: really-clean clean-other
 	rm -rf build dist
 
 clean-dist: vars
@@ -313,7 +313,8 @@ clean-other:;
 
 .PHONY: release release-on-github update-init update-meta update-citation \
 	print-instructions packages clean test-pypi pypi extra-files dmg \
-	pyinstaller
+	pyinstaller clean clean-dist clean-build clean-release clean-other \
+	really-clean really-clean-dist really-clean-build completely-clean
 
 .SILENT: clean clean-dist clean-build clean-release clean-other really-clean \
 	really-clean-dist really-clean-build completely-clean
