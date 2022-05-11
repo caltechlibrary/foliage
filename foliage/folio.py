@@ -61,6 +61,9 @@ from   foliage.exceptions import *
 # Internal constants.
 # .............................................................................
 
+# Accession number prefix for this site.
+_AN_PREFIX = 'cit.oai.folio.org.fs00001057'
+
 # Number of times we retry an api call that return an HTTP error.
 _MAX_RETRY = 3
 
@@ -472,7 +475,7 @@ class Folio():
         elif id.startswith('ho') and id[2].isdigit():
             log(f'recognized {id} as an holdings hrid')
             id_kind = IdKind.HOLDINGS_HRID
-        elif id.startswith('clc') and '.' in id:
+        elif id.startswith(_AN_PREFIX):
             log(f'recognized {id} as an accession number')
             id_kind = IdKind.ACCESSION
         elif id.count('-') > 2:
@@ -1070,9 +1073,8 @@ class Folio():
 # Misc. utilities
 # .............................................................................
 
-def instance_id_from_accession(an):
-    start = an.find('.')
-    id_part = an[start + 1:]
+def instance_id_from_accession(accession_number):
+    id_part = accession_number[len(_AN_PREFIX) + 1:]
     return id_part.replace('.', '-')
 
 
