@@ -23,7 +23,7 @@ from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
 from   pywebio.output import put_success, put_info, put_table, put_grid, span
 from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
 from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column, put_scope, clear_scope
+from   pywebio.output import put_column, put_scope, clear_scope, get_scope
 from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
 from   pywebio.session import run_js, eval_js
@@ -108,12 +108,19 @@ def tab_contents():
 # .............................................................................
 
 _interrupted = False
+_running = False
 _last_textbox = ''
 _last_results = {}
 _last_kind = None
 _last_inventory_api = True
 _last_open_loans = True
 _location_map = None
+
+
+def load_file():
+    log(f'user requesting file upload')
+    if (contents := user_file('Upload a file containing identifiers')):
+        pin.textbox_find = contents
 
 
 def init_location_map():
@@ -129,10 +136,12 @@ def inputs_are_unchanged():
     global _last_kind
     global _last_inventory_api
     global _last_open_loans
-    return (pin.textbox_find == _last_textbox
-            and pin.select_kind == _last_kind
-            and pin.inventory_api == _last_inventory_api
-            and pin.open_loans == _last_open_loans)
+    unchanged = (pin.textbox_find == _last_textbox
+                 and pin.select_kind == _last_kind
+                 and pin.inventory_api == _last_inventory_api
+                 and pin.open_loans == _last_open_loans)
+    log(f'field values are considered {"unchanged" if unchanged else "changed"}')
+    return unchanged
 
 
 def clear_tab():
@@ -148,29 +157,61 @@ def clear_tab():
 
 
 def stop():
-    global _last_textbox
+    '''Stop an ongoing lookup by setting the _interrupted flag.'''
     global _interrupted
+    global _last_textbox
     log(f'stopping')
     _interrupted = True
-    stop_processbar()
     _last_textbox = ''
+    stop_processbar()
+    interrupt()
+    with use_scope('output'):
+        tell_warning('**Stopping** ...')
 
 
 def reset():
-    # Stop any ongoing operations.
-    stop()
-    wait(0.5)
     # Reset to state where we can run new operations.
     global _interrupted
     _interrupted = False
     reset_interrupts()
 
 
-def load_file():
-    log(f'user requesting file upload')
-    if (contents := user_file('Upload a file containing identifiers')):
-        pin.textbox_find = contents
+def enable_lookup_button(state):
+    '''Enable the "look up records" button if True, disable if False.'''
+    action = 'removeClass' if state else 'addClass'
+    eval_js(f'''$("button:contains('Look up records')").{action}("disabled-button");''')
 
+
+def wait_if_running():
+    '''Check if the run state is running; if it is, wait until it changes.'''
+    # The _running variable is set by do_find() when it's finished, and it's
+    # set even if it gets interrupted. This is what we cue from.
+    global _running
+    if not _running:
+        return
+    enable_lookup_button(False)
+    stop()
+    # Wait in case an ongoing lookup is running, but don't wait forever.
+    wait_count = 10
+    while _running and wait_count > 0:
+        # If the user clicks multiple times rapidly, the exception raised for
+        # interrupts starts to cascade. Wrap with a try-except to avoid this.
+        try:
+            wait(1)
+            wait_count -= 1
+        except Interrupted:
+            continue
+    enable_lookup_button(True)
+
+
+# Summary of the basic flow of control:
+#
+# User clicks "look up records", thus invoking do_find().
+# We show progress bar & stop button while lookup is running.
+# Possible scenarios:
+#   1) process finishes normally
+#   2) user clicks stop button
+#   3) user clicks "look up records" button while lookup is running
 
 def do_find():
     global _last_results
@@ -180,7 +221,9 @@ def do_find():
     global _last_open_loans
     global _location_map
     global _interrupted
-    log(f'do_find invoked')
+    global _running
+    log('do_find invoked')
+    wait_if_running()
     reset()
     # Normally we'd want to find out if they input any identifiers, but I want
     # to detect *any* change to the input box, so this is a lower-level test.
@@ -216,6 +259,7 @@ def do_find():
                        onclick = lambda: stop()).style('text-align: right'),
         ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         # The staff want to see location names, so we need to get the mapping.
+        _running = True
         for count, id in enumerate(identifiers, start = 2):
             if _interrupted:
                 break
@@ -272,6 +316,7 @@ def do_find():
                            onclick = lambda: do_export(_last_results, kind_wanted),
                            ).style('text-align: right')
             ]]).style('margin: 1.5em 17px auto 17px')
+        _running = False
 
 
 def field(record, field_name, subfield_name = None, list_joiner = ', '):
