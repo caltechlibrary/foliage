@@ -1,5 +1,13 @@
 # Change log for foliage
 
+## ★ Version 1.2.5 (2022-05-11) ★
+
+Changes in this version:
+* Use a fork of PyWebIO 1.4.0 with just the changes I need to fix a couple of limitations in the framework. Foliage's `requirements.txt` file references the fork in GitHub, so that installation of Foliage will get that version instead of the official PyWebIO version from PyPI.
+* Update the (internal) constant used to recognize accession numbers.
+* Fix a UI bug in the _Look up records_ tab, wherein clicking the _Look up records_ button while it was already running could result in multiple output streams and confusing output.
+
+
 ## ★ Version 1.2.4 (2022-04-01) ★
 
 Changes in this version:
