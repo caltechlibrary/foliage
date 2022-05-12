@@ -274,7 +274,7 @@ packages: vars
 # https://packaging.python.org/en/latest/specifications/pypirc/
 
 test-pypi: packages
-	python3 -m twine upload --repository testpypi $(distdir)/$(name)-$(version)*.{whl,gz}
+	python3 -m twine upload --verbose --repository testpypi $(distdir)/$(name)-$(version)*.{whl,gz}
 
 pypi: packages
 	python3 -m twine upload $(distdir)/$(name)-$(version)*.{gz,whl}
