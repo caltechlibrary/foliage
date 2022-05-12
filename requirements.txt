@@ -26,4 +26,4 @@ validators      == 0.18.2
 wand            == 0.6.7
 
 # This is a fork of PyWebIo with a couple of minor but crucial modifications.
-git+https://github.com/mhucka/PyWebIO.git@2af53fc
+pywebio @ git+https://github.com/mhucka/PyWebIO.git@2af53fc
