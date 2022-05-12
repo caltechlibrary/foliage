@@ -12,7 +12,7 @@ repository-code: "https://github.com/caltechlibrary/foliage"
 title: "Foliage: a tool to do bulk changes in FOLIO using the OKAPI API"
 date-released: 2022-05-11
 version: "1.2.6"
-doi: 10.22002/20171
+doi: 10.22002/20172
 keywords: 
   - FOLIO
   - batch operations
