@@ -29,7 +29,7 @@ Foliage (_**Foli**o ch**a**n**g**e **E**ditor_) is a desktop computer applicatio
 
 Although Foliage is a desktop application and not a web service, it uses a web page as its user interface &ndash; it opens a page in a browser on the user's computer, letting the user interact with the program through the familiar elements of a web page. This lets Foliage present an identical user interface no matter whether it is running on Window, macOS, or Linux.
 
-<p align="center"><img width="80%" src=".graphics/status-warning.svg"></p>
+<p align="center"><img width="80%" src="https://github.com/caltechlibrary/foliage/raw/main/.graphics/status-warning.svg"></p>
 
 
 ## Installation
