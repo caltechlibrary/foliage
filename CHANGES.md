@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.2.6 (2022-05-11) ★
+
+A late-breaking discovery forced another release. It turns out that PyPI will not accept a package that uses a `git+https://` package dependency, which means Foliage can't be uploaded as it was. So, this release changes the `requirements.txt` file again, changes the installation process, and reduces the installation options.
+
+
 ## ★ Version 1.2.5 (2022-05-11) ★
 
 Changes in this version:
