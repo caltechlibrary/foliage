@@ -5,7 +5,7 @@ Foliage is the FOLIo chAnGe Editor, a tool to do bulk changes and other operatio
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg?style=flat-square)](https://choosealicense.com/licenses/bsd-3-clause)
 [![Python](https://img.shields.io/badge/Python-3.8+-brightgreen.svg?style=flat-square)](https://www.python.org/downloads/release/python-380/)
 [![Latest release](https://img.shields.io/github/v/release/caltechlibrary/foliage.svg?style=flat-square&color=b44e88)](https://github.com/caltechlibrary/foliage/releases)
-[![DOI](https://img.shields.io/badge/dynamic/json.svg?label=DOI&style=flat-square&color=lightgray&query=$.metadata.doi&uri=https://data.caltech.edu/api/record/20171)](https://data.caltech.edu/records/20171)
+[![DOI](https://img.shields.io/badge/dynamic/json.svg?label=DOI&style=flat-square&color=lightgray&query=$.metadata.doi&uri=https://data.caltech.edu/api/record/20172)](https://data.caltech.edu/records/20172)
 
 
 ## Table of contents
