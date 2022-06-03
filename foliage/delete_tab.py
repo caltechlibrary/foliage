@@ -131,6 +131,12 @@ def skipped(record_or_id, msg, why = ''):
     tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
 
 
+def flagged(record_or_id, msg, why = ''):
+    comment = (' (' + why + ')') if why else ''
+    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_warning(f'Note about **{id}**{comment}: ' + msg + '.')
+
+
 def do_delete():
     log(f'do_delete invoked')
     identifiers = unique_identifiers(pin.textbox_delete)
@@ -260,25 +266,30 @@ def delete_instance(instance, for_id = None):
             return False
 
     # Next, get the matched id from source storage & delete the instance there.
-    def response_converter(response):
+    def srs_response_converter(response):
         if not response or not response.text:
             log('no response received from FOLIO')
+            return None
+        if response.status_code == 404:
+            # Assume this is a case of an instance lacking a Marc record.
+            log('No SRS record found')
             return None
         return json.loads(response.text)
 
     folio = Folio()
     srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
-    data_json = folio.request(srsget, converter = response_converter)
+    data_json = folio.request(srsget, converter = srs_response_converter)
     if not data_json:
-        failed(instance, 'unable to retrieve instance data from FOLIO SRS')
-        return
+        flagged(instance, ("FOLIO SRS lacks a corresponding record, therefore"
+                           " only the instance record will be deleted"))
     elif 'matchedId' not in data_json:
         failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
-    srs_id = data_json["matchedId"]
-    log(f'SRS id for {instance.id} is {srs_id}')
-    srsdel = f'/source-storage/records/{srs_id}'
-    folio.request(srsdel)
+    else:
+        srs_id = data_json["matchedId"]
+        log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
+        srsdel = f'/source-storage/records/{srs_id}'
+        folio.request(srsdel)
 
     # If we didn't get an exception, finally delete the instance from inventory.
     return delete(instance, for_id)
