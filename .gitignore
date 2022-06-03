@@ -108,3 +108,6 @@ dev/installers/windows/version.py
 dev/installers/windows/foliage_innosetup_script.iss
 dev/installers/macos/READ THIS PLEASE.html
 tests/settings.ini
+*.tmp
+dev/one-page-docs/read-me-first-macos/read-me-first.html
+dev/one-page-docs/read-me-first-windows/read-me-first.html
