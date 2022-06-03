@@ -178,9 +178,10 @@ dmg: dist-dirs $(distdir)/$(appname)
 	#    Error: write EPIPE
 	#    at WriteWrap.onWriteComplete [as oncomplete]
 	# To fix it, set DYLD_LIBRARY_PATH appropriately in your shell.
-	pushd $(distdir)
+	origdir=$(CURDIR)
+	cd $(distdir)
 	create-dmg --overwrite $(appname)
-	popd
+	cd $(origdir)
 	-rm -f $(distdir)/license.txt
 
 
