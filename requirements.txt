@@ -8,7 +8,7 @@
 
 appdirs         == 1.4.4
 boltons         == 21.0.0
-commonpy        == 1.9.1
+commonpy        == 1.9.4
 fastnumbers     == 3.1.0
 keyring         == 23.2.1
 openpyxl        == 3.0.7
