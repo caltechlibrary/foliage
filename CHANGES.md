@@ -1,5 +1,12 @@
 # Change log for foliage
 
+## ★ Version 1.2.7 (2022-06-03) ★
+
+Changes in this version:
+* Fixes an error deleting instance records that didn't have a corresponding SRS record. The new approach just ignores a missing SRS record and proceeds with deletions in the FOLIO storage and inventory systems.
+* Now accepts Caltech user id's with or without the leading `000`. Previously, unless a UID had the the form `0001234567`, Foliage would fail to find records. Now it tries a second time after adding leading 0's.
+
+
 ## ★ Version 1.2.6 (2022-05-11) ★
 
 A late-breaking discovery forced another release. It turns out that PyPI will not accept a package that uses a `git+https://` package dependency, which means Foliage can't be uploaded as it was. So, this release changes the `requirements.txt` file again, changes the installation process, and reduces the installation options.
