@@ -502,6 +502,9 @@ class Folio():
             # Most hrid's will follow the pattern above, so try other cases 1st.
             folio_searches = [
                 ('/users?query=barcode=',                   IdKind.USER_BARCODE),
+                # Caltech ID's are same as user barcodes with a leading 000.
+                # Let's try to help people who type in a CITUID without the 0's.
+                ('/users?query=barcode=000',                IdKind.USER_BARCODE),
                 ('/instance-storage/instances?query=hrid=', IdKind.INSTANCE_HRID),
                 ('/item-storage/items?query=hrid=',         IdKind.ITEM_HRID),
                 ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
@@ -846,10 +849,10 @@ class Folio():
 
         elif requested == RecordKind.USER:
             if id_kind == IdKind.USER_ID:
-                endpoint = f'/users/{id}'
+                endpoint = f'/users/{id.zfill(10)}'
                 data_extractor = partial(record_list, RecordKind.USER, None)
             elif id_kind == IdKind.USER_BARCODE:
-                endpoint = f'/users?query=barcode={id}'
+                endpoint = f'/users?query=barcode={id.zfill(10)}'
                 data_extractor = partial(record_list, RecordKind.USER, 'users')
             elif id_kind == IdKind.ITEM_ID:
                 records = self.related_records(id, IdKind.ITEM_ID, 'loan',
