@@ -502,12 +502,12 @@ class Folio():
             # Most hrid's will follow the pattern above, so try other cases 1st.
             folio_searches = [
                 ('/users?query=barcode=',                   IdKind.USER_BARCODE),
-                ('/instance-storage/instances?query=hrid=', IdKind.INSTANCE_HRID),
-                ('/item-storage/items?query=hrid=',         IdKind.ITEM_HRID),
-                ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
                 # Caltech ID's are same as user barcodes with a leading 000.
                 # Let's try to help people who type in a CITUID without the 0's.
                 ('/users?query=barcode=000',                IdKind.USER_BARCODE),
+                ('/instance-storage/instances?query=hrid=', IdKind.INSTANCE_HRID),
+                ('/item-storage/items?query=hrid=',         IdKind.ITEM_HRID),
+                ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
             ]
             for query, kind in folio_searches:
                 if (response := self.request(f'{query}{id}&limit=0')):
