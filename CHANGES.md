@@ -1,5 +1,11 @@
 # Change log for foliage
 
+## ★ Version 1.2.8 (2022-06-10) ★
+
+Changes in this version:
+* Fix a bug reported by Donna W. on 2022-06-09, in which it would incorrectly report all loans on the instance associated with a given holdings record, instead of only considering the items attached to the given holdings record.
+
+
 ## ★ Version 1.2.7 (2022-06-03) ★
 
 Changes in this version:
