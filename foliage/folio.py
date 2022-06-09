@@ -801,7 +801,8 @@ class Folio():
                     loans = [ln for ln in loans if ln.data['status']['name'] == 'Open']
                 return loans
             elif id_kind in [IdKind.INSTANCE_HRID, IdKind.ACCESSION]:
-                # Get the instance record & do this again with the instance id.
+                # Get the instance record & do this again with the instance id,
+                # because we solved that case in the code above.
                 records = self.related_records(id, id_kind, 'instance',
                                                use_inventory, open_loans_only)
                 if not records:
@@ -810,13 +811,15 @@ class Folio():
                 return self.related_records(instance_id, IdKind.INSTANCE_ID, 'loan',
                                             use_inventory, open_loans_only)
             elif id_kind in [IdKind.HOLDINGS_ID, IdKind.HOLDINGS_HRID]:
-                holdings = self.related_records(id, id_kind, 'holdings',
-                                                use_inventory, open_loans_only)
-                if not holdings:
-                    return []
-                instance_id = holdings[0].data['instanceId']
-                return self.related_records(instance_id, IdKind.INSTANCE_ID, 'loan',
-                                            use_inventory, open_loans_only)
+                # Can't go straight from holdings records to loans. Get items
+                # under this holdings record, then get loans on those items.
+                items = self.related_records(id, id_kind, 'item',
+                                             use_inventory, open_loans_only)
+                loans = []
+                for item in items:
+                    loans += self.related_records(item.id, IdKind.ITEM_ID, 'loan',
+                                                  use_inventory, open_loans_only)
+                return loans
             else:
                 raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
 
