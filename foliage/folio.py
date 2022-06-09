@@ -555,7 +555,7 @@ class Folio():
         associated with "id".
         '''
         use_inv = 'using inventory API' if use_inventory else ''
-        log(f'getting {requested} record(s) for {id_kind} id {id} {use_inv}')
+        log(f'getting {requested} record(s) for {id_kind} {id} {use_inv}')
 
         def record_list(kind, key, response):
             if not response or not response.text or response.status_code == 404:
@@ -778,19 +778,9 @@ class Folio():
                 if open_loans_only:
                     loans = [ln for ln in loans if ln.data['status']['name'] == 'Open']
                 return loans
-            elif id_kind == IdKind.ITEM_BARCODE:
-                # Can't seem to use barcodes directly in loan-storage.
-                log(f'need to find item id for item barcode {id}')
-                records = self.related_records(id, IdKind.ITEM_BARCODE, 'item',
-                                               use_inventory, open_loans_only)
-                if not records:
-                    return []
-                item_id = records[0].id
-                return self.related_records(item_id, IdKind.ITEM_ID, 'loan',
-                                            use_inventory, open_loans_only)
-            elif id_kind == IdKind.ITEM_HRID:
-                log(f'need to find item id for item hrid {id}')
-                records = self.related_records(id, IdKind.ITEM_HRID, 'item',
+            elif id_kind in [IdKind.ITEM_BARCODE, IdKind.ITEM_HRID]:
+                log(f'need to find item id for {id_kind} {id}')
+                records = self.related_records(id, id_kind, 'item',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -810,34 +800,17 @@ class Folio():
                 if open_loans_only:
                     loans = [ln for ln in loans if ln.data['status']['name'] == 'Open']
                 return loans
-            elif id_kind == IdKind.INSTANCE_HRID:
+            elif id_kind in [IdKind.INSTANCE_HRID, IdKind.ACCESSION]:
                 # Get the instance record & do this again with the instance id.
-                records = self.related_records(id, IdKind.INSTANCE_HRID, 'instance',
+                records = self.related_records(id, id_kind, 'instance',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
                 instance_id = records[0].id
                 return self.related_records(instance_id, IdKind.INSTANCE_ID, 'loan',
                                             use_inventory, open_loans_only)
-            elif id_kind == IdKind.ACCESSION:
-                # Get the instance record & do this again with the instance id.
-                records = self.related_records(id, IdKind.ACCESSION, 'instance',
-                                               use_inventory, open_loans_only)
-                if not records:
-                    return []
-                instance_id = records[0].id
-                return self.related_records(instance_id, IdKind.INSTANCE_ID, 'loan',
-                                            use_inventory, open_loans_only)
-            elif id_kind == IdKind.HOLDINGS_ID:
-                holdings = self.related_records(id, IdKind.HOLDINGS_ID, 'holdings',
-                                                use_inventory, open_loans_only)
-                if not holdings:
-                    return []
-                instance_id = holdings[0].data['instanceId']
-                return self.related_records(instance_id, IdKind.INSTANCE_ID, 'loan',
-                                            use_inventory, open_loans_only)
-            elif id_kind == IdKind.HOLDINGS_HRID:
-                holdings = self.related_records(id, IdKind.HOLDINGS_HRID, 'holdings',
+            elif id_kind in [IdKind.HOLDINGS_ID, IdKind.HOLDINGS_HRID]:
+                holdings = self.related_records(id, id_kind, 'holdings',
                                                 use_inventory, open_loans_only)
                 if not holdings:
                     return []
