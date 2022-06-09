@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -54,6 +54,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
@@ -366,21 +367,21 @@
           <article class="md-content__inner md-typeset" role="main">
             
   <section id="the-foliage-user-interface">
-<h1 id="foliage-interface--page-root">The Foliage user interface<a class="headerlink" href="#foliage-interface--page-root" title="Permalink to this headline">¶</a></h1>
+<h1 id="foliage-interface--page-root">The Foliage user interface<a class="headerlink" href="#foliage-interface--page-root" title="Permalink to this heading">¶</a></h1>
 <p>When you start Foliage normally (or after it shows the one-time credentials screen, described below), your browser should present a page that looks like the one below:</p>
 <figure>
 <img src="_static/media/main-page.png"/>
 </figure>
 <p>The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) <em>Look up records</em> (the first one shown when Foliage starts up), (2) <em>Change records</em>, (3) <em>Delete records</em>, (4) <em>List UUIDs</em>, and (5) <em>Other</em>. They are described in detail below.</p>
 <section id="tab-look-up-records">
-<h2 id="tab-look-up-records">Tab: look up records<a class="headerlink" href="#tab-look-up-records" title="Permalink to this headline">¶</a></h2>
+<h2 id="tab-look-up-records">Tab: look up records<a class="headerlink" href="#tab-look-up-records" title="Permalink to this heading">¶</a></h2>
 <p>The first tab – the one visible when you start up Foliage – provides a facility for looking up any item, instance, holdings, loan, or user record using any of the common identifiers by which the records can be addressed.  Depending on the type of record, this may be a barcode, a unique id (i.e., a string that looks like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>), an “hrid” (human readable identifier), or an accession number. You can either type or paste the numbers into the text box on the page, or use the <span class="button color-outline-primary">Upload</span> button to upload a text file containing such identifiers. Identifiers can be separated by newlines, spaces, commas, colons, or semicolons; Foliage will also strip any quote characters from the input. Lastly, identifiers can be mixed: you can enter barcodes for some items and hrid’s for others all at once, and Foliage won’t care.</p>
 <p>The screenshot below shows an example of looking up an item by its barcode:</p>
 <figure>
 <img src="_static/media/lookup-barcode.png"/>
 </figure>
 <section id="options-for-controlling-lookups">
-<h3 id="options-for-controlling-lookups">Options for controlling lookups<a class="headerlink" href="#options-for-controlling-lookups" title="Permalink to this headline">¶</a></h3>
+<h3 id="options-for-controlling-lookups">Options for controlling lookups<a class="headerlink" href="#options-for-controlling-lookups" title="Permalink to this heading">¶</a></h3>
 <p>Under the input text box, there are four control elements that influence what Foliage does.</p>
 <ul class="simple">
 <li><p><em>Kind of record to retrieve</em>: The five radio boxes allow you to select the kind of record to retrieve based on the identifiers given. One of Foliage’s powerful features is that it lets you use one kind of record identifier to search for <em>other</em> kinds of records. For example, you can supply item barcodes and select <em>Instance</em> as the type of record to retrieve, and Foliage will retrieve the instance records for the given identifiers. Or you can select <em>Loan</em> as the type to retrieve and find out if there are any loans out for the given items. To take another example, you could provide a user identifier, select <em>Item</em> as the kind of record to retrieve, and get back a list of the items on loan to the user.</p></li>
@@ -390,12 +391,12 @@
 </ul>
 </section>
 <section id="saving-the-results">
-<h3 id="saving-the-results">Saving the results<a class="headerlink" href="#saving-the-results" title="Permalink to this headline">¶</a></h3>
+<h3 id="saving-the-results">Saving the results<a class="headerlink" href="#saving-the-results" title="Permalink to this heading">¶</a></h3>
 <p>After performing the search and displaying the results, Foliage includes a button named <span class="button color-outline-primary">Export</span> at the bottom of the page. This allows you to export a list of all the records you looked up as a file in <span class="xref myst">CSV</span> or <span class="xref myst">JSON</span> format.</p>
 </section>
 </section>
 <section id="tab-change-records">
-<h2 id="tab-change-records">Tab: change records<a class="headerlink" href="#tab-change-records" title="Permalink to this headline">¶</a></h2>
+<h2 id="tab-change-records">Tab: change records<a class="headerlink" href="#tab-change-records" title="Permalink to this heading">¶</a></h2>
 <p>The <em>Change records</em> tab provides functionality for changing the values of fields in records. You can use it to add, change, or delete values. It currently works only for item and holdings records, and only for the <em>Temporary location</em> and <em>Permanent location</em> fields, though this may be expanded in the future.</p>
 <figure>
 <img src="_static/media/change-tab.png"/>
@@ -421,17 +422,17 @@
 </figure>
 <p>Once the required values have been selected for the relevant fields, click the <span class="button color-danger">Change records</span> button to proceed with the changes.</p>
 <section id="field-matching-and-change-operations">
-<h3 id="field-matching-and-change-operations">Field matching and change operations<a class="headerlink" href="#field-matching-and-change-operations" title="Permalink to this headline">¶</a></h3>
+<h3 id="field-matching-and-change-operations">Field matching and change operations<a class="headerlink" href="#field-matching-and-change-operations" title="Permalink to this heading">¶</a></h3>
 <p>The selectors in the <em>Change records</em> interface are designed to ask only for the values actually needed for a given operation. The values requested are required. For example, if you select <em>Delete value</em> as the action, the Foliage interface will require you to select a current field value and will not allow you to leave it blank , and it will not let you specify a new field value. Foliage is also strict about matching field values when it performs the changes. For example, it will not change a record’s field value to a new value unless it matches the value expected to be the current value.</p>
 <p>These strict requirements are mainly motivated by the goal of reducing the chance of accidental unintended changes when long lists of records are involved, but they also have some benefits for how users can perform changes. For example, it’s safe to give Foliage a list of data that may or may not have specific field values, because it will skip those that don’t match. For example, suppose books from two different locations A and B are being moved to location C. You can load a list of the book barcodes, select A as the current location field value and C as the new field value, click the <span class="button color-danger">Change records</span> button to make the changes, then (without doing anything else) change the selection of the current field value to B in the user interface, and click <span class="button color-danger">Change records</span> button a second time. Since Foliage will only change matching records, the first run will change only those records that have current location A and the second run will change only those records that have current location B. Together, the two runs will have performed movers A → C and B → C.</p>
 </section>
 <section id="saving-a-log-of-the-results">
-<h3 id="saving-a-log-of-the-results">Saving a log of the results<a class="headerlink" href="#saving-a-log-of-the-results" title="Permalink to this headline">¶</a></h3>
+<h3 id="saving-a-log-of-the-results">Saving a log of the results<a class="headerlink" href="#saving-a-log-of-the-results" title="Permalink to this heading">¶</a></h3>
 <p>After performing the changes and printing a summary of the results, Foliage will include a button named <span class="button color-outline-primary">Export</span> at the bottom. This allows you to export a list of all the changes as a CSV file.</p>
 </section>
 </section>
 <section id="tab-delete-records">
-<h2 id="tab-delete-records">Tab: delete records<a class="headerlink" href="#tab-delete-records" title="Permalink to this headline">¶</a></h2>
+<h2 id="tab-delete-records">Tab: delete records<a class="headerlink" href="#tab-delete-records" title="Permalink to this heading">¶</a></h2>
 <p>You may already have guessed what the <em>Delete records</em> tab in Foliage allows you to do. The current version of Foliage allows the deletion of item, holdings, and instance records. Foliage is smart enough to perform deletions recursively if necessary: deleting a holdings record deletes all the associated items, and deleting an instance record deletes all the associated holdings and items.</p>
 <figure>
 <img src="_static/media/delete-tab.png"/>
@@ -443,7 +444,7 @@
 </div>
 </section>
 <section id="tab-list-uuids">
-<h2 id="tab-list-uuids">Tab: list UUIDs<a class="headerlink" href="#tab-list-uuids" title="Permalink to this headline">¶</a></h2>
+<h2 id="tab-list-uuids">Tab: list UUIDs<a class="headerlink" href="#tab-list-uuids" title="Permalink to this heading">¶</a></h2>
 <p>Many data fields in FOLIO records take values drawn from controlled vocabularies. These vocabularies consist of unique identifiers (<span class="xref myst">UUIDs</span> – strings that look like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>). Each different type of field in a record can take on values from a specific list of values.</p>
 <p>Finding out the possible values is not easy to do directly in FOLIO. To help compensate, Foliage offers a simple way to list the possible values of various identifier types. This can be done in the <em>List UUIDs</em> tab.</p>
 <figure>
@@ -456,7 +457,7 @@
 <p>The identifiers can be clicked to get the full data for a given value. The complete list can also be exported by clicking the  <span class="button color-outline-primary">Export</span> button.</p>
 </section>
 <section id="tab-other">
-<h2 id="tab-other">Tab: other<a class="headerlink" href="#tab-other" title="Permalink to this headline">¶</a></h2>
+<h2 id="tab-other">Tab: other<a class="headerlink" href="#tab-other" title="Permalink to this heading">¶</a></h2>
 <p>The <em>Other</em> tab has already been mentioned above in the section on <span class="xref myst">Authentication</span>. On this tab, Foliage provides three buttons, shown in the screenshot below:</p>
 <figure>
 <img src="_static/media/other-tab.png"/>
@@ -516,10 +517,10 @@
               
           </div>
             Last updated on
-              Jun 03, 2022.
+              Jun 09, 2022.
             <br/>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>

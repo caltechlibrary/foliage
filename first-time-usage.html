@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -54,6 +54,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
@@ -366,11 +367,11 @@
           <article class="md-content__inner md-typeset" role="main">
             
   <section id="starting-foliage">
-<h1 id="first-time-usage--page-root">Starting Foliage<a class="headerlink" href="#first-time-usage--page-root" title="Permalink to this headline">¶</a></h1>
+<h1 id="first-time-usage--page-root">Starting Foliage<a class="headerlink" href="#first-time-usage--page-root" title="Permalink to this heading">¶</a></h1>
 <p>Foliage is a desktop application that runs on your computer, but – somewhat uncommonly – it uses a web page as its user interface. When you run Foliage, <strong>you interact with it through your usual web browser</strong>, but all the while, you are interacting with a program running on your computer. This style of user interface means the elements of the interface (the buttons, tabs, scroll bars) will be very familiar to anyone who has interacted with a modern web page. It also means that Foliage looks and behaves identically no matter whether it is running on Window, macOS, or Linux.</p>
 <p>The sections below describe how Foliage works and the functionality presented in the user interface.</p>
 <section id="starting-and-quitting">
-<h2 id="starting-and-quitting">Starting and quitting<a class="headerlink" href="#starting-and-quitting" title="Permalink to this headline">¶</a></h2>
+<h2 id="starting-and-quitting">Starting and quitting<a class="headerlink" href="#starting-and-quitting" title="Permalink to this heading">¶</a></h2>
 <p>There are multiple ways to start Foliage. One way is to double-click the program icon in the Windows Explorer or macOS Finder. You can also run Foliage as a command line application. (When doing the latter, you can find out available command-line options by running <code class="docutils literal notranslate"><span class="pre">foliage</span> <span class="pre">help</span></code>.)</p>
 <p>In either case, Foliage will both (a) open a web browser page that acts as the main Foliage interface and (b) provide an icon in the Windows taskbar or the macOS system tray. The icon serves as a reminder that Foliage is running, and offers a single menu option to quit Foliage. You can access the menu by right-clicking on Windows and control-clicking on macOS. Below are images of what this icon looks like on different computers:</p>
 <figure>
@@ -383,7 +384,7 @@
 </figure>
 </section>
 <section id="first-time-permissions">
-<h2 id="first-time-permissions">First-time permissions<a class="headerlink" href="#first-time-permissions" title="Permalink to this headline">¶</a></h2>
+<h2 id="first-time-permissions">First-time permissions<a class="headerlink" href="#first-time-permissions" title="Permalink to this heading">¶</a></h2>
 <p>When you start a given version of Foliage for the first time on Windows or macOS, the operating system will ask you to give permission for the application to accept network connections.  The following images show examples from macOS and Windows, respectively:</p>
 <figure>
 <img src="_static/media/macos-accept-connections.png" width="500px"/>
@@ -394,7 +395,7 @@
 <p>Make sure to click <strong>Allow</strong>. The request for accepting network connections is normal and not a sign of a problem. The reason it happens is that, although Foliage is a desktop application, it needs to let your web browser to connect to it so that the browser can interact with Foliage, and this triggers normal operating system security warnings. The operating system will not ask again after the first time you run a particular version of Foliage.</p>
 </section>
 <section id="folio-authentication">
-<h2 id="folio-authentication">FOLIO authentication<a class="headerlink" href="#folio-authentication" title="Permalink to this headline">¶</a></h2>
+<h2 id="folio-authentication">FOLIO authentication<a class="headerlink" href="#folio-authentication" title="Permalink to this heading">¶</a></h2>
 <p>Before you can do anything in Foliage, the program will need to ask the FOLIO server for a <em>token</em> (a secret key) that Foliage will use to authenticate itself every time it communicates with the server. To get the token, Foliage needs to ask you for some basic information. It does this with a short form that it presents the first time it is run on a new computer:</p>
 <figure>
 <img src="_static/media/authentication.png"/>
@@ -407,7 +408,7 @@
 </figure>
 </section>
 <section id="second-time-permissions">
-<h2 id="second-time-permissions">Second-time permissions<a class="headerlink" href="#second-time-permissions" title="Permalink to this headline">¶</a></h2>
+<h2 id="second-time-permissions">Second-time permissions<a class="headerlink" href="#second-time-permissions" title="Permalink to this heading">¶</a></h2>
 <p>On macOS, after you have run a given version of Foliage for the first time and it has stored the FOLIO token, the next time you start Foliage, macOS will ask you for another set of permissions:</p>
 <figure>
 <img src="_static/media/macos-keychain.png" width="500px"/>
@@ -464,10 +465,10 @@
               
           </div>
             Last updated on
-              Jun 03, 2022.
+              Jun 09, 2022.
             <br/>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>
