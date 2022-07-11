@@ -9,8 +9,8 @@
 .ONESHELL: 				# Run all commands in the same shell.
 .SHELLFLAGS += -e			# Exit at the first error.
 
-# This needs at least GNU Make version 3.82 for the dmg-making rules.
-# The following is based on the approach posted by Eldar Abusalimov to
+# This Makefile uses syntax that needs at least GNU Make version 3.82.
+# The following test is based on the approach posted by Eldar Abusalimov to
 # Stack Overflow in 2012 at https://stackoverflow.com/a/12231321/743730
 
 ifeq ($(filter undefine,$(value .FEATURES)),)
@@ -23,8 +23,8 @@ endif
 # The following is based on the approach posted by Jonathan Ben-Avraham to
 # Stack Overflow in 2014 at https://stackoverflow.com/a/25668869
 
-PROGRAMS_NEEDED = curl gh git jq sed pyinstaller pandoc inliner create-dmg
-TEST := $(foreach p,$(PROGRAMS_NEEDED),\
+programs_needed = awk curl gh git jq sed python3 pyinstaller pandoc inliner create-dmg
+TEST := $(foreach p,$(programs_needed),\
 	  $(if $(shell which $(p)),_,$(error Cannot find program "$(p)")))
 
 # Set some basic variables.  These are quick to set; we set additional
@@ -67,6 +67,15 @@ help:
 	@echo 'make report'
 	@echo '  Print variables set in this Makefile from various sources.'
 	@echo '  This is useful to verify the values that have been parsed.'
+	@echo ''
+	@echo 'make lint'
+	@echo '  Run Python linters like flake8.'
+	@echo ''
+	@echo 'make test'
+	@echo '  Run pytest.'
+	@echo ''
+	@echo 'make install'
+	@echo '  Install the project in dev mode.'
 	@echo ''
 	@echo 'make release'
 	@echo '  Do a release on GitHub. This will push changes to GitHub,'
@@ -143,6 +152,21 @@ report: vars
 	@echo zipfile	= $(zipfile)
 
 
+# make lint & make test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+lint:
+	flake8 %PROJECT_NAME%
+
+test tests:
+	pytest -v --cov=%PROJECT_NAME% -l tests/
+
+
+# make install ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+install:
+	python3 install -e .[dev]
+
+
 # make binary ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 # Note: the actions in this section only work on non-Windows systems. For
@@ -154,7 +178,7 @@ dependencies:;
 	pip3 install -r requirements.txt
 
 dist-dirs:
-	-mkdir -p dist/macos dist/win
+	-mkdir -p $(distdir)/macos $(distdir)/win
 
 extra-files: dist-dirs $(aboutfile) $(winreadme) $(macreadme) ABOUT.html
 
@@ -285,7 +309,8 @@ packages: vars
 # https://packaging.python.org/en/latest/specifications/pypirc/
 
 test-pypi: packages
-	python3 -m twine upload --verbose --repository testpypi $(distdir)/$(name)-$(version)*.{whl,gz}
+	python3 -m twine upload --verbose --repository testpypi \
+	   $(distdir)/$(name)-$(version)*.{whl,gz}
 
 pypi: packages
 	python3 -m twine upload $(distdir)/$(name)-$(version)*.{gz,whl}
@@ -299,11 +324,11 @@ clean: clean-dist clean-build clean-release clean-other
 really-clean: clean really-clean-dist really-clean-build
 
 completely-clean: really-clean clean-other
-	rm -rf build dist
+	rm -rf $(builddir) $(distdir)
 
 clean-dist: vars
 	rm -fr $(distdir)/$(name) $(distdir)/$(appname) $(zipfile) \
-	    dist/$(name)-$(version)-py3-none-any.whl
+	    $(distdir)/$(name)-$(version)-py3-none-any.whl
 
 really-clean-dist:;
 	rm -fr $(distdir)
@@ -312,7 +337,7 @@ clean-build:;
 	rm -rf $(builddir)
 
 really-clean-build:;
-	rm -rf build/lib build/pyinstaller-$(os) build/bdist.*
+	rm -rf $(builddir)/lib $(builddir)/pyinstaller-$(os) $(builddir)/bdist.*
 
 clean-release:;
 	rm -rf $(name).egg-info codemeta.json.bak $(initfile).bak README.md.bak
@@ -321,11 +346,19 @@ clean-other:;
 	rm -f $(aboutfile) $(macreadme) $(winreadme) $(distdir)/license.txt
 	rm -fr __pycache__ $(name)/__pycache__ .eggs
 	rm -rf .cache
+	rm -rf .pytest_cache
 
 .PHONY: release release-on-github update-init update-meta update-citation \
 	print-instructions packages clean test-pypi pypi extra-files dmg \
 	pyinstaller clean clean-dist clean-build clean-release clean-other \
 	really-clean really-clean-dist really-clean-build completely-clean
+
+.PHONY: help vars report release test-branch \
+	update-init update-meta update-citation commit-updates \
+	release-on-github print-instructions update-doi \
+	packages test-pypi pypi clean really-clean completely-clean \
+	clean-dist really-clean-dist clean-build really-clean-build \
+	clean-release clean-other dmg pyinstaller extra-files
 
 .SILENT: clean clean-dist clean-build clean-release clean-other really-clean \
 	really-clean-dist really-clean-build completely-clean
