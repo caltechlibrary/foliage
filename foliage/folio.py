@@ -466,7 +466,10 @@ class Folio():
             return self._kind_cache[id]
 
         id_kind = IdKind.UNKNOWN
-        if (isint(id) and id.startswith('350')) or id.startswith('nobarcode'):
+        if ((isint(id) and id.startswith('350'))
+            or id.startswith('nobarcode')
+            or id.startswith('temp-') or id.startswith('TEMP-')
+            or (isint(id) and 1 <= int(id) <= 200)):
             log(f'recognized {id} as an item barcode')
             id_kind = IdKind.ITEM_BARCODE
         elif id.startswith('it') and id[2].isdigit():
