@@ -83,9 +83,9 @@ def tab_contents():
                 ], size = '95px auto').style('text-align: right')],
                 [put_text('Select the action to perform:')],
                 [put_radio('chg_op', inline = True,
-                           options = [ ('Add value', 'add', True),
-                                       ('Change value', 'change'),
-                                       ('Delete value', 'delete')]
+                           options = [('Add value', 'add', True),
+                                      ('Change value', 'change'),
+                                      ('Delete value', 'delete')]
                            ).style(f'margin-bottom: 0.3em; {margin_adjust}')],
                 [put_text('Current field value (records must match this):').style('opacity: 0.3')],
                 [put_row([
@@ -414,9 +414,9 @@ def change_item(item, given_hrec = None, context = ''):
     else:
         save_changes(item)
 
-    # If the change is to a temporary location field, we can make the change
-    # without having to change a holdings record, and we're done.
-    if pin.chg_field == 'Temporary location':
+    # If the change is to a temporary location field or loan type, we can
+    # make the change without having to change a holdings record.
+    if pin.chg_field in ['Temporary location', 'Loan type']:
         return True
 
     # Not a temporary location change. Were we given the holdings record in the
@@ -634,4 +634,7 @@ known_fields = {
     'Permanent location': Field(type = TypeKind.LOCATION,
                                 key = 'permanentLocationId',
                                 delete_ok = [RecordKind.ITEM]),
+    'Loan type': Field(type = TypeKind.LOAN,
+                                key = 'permanentLoanTypeId',
+                                delete_ok = []),
 }
