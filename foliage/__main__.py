@@ -173,6 +173,7 @@ from   foliage.folio import Folio
 from   foliage.list_tab import ListTab
 from   foliage.lookup_tab import LookupTab
 from   foliage.other_tab import OtherTab
+from   foliage.clean_tab import CleanTab
 from   foliage.system_widget import SystemWidget
 from   foliage.ui import quit_app, reload_page, confirm, notify, inside_pyinstaller_app
 from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
@@ -186,7 +187,7 @@ from   foliage.ui import close_splash_screen
 _DIRS = AppDirs('Foliage', 'CaltechLibrary')
 '''Platform-specific directories for Foliage data.'''
 
-_TABS = [LookupTab(), ChangeTab(), DeleteTab(), ListTab(), OtherTab()]
+_TABS = [LookupTab(), ChangeTab(), DeleteTab(), CleanTab(), ListTab(), OtherTab()]
 '''List of tabs making up the Foliage application.'''
 
 
@@ -462,7 +463,7 @@ def config_debug(debug_arg):
                     note_error(f'Can\'t write debug ouput in {log_dir}')
                     exit()
             faulthandler.enable()
-            if not os.name == 'nt':     # Can't use next part on Windows.
+            if os.name != 'nt':         # Can't use next part on Windows.
                 import signal
                 from boltons.debugutils import pdb_on_signal
                 pdb_on_signal(signal.SIGUSR1)

@@ -13,6 +13,7 @@ from   commonpy.data_utils import unique, pluralized, flattened
 from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import exists, readable
 from   commonpy.interrupt import wait, interrupt, reset_interrupts
+from   decouple import config
 from   pprint import pformat
 import pyperclip
 from   pywebio.input import input, select, checkbox, radio
@@ -32,7 +33,7 @@ import threading
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_data
-from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
+from   foliage.folio import Folio, RecordKind, IdKind, TypeKind, Record
 from   foliage.folio import unique_identifiers, back_up_record
 from   foliage.ui import confirm, notify, stop_processbar
 from   foliage.ui import note_info, note_warn, note_error
@@ -212,36 +213,38 @@ def do_delete():
                        onclick = lambda: stop()).style('text-align: right'),
         ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         _running = True
-        for count, id in enumerate(identifiers, start = 2):
+        for count, user in enumerate(identifiers, start = 2):
             if _interrupted:
                 break
             try:
                 # Check that the kind of id we were given is really for users.
-                id_kind = folio.id_kind(id)
+                id_kind = folio.id_kind(user)
                 if id_kind is IdKind.UNKNOWN:
-                    tell_failure(f'Unrecognized identifier: **{id}**.')
+                    tell_failure(f'Unrecognized identifier: **{user}**.')
                     continue
                 if id_kind not in [IdKind.USER_BARCODE, IdKind.USER_ID]:
-                    tell_failure(f'Not a user identifier or barcode: **{id}**.')
+                    tell_failure(f'Not a user identifier or barcode: **{user}**.')
                     continue
                 deletions = []
-                for loan in folio.related_records(id, id_kind, RecordKind.LOAN,
+                deletions_ids = set()
+                for loan in folio.related_records(user, id_kind, RecordKind.LOAN,
                                                   open_loans_only = False):
                     if _interrupted:
                         raise Interrupted
                     item_id = loan.data['itemId']
                     item = folio.related_records(item_id, IdKind.ITEM_ID, RecordKind.ITEM)
-                    if not item:
+                    if not item and item_id not in deletions_ids:
                         log(f'item {item_id} no longer exists; need delete loan {loan.id}')
                         deletions.append(loan)
+                        deletions_ids.add(item_id)
                 if not deletions:
                     put_warning('Did not find any loans on deleted items for'
-                                f' user {id} – nothing to do.')
+                                f' user {user} – nothing to do.')
                     continue
                 for loan in deletions:
                     if _interrupted:
                         raise Interrupted
-                    delete(loan, id)
+                    delete(loan, loan.data['itemId'], user)
             except Interrupted as ex:
                 log('stopping due to interruption')
                 _interrupted = True
@@ -268,9 +271,9 @@ def do_delete():
         _running = False
 
 
-def delete(record, for_id = None):
+def delete(record, item_id, user_id):
     '''Low-level function to delete the given record.'''
-    why = ('for loan by user ' + for_id) if for_id else ''
+    why = f'for loan on nonexistent item {item_id} by user {user_id}'
     if config('DEMO_MODE', cast = bool):
         log(f'demo mode in effect – pretending to delete {record.id}')
     else:
