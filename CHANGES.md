@@ -1,5 +1,12 @@
 # Change log for foliage
 
+## ★ Version 1.3.0 (2022-07-13) ★
+
+This version adds new new features:
+* The _Change Records_ tab now supports changing the loan type on records.
+* A new tab, _Clean Records_, is available. It currently has one capability: to delete "phantom" loans based on user id's, meaning loan records associated with users but for items that no longer exist in Folio.
+
+
 ## ★ Version 1.2.8 (2022-06-10) ★
 
 Changes in this version:
