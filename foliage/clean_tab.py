@@ -61,8 +61,10 @@ def tab_contents():
         put_grid([[
             put_markdown("Input one or more **user barcodes** or **user id**'s"
                          ' below, or upload a file containing them. Click'
-                         ' the button below to delete loans associated with'
-                         ' those users for items that are no longer in FOLIO.'),
+                         " the button below to delete user's loans on items"
+                         " that can't be found in FOLIO. Loans on other items"
+                         ' (i.e., for any items that _can_ be found in FOLIO)'
+                         ' will be left untouched.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style(
                            'text-align: right'),
