@@ -233,7 +233,6 @@ def delete_holdings(holdings, for_id = None):
     # Deletions on holdings are not recursive. The items have to be deleted 1st
     # and FOLIO will give a 400 error if you try to delete a holdings record
     # while there's still an item somewhere pointing to it.
-    why = 'deleting item attached to holdings record {holdings.id}'
     folio = Folio()
     # Start at the bottom: delete its items 1st.
     for item in folio.related_records(holdings.id, IdKind.HOLDINGS_ID, RecordKind.ITEM):
@@ -257,7 +256,6 @@ def delete_instance(instance, for_id = None):
     # API used elsewhere in Foliage. (That part comes from Banerjee's script.)
 
     # Start by using delete_holdings(), which will delete items too.
-    why = 'deleting all records attached to instance record {instance.id}'
     folio = Folio()
     for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
                                           RecordKind.HOLDINGS):
@@ -285,6 +283,8 @@ def delete_instance(instance, for_id = None):
     elif 'matchedId' not in data_json:
         failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
+    elif config('DEMO_MODE', cast = bool):
+        log(f'demo mode in effect – pretending to delete {instance.id} from SRS')
     else:
         srs_id = data_json["matchedId"]
         log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
