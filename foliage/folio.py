@@ -70,6 +70,17 @@ _MAX_RETRY = 3
 # Time between retries, multiplied by retry number.
 _RETRY_TIME_FACTOR = 2
 
+# Regex to identify item barcodes.
+_ITEM_BARCODE_REGEX = re.compile(r'\A('
+                                 + '|'.join([
+                                     r'350\d+',
+                                     r'\d{1,3}',
+                                     r'nobarcode\d+',
+                                     r'temp-\w+',
+                                     r'tmp-\w+',
+                                     r'SFL-\w+',
+                                 ]) + r')\Z',
+                                 re.IGNORECASE)
 
 # Public data types.
 # .............................................................................
@@ -466,10 +477,8 @@ class Folio():
             return self._kind_cache[id]
 
         id_kind = IdKind.UNKNOWN
-        if ((isint(id) and id.startswith('350'))
-            or id.startswith('nobarcode')
-            or id.startswith('temp-') or id.startswith('TEMP-')
-            or (isint(id) and 1 <= int(id) <= 200)):
+        id = id.strip(r' \\')    # Strip backslashes that got into some barcodes
+        if (_ITEM_BARCODE_REGEX.match(id)):
             log(f'recognized {id} as an item barcode')
             id_kind = IdKind.ITEM_BARCODE
         elif id.startswith('it') and id[2].isdigit():
