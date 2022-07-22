@@ -255,6 +255,7 @@ def delete_instance(instance, for_id = None):
     # storage API, which is a 3rd API besides the inventory API and storage
     # API used elsewhere in Foliage. (That part comes from Banerjee's script.)
 
+    why = f'for request to delete instance record {instance.id}'
     # Start by using delete_holdings(), which will delete items too.
     folio = Folio()
     for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
@@ -283,13 +284,19 @@ def delete_instance(instance, for_id = None):
     elif 'matchedId' not in data_json:
         failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
-    elif config('DEMO_MODE', cast = bool):
-        log(f'demo mode in effect – pretending to delete {instance.id} from SRS')
     else:
-        srs_id = data_json["matchedId"]
-        log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
-        srsdel = f'/source-storage/records/{srs_id}'
-        folio.request(srsdel, op = 'delete')
+        if config('DEMO_MODE', cast = bool):
+            log(f'demo mode in effect – pretending to delete {instance.id} from SRS')
+        else:
+            try:
+                srs_id = data_json["matchedId"]
+                log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
+                srsdel = f'/source-storage/records/{srs_id}'
+                folio.request(srsdel, op = 'delete')
+            except FolioOpFailed as ex:
+                failed(record, str(ex), why)
+                return False
+        succeeded(instance, f'removed instance record **{instance.id}** from SRS', why)
 
     # If we didn't get an exception, finally delete the instance from inventory.
     return delete(instance, for_id)
