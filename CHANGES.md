@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.4.0 (TBD) ★
+
+This version fixes a serious bug in how deletions of instance records were done (or rather, not done). The previous code failed to correctly issue the deletion to SRS, which meant deletions were not actually being effectuated in EDS.
+
+
 ## ★ Version 1.3.0 (2022-07-13) ★
 
 This version adds new new features:
