@@ -289,7 +289,7 @@ def delete_instance(instance, for_id = None):
         srs_id = data_json["matchedId"]
         log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
         srsdel = f'/source-storage/records/{srs_id}'
-        folio.request(srsdel)
+        folio.request(srsdel, op = 'delete')
 
     # If we didn't get an exception, finally delete the instance from inventory.
     return delete(instance, for_id)
