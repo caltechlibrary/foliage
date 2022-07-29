@@ -245,26 +245,13 @@ def delete_holdings(holdings, for_id = None):
 
 def delete_instance(instance, for_id = None):
     '''Delete the given instance record.'''
-    # Deletions on instances are not recursive regardless of which API you use.
-    # The following is based on Kyle Banerjee's script dated 2021-11-11 at
-    # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
-    # but whereas that script uses the instance-storage API endpoint, this uses
-    # the inventory API. (I'm told the latter will simply forward the request
-    # to the instance storage API, but I decided to use the inventory API in
-    # case it does more in the future.) Note that this also uses the source
-    # storage API, which is a 3rd API besides the inventory API and storage
-    # API used elsewhere in Foliage. (That part comes from Banerjee's script.)
-
-    why = f'for request to delete instance record {instance.id}'
-    # Start by using delete_holdings(), which will delete items too.
+    why = f'for request to delete FOLIO instance record {instance.id}'
     folio = Folio()
-    for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
-                                          RecordKind.HOLDINGS):
-        if not delete_holdings(holdings, for_id = instance.id):
-            failed(instance, f'unable to delete all holdings records')
-            return False
 
-    # Next, get the matched id from source storage & delete the instance there.
+    # Deletions must be done in two separate places: source storage (SRS), and
+    # the regular instance/holdings/items storage APIs. Kyle Banerjee said in
+    # personal communication of 2022-07-27 that SRS should be done first.
+
     def srs_response_converter(response):
         if not response or not response.text:
             log('no response received from FOLIO')
@@ -275,7 +262,6 @@ def delete_instance(instance, for_id = None):
             return None
         return json.loads(response.text)
 
-    folio = Folio()
     srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
     data_json = folio.request(srsget, converter = srs_response_converter)
     if not data_json:
@@ -285,18 +271,36 @@ def delete_instance(instance, for_id = None):
         failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
     else:
+        srs_id = data_json["matchedId"]
         if config('DEMO_MODE', cast = bool):
-            log(f'demo mode in effect – pretending to delete {instance.id} from SRS')
+            log(f'demo mode in effect – pretending to delete {srs_id} from SRS')
         else:
             try:
-                srs_id = data_json["matchedId"]
                 log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
                 srsdel = f'/source-storage/records/{srs_id}'
                 folio.request(srsdel, op = 'delete')
             except FolioOpFailed as ex:
                 failed(record, str(ex), why)
                 return False
-        succeeded(instance, f'removed instance record **{instance.id}** from SRS', why)
+        succeeded(instance, f'removed SRS instance record **{srs_id}**', why)
+
+    # Deletions on instances are not recursive regardless of which API you use.
+    # The following is based on Kyle Banerjee's script dated 2021-11-11 at
+    # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
+    # but whereas that script uses the instance-storage API endpoint, this uses
+    # the inventory API. (I'm told the latter will simply forward the request
+    # to the instance storage API, but I decided to use the inventory API in
+    # case it does more in the future.) Note that this also uses the source
+    # storage API, which is a 3rd API besides the inventory API and storage
+    # API used elsewhere in Foliage. (That part comes from Banerjee's script.)
+
+    # Start by using delete_holdings(), which will delete items too.
+    folio = Folio()
+    for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
+                                          RecordKind.HOLDINGS):
+        if not delete_holdings(holdings, for_id = instance.id):
+            failed(instance, f'unable to delete all holdings records')
+            return False
 
     # If we didn't get an exception, finally delete the instance from inventory.
     return delete(instance, for_id)
