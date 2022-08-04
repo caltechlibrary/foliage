@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.4.1 (2022-08-04) ★
+
+This version fixes a bug in detecting errors when attempting to delete instances from the SRS subsystem. (Thanks to Mel Ray for reporting the problem.)
+
+
 ## ★ Version 1.4.0 (2022-07-29) ★
 
 This version fixes a serious bug in how deletions of instance records were done (or rather, not done). The previous code failed to correctly issue the deletion to SRS, which meant deletions were not actually being effectuated in EDS.
