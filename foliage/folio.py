@@ -404,7 +404,7 @@ class Folio():
             raise FolioOpFailed('Error in API call to FOLIO – please report this')
         elif response.status_code in [401, 403]:
             # "Not authorized to perform requested action"
-            log(f'FOLIO response code {response.status_code}: user is not authorized')
+            log(f'FOLIO response code {response.status_code}: ' + response.text)
             raise FolioOpFailed('FOLIO permissions error: not authorized for action')
         elif response.status_code == 404:
             # "Item not found" etc.
