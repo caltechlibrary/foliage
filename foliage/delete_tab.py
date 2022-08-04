@@ -197,7 +197,7 @@ def do_delete():
             return
         except Exception as ex:
             import traceback
-            log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
+            log('Exception: ' + str(ex) + '\n' + traceback.format_exc())
             tell_failure(f'Error: ' + str(ex))
             return
         finally:
@@ -280,7 +280,7 @@ def delete_instance(instance, for_id = None):
                 srsdel = f'/source-storage/records/{srs_id}'
                 folio.request(srsdel, op = 'delete')
             except FolioOpFailed as ex:
-                failed(record, str(ex), why)
+                failed(instance, str(ex), why)
                 return False
         succeeded(instance, f'removed SRS instance record **{srs_id}**', why)
 
