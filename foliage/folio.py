@@ -62,7 +62,7 @@ from   foliage.exceptions import *
 # .............................................................................
 
 # Accession number prefix for this site.
-_AN_PREFIX = 'cit.oai.folio.org.fs00001057'
+_AN_PREFIX = 'cit.oai'
 
 # Number of times we retry an api call that return an HTTP error.
 _MAX_RETRY = 3
@@ -1065,8 +1065,11 @@ class Folio():
 # .............................................................................
 
 def instance_id_from_accession(accession_number):
-    id_part = accession_number[len(_AN_PREFIX) + 1:]
-    return id_part.replace('.', '-')
+    '''Return an instance id constructed from an accession number.'''
+    # FOLIO ANs end with a UUID where the dashes are replaced with periods:
+    # cit.oai.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed
+    # UUID are 32 hex chars with 4 separators (= 36 chars total).
+    return accession_number[-36:].replace('.', '-')
 
 
 def unique_identifiers(text):
