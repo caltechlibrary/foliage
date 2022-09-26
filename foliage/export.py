@@ -68,27 +68,29 @@ def export_records(records, kind):
         export_records_json(records, kind)
 
 
-def export_data(data_list, filename):
+def export_data(data_list, filename, sort = True):
     if not data_list:
         return
 
     # Assume all the items have the same structure and it is flat.
     columns = list(data_list[0].keys())
-    # Try to find a good sort key, else default to 1st key found.
-    if 'id' in columns:
-        sort_key = 'id'
-    elif 'record id' in columns:
-        sort_key = 'Record ID'
-    elif 'name' in columns:
-        sort_key = 'name'
-    else:
-        sort_key = list(data_list[0].keys())[0]
+    if sort:
+        # Try to find a good sort key, else default to 1st key found.
+        if 'id' in columns:
+            sort_key = 'id'
+        elif 'record id' in columns:
+            sort_key = 'Record ID'
+        elif 'name' in columns:
+            sort_key = 'name'
+        else:
+            sort_key = list(data_list[0].keys())[0]
+        data_list = sorted(data_list, key = lambda d: d[sort_key])
 
     # Write into an in-memory, file-like object & tell PyWebIO to download it.
     with StringIO() as tmp:
         writer = csv.DictWriter(tmp, fieldnames = columns)
         writer.writeheader()
-        for item_dict in sorted(data_list, key = lambda d: d[sort_key]):
+        for item_dict in data_list:
             writer.writerow(item_dict)
         tmp.seek(0)
         bytes_ = BytesIO(tmp.read().encode('utf8')).getvalue()
