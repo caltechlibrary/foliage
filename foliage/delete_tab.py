@@ -356,7 +356,7 @@ def do_export(file_name):
                 if 'effectiveLocationId' in rec.data:
                     entry['Effective location'] = location(rec.data['effectiveLocationId'])
         values.append(entry)
-    export_data(values, file_name)
+    export_data(values, file_name, sort = False)
 
 
 _HANDLERS = {
