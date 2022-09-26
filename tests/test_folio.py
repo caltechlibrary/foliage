@@ -1,13 +1,6 @@
 import decouple
 import os
 import pytest
-import sys
-
-try:
-    thisdir = os.path.dirname(os.path.abspath(__file__))
-    sys.path.append(os.path.join(thisdir, '..'))
-except Exception:                       # noqa: PIE786
-    sys.path.append('..')
 
 from foliage.folio import Folio, IdKind
 
