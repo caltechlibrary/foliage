@@ -33,3 +33,11 @@ def test_record_id_type(define_env_vars):
     assert folio.id_kind('TEMP-D1234') == IdKind.ITEM_BARCODE
     assert folio.id_kind('TEMP-FFF123') == IdKind.ITEM_BARCODE
     assert folio.id_kind('tmp-21924070') == IdKind.ITEM_BARCODE
+    assert folio.id_kind('cit.oai.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed') == IdKind.ACCESSION
+    assert folio.id_kind('cit.oai.edge.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed') == IdKind.ACCESSION
+
+
+def test_extracting_instance_id():
+    from foliage.folio import instance_id_from_accession
+    instance_id_from_accession('cit.oai.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed') == '17c5c348-8796-4b11-90a8-6b31ff9509ed'
+    instance_id_from_accession('cit.oai.edge.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed') == '17c5c348-8796-4b11-90a8-6b31ff9509ed'
