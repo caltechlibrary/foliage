@@ -95,8 +95,8 @@ def credentials_from_file(creds_file):
     '''
     try:
         config_file = Config(creds_file)
-    except Exception as ex:
-        log(f'unable to read given creds file: ' + str(ex))
+    except Exception as ex:             # noqa: PIE786
+        log('unable to read given creds file: ' + str(ex))
         return None
     return _creds_from_source(config_file, str(creds_file))
 
@@ -124,13 +124,13 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
         clicked_ok = val
         event.set()
 
-    log(f'asking user for credentials')
+    log('asking user for credentials')
     current = initial_creds or Credentials('', '', '')
     pins = [
         put_markdown('_This information is needed to create a FOLIO API token.'
-                     + ' Your FOLIO login & password will_'
-                     + ' **not** _be stored after this form disappears; only'
-                     + ' the token, URL and tenant id will be stored._'),
+                     ' Your FOLIO login & password will_'
+                     ' **not** _be stored after this form disappears; only'
+                     ' the token, URL and tenant id will be stored._'),
         put_input('user',      label = 'FOLIO user name'),
         put_input('password',  label = 'FOLIO password', type = 'password'),
         put_input('url',       label = 'OKAPI URL', value = current.url),
@@ -148,7 +148,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     wait(0.5)                           # Give time for popup to go away.
 
     if not clicked_ok:
-        log(f'user cancelled out of credentials dialog')
+        log('user cancelled out of credentials dialog')
         return initial_creds
 
     if pin.url:                         # Remove '/' if the user included it.
@@ -156,7 +156,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
 
     if not all([pin.url, pin.tenant_id, pin.user, pin.password]):
         if warn_empty:
-            log(f'user provided incomplete credentials')
+            log('user provided incomplete credentials')
             if confirm('Cannot proceed without all credentials. Try again?'):
                 tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
                 return credentials_from_user(initial_creds = tmp)
@@ -173,7 +173,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
     else:
         note_info('New FOLIO API token obtained.')
 
-    log(f'got credentials from user')
+    log('got credentials from user')
     return Credentials(url = pin.url, tenant_id = pin.tenant_id, token = token)
 
 
@@ -199,11 +199,11 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
     log(f'trying to read value from {ring}')
     try:
         value = keyring.get_password(ring, getpass.getuser())
-    except Exception as ex:
+    except Exception as ex:             # noqa: PIE786
         log('exception trying to get password from keyring: ' + str(ex))
         return None
     if value:
-        if __debug__: log(f'got credentials from keyring {ring}')
+        log(f'got credentials from keyring {ring}')
         parts = _decoded(value)
         if all(parts) or partial_ok:
             return Credentials(url = parts[0], tenant_id = parts[1], token = parts[2])
@@ -213,7 +213,7 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
 
 def use_credentials(creds):
     '''Set run-time environment credentials and save them to the keyring.'''
-    log(f'setting environment variables for credentials')
+    log('setting environment variables for credentials')
     os.environ['FOLIO_OKAPI_URL']       = creds.url
     os.environ['FOLIO_OKAPI_TENANT_ID'] = creds.tenant_id
     os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
@@ -245,6 +245,7 @@ very unlikely to be part of a legitimate string value typed by user at a
 shell prompt, because control-c is normally used to interrupt programs.
 '''
 
+
 def _encoded(url, tenant_id, token):
     return f'{url}{_SEP}{tenant_id}{_SEP}{token}'
 
@@ -275,5 +276,5 @@ def _store_credentials(creds, ring = _KEYRING):
     if sys.platform.startswith('darwin'):
         keyring.set_keyring(Keyring())
     value = _encoded(creds.url, creds.tenant_id, creds.token)
-    if __debug__: log(f'storing credentials to keyring {_KEYRING}')
+    log(f'storing credentials to keyring {_KEYRING}')
     keyring.set_password(ring, getpass.getuser(), value)

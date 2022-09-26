@@ -21,7 +21,7 @@ from   pywebio.pin import pin, put_textarea
 from   sidetrack import log
 
 from   foliage.base_tab import FoliageTab
-from   foliage.exceptions import *
+from   foliage.exceptions import FolioOpFailed
 from   foliage.export import export_data
 from   foliage.folio import Folio, RecordKind, IdKind, TypeKind, Record
 from   foliage.folio import unique_identifiers, back_up_record
@@ -45,15 +45,15 @@ class DeleteTab(FoliageTab):
 # .............................................................................
 
 def tab_contents():
-    log(f'generating delete tab contents')
+    log('generating delete tab contents')
     return [
         put_grid([[
             put_markdown('Input one or more item, holdings, or instance'
-                         + ' identifiers (in the form of id\'s, barcodes, hrid\'s,'
-                         + ' or accession numbers), or upload a file containing'
-                         + ' the identifiers. **Warning**: Deleting holdings'
-                         + ' **will delete all their items**, and deleting'
-                         + ' instances **will delete all their holdings _and_ items**.'),
+                         ' identifiers (in the form of id\'s, barcodes, hrid\'s,'
+                         ' or accession numbers), or upload a file containing'
+                         ' the identifiers. **Warning**: Deleting holdings'
+                         ' **will delete all their items**, and deleting'
+                         ' instances **will delete all their holdings _and_ items**.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -71,24 +71,25 @@ def tab_contents():
 # .............................................................................
 
 def clear_tab():
-    log(f'clearing tab')
+    log('clearing tab')
     clear('output')
     pin.textbox_delete = ''
 
 
 def load_file():
-    log(f'user requesting file upload')
+    log('user requesting file upload')
     if (file := user_file('Upload a file containing identifiers')):
         pin.textbox_delete = file
 
 
 def stop():
-    log(f'stopping')
+    log('stopping')
     interrupt()
     stop_processbar()
 
 
 _results = []
+
 
 def clear_results():
     global _results
@@ -97,9 +98,9 @@ def clear_results():
 
 def record_result(record_or_id, success, notes):
     global _results
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     rec = record_or_id if isinstance(record_or_id, Record) else None
-    _results.append({'id': id, 'success': success, 'notes': notes, 'record': rec})
+    _results.append({'id': id_, 'success': success, 'notes': notes, 'record': rec})
 
 
 def succeeded(record_or_id, msg, why = ''):
@@ -111,25 +112,25 @@ def succeeded(record_or_id, msg, why = ''):
 def failed(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
     record_result(record_or_id, False, msg + comment)
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_failure(f'Failed to delete **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_failure(f'Failed to delete **{id_}**{comment}: ' + msg + '.')
 
 
 def skipped(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
     record_result(record_or_id, False, msg + comment)
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_warning(f'Skipped **{id_}**{comment}: ' + msg + '.')
 
 
 def flagged(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_warning(f'Note about **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_warning(f'Note about **{id_}**{comment}: ' + msg + '.')
 
 
 def do_delete():
-    log(f'do_delete invoked')
+    log('do_delete invoked')
     identifiers = unique_identifiers(pin.textbox_delete)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
@@ -138,7 +139,7 @@ def do_delete():
                    ' records, all their associated items and holdings will'
                    ' also be deleted. Only do this if you have verified the'
                    ' implications first. Proceed?', danger = True):
-        log(f'user declined to proceed')
+        log('user declined to proceed')
         return
     clear_results()
     reset_interrupts()
@@ -155,41 +156,41 @@ def do_delete():
         ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         try:
             done = 0
-            for id in identifiers:
+            for id_ in identifiers:
                 with use_scope('current_activity', clear = True):
-                    put_markdown(f'_Looking up {id} ..._').style(PROGRESS_TEXT)
-                record = folio.record(id)
+                    put_markdown(f'_Looking up {id_} ..._').style(PROGRESS_TEXT)
+                record = folio.record(id_)
                 if not record:
-                    failed(id, f'unrecognized identifier **{id}**')
+                    failed(id_, f'unrecognized identifier **{id_}**')
                     continue
                 done += 1
                 set_processbar('bar', done/steps)
                 if record.kind not in _HANDLERS.keys():
-                    skipped(id, f'deleting {record.kind} records is not supported')
+                    skipped(id_, f'deleting {record.kind} records is not supported')
                     continue
                 with use_scope('current_activity', clear = True):
                     text = '_Deleting '
                     if record.kind is RecordKind.ITEM:
-                        text += f'item {id} ..._'
+                        text += f'item {id_} ..._'
                     elif record.kind is RecordKind.HOLDINGS:
-                        text += f'holdings {id} and associated items ..._'
+                        text += f'holdings {id_} and associated items ..._'
                     elif record.kind is RecordKind.INSTANCE:
-                        text += f'instance {id} and associated holdings and items ..._'
+                        text += f'instance {id_} and associated holdings and items ..._'
                     elif record.kind is RecordKind.USER:
-                        text += f'user {id} and associated holdings and items ..._'
+                        text += f'user {id_} and associated holdings and items ..._'
                     put_markdown(text).style(PROGRESS_TEXT)
                 _HANDLERS[record.kind](record)
                 done += 1
                 set_processbar('bar', done/steps)
             set_processbar('bar', 1)
             clear_scope('current_activity')
-        except Interrupted as ex:
+        except Interrupted:
             tell_warning('**Stopped**.')
             return
-        except Exception as ex:
+        except Exception as ex:         # noqa: PIE786
             import traceback
             log('Exception: ' + str(ex) + '\n' + traceback.format_exc())
-            tell_failure(f'Error: ' + str(ex))
+            tell_failure('Error: ' + str(ex))
             return
         finally:
             stop_processbar()
@@ -290,7 +291,7 @@ def delete_instance(instance, for_id = None):
     for holdings in folio.related_records(instance.id, IdKind.INSTANCE_ID,
                                           RecordKind.HOLDINGS):
         if not delete_holdings(holdings, for_id = instance.id):
-            failed(instance, f'unable to delete all holdings records')
+            failed(instance, 'unable to delete all holdings records')
             return False
 
     # If we didn't get an exception, finally delete the instance from inventory.
@@ -304,11 +305,12 @@ def delete_user(record, for_id = None):
 
 _location_map = None
 
+
 def init_location_map():
     global _location_map
     if _location_map is None:
         folio = Folio()
-        _location_map = {x.data['id']:x.data['name']
+        _location_map = {x.data['id']: x.data['name']
                          for x in folio.types(TypeKind.LOCATION)}
 
 
@@ -341,7 +343,6 @@ def do_export(file_name):
     # People want to see titles, dates, locations. We need to do lookups to
     # get them.
     values = []
-    folio = Folio()
     for result in _results:
         entry = {'Record ID'          : result['id'],
                  'Operation success'  : result['success'],

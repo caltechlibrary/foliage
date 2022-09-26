@@ -25,7 +25,7 @@ import sys
 import threading
 
 from   foliage.base_tab import FoliageTab
-from   foliage.exceptions import *
+from   foliage.exceptions import FolioOpFailed
 from   foliage.export import export_data
 from   foliage.folio import Folio, RecordKind, IdKind, TypeKind, Record
 from   foliage.folio import unique_identifiers, back_up_record
@@ -49,16 +49,16 @@ class ChangeTab(FoliageTab):
 # .............................................................................
 
 def tab_contents():
-    log(f'generating change tab contents')
+    log('generating change tab contents')
     # FIXME what causes these diffs on windows?
     textarea_rows = 14 if sys.platform.startswith('win') else 13
     margin_adjust = 'margin-top: -1.1em' if sys.platform.startswith('win') else ''
     return [
         put_grid([[
             put_markdown('Input item and/or holdings identifiers'
-                         + ' (i.e., barcodes, id\'s, or hrid\'s). All'
-                         + ' records will be changed the same way. Changing a'
-                         + ' holdings record will also change all its items.'),
+                         ' (i.e., barcodes, id\'s, or hrid\'s). All'
+                         ' records will be changed the same way. Changing a'
+                         ' holdings record will also change all its items.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -79,7 +79,8 @@ def tab_contents():
                                       ('Change value', 'change'),
                                       ('Delete value', 'delete')]
                            ).style(f'margin-bottom: 0.3em; {margin_adjust}')],
-                [put_text('Current field value (records must match this):').style('opacity: 0.3')],
+                [put_text('Current field value (records must match this):'
+                          ).style('opacity: 0.3')],
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_value('old')),
                     put_textarea('old_value', rows = 1, readonly = True),
@@ -89,7 +90,7 @@ def tab_contents():
                     put_button('Select', onclick = lambda: select_field_value('new')),
                     put_textarea('new_value', rows = 1, readonly = True),
                 ], size = '95px auto').style('z-index: 9')],
-                ]).style('margin-left: 12px'),
+            ]).style('margin-left: 12px'),
         ]], cell_widths = '50% 50%').style('margin-top: 1em'),
         put_row([
             put_button('Change records', color = 'danger',
@@ -170,7 +171,7 @@ def update_tab(value):
 
 
 def clear_tab():
-    log(f'clearing tab')
+    log('clearing tab')
     clear('output')
     pin.textbox_ids = ''
     pin.chg_op = 'add'
@@ -215,7 +216,7 @@ def select_field_value(old_new):
 
 
 def selected(title, values):
-    log(f'showing list selection popup')
+    log('showing list selection popup')
     event = threading.Event()
     clicked_ok = False
 
@@ -248,18 +249,19 @@ def all_selections_made():
 
 
 def load_file():
-    log(f'user requesting file upload')
+    log('user requesting file upload')
     if (contents := user_file('Upload a file containing identifiers')):
         pin.textbox_ids = contents
 
 
 def stop():
-    log(f'stopping')
+    log('stopping')
     interrupt()
     stop_processbar()
 
 
 _results = []
+
 
 def clear_results():
     global _results
@@ -268,29 +270,30 @@ def clear_results():
 
 def record_result(record_or_id, success, notes):
     global _results
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     rec = record_or_id if isinstance(record_or_id, Record) else None
-    _results.append({'id': id, 'success': success, 'notes': notes, 'record': rec})
+    _results.append({'id': id_, 'success': success, 'notes': notes, 'record': rec})
 
 
 def succeeded(record_or_id, msg, context = ''):
     comment = (' (' + context + ')') if context else ''
     record_result(record_or_id, True, msg + comment)
-    tell_success(f'Success for **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_success(f'Success for **{id_}**{comment}: ' + msg + '.')
 
 
 def failed(record_or_id, msg, context = ''):
     comment = (' (' + context + ')') if context else ''
     record_result(record_or_id, False, msg + comment)
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_failure(f'Failure for **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_failure(f'Failure for **{id_}**{comment}: ' + msg + '.')
 
 
 def skipped(record_or_id, msg, context = ''):
     comment = (' (' + context + ')') if context else ''
     record_result(record_or_id, False, msg + comment)
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_warning(f'Skipped **{id_}**{comment}: ' + msg + '.')
 
 
 _SUPPORTED_KINDS = [
@@ -298,8 +301,9 @@ _SUPPORTED_KINDS = [
     RecordKind.HOLDINGS,
 ]
 
+
 def do_change():
-    log(f'do_change invoked')
+    log('do_change invoked')
     identifiers = unique_identifiers(pin.textbox_ids)
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
@@ -308,7 +312,7 @@ def do_change():
         note_error('Missing selections – cannot proceed until form is filled out.')
         return
     if not confirm('Proceed with changes to records in FOLIO?', danger = True):
-        log(f'user declined to proceed')
+        log('user declined to proceed')
         return
     clear_results()
     reset_interrupts()
@@ -316,10 +320,10 @@ def do_change():
     folio = Folio()
     with use_scope('output', clear = True):
         try:
-            done = 0
+            done = 0                    # noqa: SIM113
             put_grid([[
                 put_scope('current_activity', [
-                    put_markdown(f'_Gathering records ..._').style(PROGRESS_TEXT)]),
+                    put_markdown('_Gathering records ..._').style(PROGRESS_TEXT)]),
             ], [
                 put_processbar('bar', init = done/steps).style('margin-top: 11px'),
                 put_button('Stop', outline = True, color = 'danger',
@@ -328,27 +332,27 @@ def do_change():
 
             # Start by gathering all records & their types.
             records = []
-            for id in identifiers:
-                record = folio.record(id)
+            for id_ in identifiers:
+                record = folio.record(id_)
                 done += 1
                 set_processbar('bar', done/steps)
                 if not record:
-                    failed(id, f'unrecognized identifier **{id}**')
+                    failed(id_, f'unrecognized identifier **{id_}**')
                     continue
                 if record.kind not in _SUPPORTED_KINDS:
-                    skipped(id, f'changing {record.kind} records is not supported')
+                    skipped(id_, f'changing {record.kind} records is not supported')
                     continue
                 records.append(record)
 
             # 1st pass: apply changes to holdings records in the input (if any).
             with use_scope('current_activity', clear = True):
-                put_markdown(f'_Changing records ..._').style(PROGRESS_TEXT)
+                put_markdown('_Changing records ..._').style(PROGRESS_TEXT)
             holdings_done = []
             for record in filter(lambda r: r.kind is RecordKind.HOLDINGS, records):
                 done += 1
                 set_processbar('bar', done/steps)
                 if not change_holdings(record):
-                    log(f'couldn\'t change and/or save holdings rec. – skipping items')
+                    log('couldn\'t change and/or save holdings rec. – skipping items')
                     continue
                 for item in folio.related_records(record.id, IdKind.HOLDINGS_ID,
                                                   RecordKind.ITEM):
@@ -367,13 +371,13 @@ def do_change():
                 done += 1
                 set_processbar('bar', done/steps)
             set_processbar('bar', 1)
-        except Interrupted as ex:
+        except Interrupted:
             tell_warning('**Stopped**.')
             return
-        except Exception as ex:
+        except Exception as ex:         # noqa: PIE786
             import traceback
             log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
-            tell_failure(f'Error: ' + str(ex))
+            tell_failure('Error: ' + str(ex))
             return
         finally:
             stop_processbar()
@@ -392,7 +396,7 @@ def change_holdings(record):
     if pin.chg_field == 'Permanent location' and pin.chg_op != 'change':
         # Holdings always have a perm loc., so can only change it.
         skipped(record.id, 'Cannot add or delete a permanent'
-                + ' location field on holdings records')
+                ' location field on holdings records')
         return False
     return change_record(record) and save_changes(record)
 
@@ -436,7 +440,7 @@ def change_item(item, given_hrec = None, context = ''):
     if not hrec:
         # This should never happen, but we always want to check everything.
         failed(item.id, f'cannot update {field_key} of {item.id} because its holdings'
-               + f' record {item.data["holdingsRecordId"]} could not be retrieved')
+               f' record {item.data["holdingsRecordId"]} could not be retrieved')
         return False
 
     # In practice, the only way we get to this point is if the operation is not
@@ -459,7 +463,7 @@ def change_item(item, given_hrec = None, context = ''):
                 except FolioOpFailed as ex:
                     failed(item.id, str(ex), context)
                     return False
-            context = f'updating item\'s holdings record pointer'
+            context = 'updating item\'s holdings record pointer'
             succeeded(item.id, f'changed holdings record to be {h.id}', context)
             break
     else:
@@ -491,7 +495,7 @@ def change_item(item, given_hrec = None, context = ''):
         # Create the record.
         context = f'moving item to new holdings record for location {location_id}'
         if config('DEMO_MODE', cast = bool):
-            log(f'demo mode – pretending to create new holdings record')
+            log('demo mode – pretending to create new holdings record')
             new_id = '[holdings id]'
         else:
             try:
@@ -524,18 +528,18 @@ def change_item(item, given_hrec = None, context = ''):
             return True
 
     # It's 1b (orig holdings rec is now empty). Need delete the holdings rec.
-    id = hrec.id
+    id_ = hrec.id
     context = 'moved last or only item to another holdings record'
     if config('DEMO_MODE', cast = bool):
-        log(f'demo mode – pretending to delete {id}')
+        log(f'demo mode – pretending to delete {id_}')
     else:
         try:
             back_up_record(hrec)
             folio.delete_record(hrec)
         except FolioOpFailed as ex:
-            failed(id, str(ex), context = context)
+            failed(id_, str(ex), context = context)
             return False
-    succeeded(item.id, f'deleted empty holdings record {id}', context)
+    succeeded(item.id, f'deleted empty holdings record {id_}', context)
     return True
 
 
@@ -549,7 +553,7 @@ def change_record(record, context = ''):
     # Get the list of known values for this type (folio.py will have cached
     # it) and create a mapping of value names to value objects.
     value_type = known_fields[pin.chg_field].type
-    values = {x.data['name']:x.data for x in folio.types(value_type)}
+    values = {x.data['name']: x.data for x in folio.types(value_type)}
 
     field_key = known_fields[pin.chg_field].key
     if (current_value := record.data.get(field_key, None)):
@@ -572,7 +576,7 @@ def change_record(record, context = ''):
                 del record.data[field_key]
             else:
                 skipped(record.id, f'not allowed to delete field {field_key}'
-                        + ' on {record.kind} records', context)
+                        ' on {record.kind} records', context)
                 return False
     elif pin.chg_op == 'add':
         log(f'adding {field_key} value "{pin.new_value}" to item {record.id}')
@@ -627,6 +631,6 @@ known_fields = {
                                 key = 'permanentLocationId',
                                 delete_ok = [RecordKind.ITEM]),
     'Loan type': Field(type = TypeKind.LOAN,
-                                key = 'permanentLoanTypeId',
-                                delete_ok = []),
+                       key = 'permanentLoanTypeId',
+                       delete_ok = []),
 }

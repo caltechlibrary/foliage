@@ -132,8 +132,8 @@ from   appdirs import AppDirs
 from   collections import ChainMap
 from   commonpy.data_utils import timestamp
 from   commonpy.exceptions import Interrupted
-from   commonpy.file_utils import writable
-from   commonpy.interrupt import config_interrupt
+from   commonpy.file_utils import writable, readable
+from   commonpy.interrupt import config_interrupt, wait
 from   commonpy.network_utils import network_available
 from   commonpy.string_utils import antiformat
 from   decouple import config
@@ -190,15 +190,14 @@ _TABS = [LookupTab(), ChangeTab(), DeleteTab(), CleanTab(), ListTab(), OtherTab(
 
 @plac.annotations(
     backup_dir = ('back up records to folder B before changes', 'option', 'b'),
-    creds_file = ('read FOLIO credentials from .ini file C',    'option', 'c'),
-    demo_mode  = ('demo mode: don\'t perform destructive ops',  'flag',   'd'),
-    no_keyring = ('don\'t use keyring for credentials',         'flag',   'K'),
-    port       = ('open browser on port P (default: 8080)',     'option', 'p'),
-    version    = ('print program version info and exit',        'flag',   'V'),
-    no_widget  = ('don\'t run the taskbar/system tray widget',  'flag',   'W'),
+    creds_file = ('read FOLIO credentials from .ini file C'   , 'option', 'c'),
+    demo_mode  = ('demo mode: don\'t perform destructive ops' , 'flag'  , 'd'),
+    no_keyring = ('don\'t use keyring for credentials'        , 'flag'  , 'K'),
+    port       = ('open browser on port P (default: 8080)'    , 'option', 'p'),
+    version    = ('print program version info and exit'       , 'flag'  , 'V'),
+    no_widget  = ('don\'t run the taskbar/system tray widget' , 'flag'  , 'W'),
     debug      = ('log debug output to "OUT" ("-" is console)', 'option', '@'),
 )
-
 def main(backup_dir = 'B', creds_file = 'C', demo_mode = False,
          no_keyring = False, port = 'P', version = False, no_widget = False,
          debug = 'OUT'):
@@ -330,14 +329,14 @@ Command-line arguments summary
         foliage = partial(foliage_page, widget)
         start_server(foliage, auto_open_webbrowser = True, cdn = False,
                      port = os.environ['PORT'], debug = os.environ['DEBUG'])
-    except KeyboardInterrupt as ex:
+    except KeyboardInterrupt:
         # Catch it, but don't treat it as an error; just stop execution.
         log('keyboard interrupt received')
         pass
-    except SystemExit as ex:
+    except SystemExit:
         # Thrown by quit_app() during a normal exit.
         log('exit requested')
-    except Exception as ex:
+    except Exception as ex:             # noqa: PIE786
         exception = ex
         exception_info = sys.exc_info()
 
@@ -360,7 +359,7 @@ Command-line arguments summary
             wait(2)
             log('closing application window')
             run_js('close_window()')
-        except:
+        except Exception:               # noqa: PIE786
             pass
         log('exiting forcefully with error code')
         # This is a sledgehammer, but it kills everything, including network
@@ -372,7 +371,6 @@ Command-line arguments summary
     # And exit ----------------------------------------------------------------
 
     log('_'*8 + f' stopped {timestamp()} ' + '_'*8)
-
 
 
 # Main page creation function.
@@ -394,7 +392,7 @@ def foliage_page(widget):
     put_actions('quit',
                 buttons = [{'label': 'Quit', 'value': True, 'color': 'warning'}]
                 ).style('position: absolute; bottom: 0px;'
-                        + 'left: calc(50% - 3em); z-index: 2')
+                        'left: calc(50% - 3em); z-index: 2')
     warn_if_demo_mode()
     close_splash_screen()
 
@@ -416,7 +414,7 @@ def foliage_page(widget):
         # The timeout is so we can check if the user quit the taskbar widget.
         changed = pin_wait_change(pin_names, timeout = 1)
         if (not widget or widget.running()) and not changed:
-             continue
+            continue
         if (widget and not widget.running()):
             log('widget has exited')
             quit_app(ask_confirm = False)
@@ -475,17 +473,18 @@ def config_debug(debug_arg):
         log('debug_arg = ' + debug_arg)
     except PermissionError:
         note_warn(f'Permission denied creating log file {antiformat(log_file)}'
-                  + ' -- debug log will not be written.')
+                  ' -- debug log will not be written.')
     except FileNotFoundError:
         note_warn(f'Cannot write log file {antiformat(log_file)}'
-                  + ' -- debug log will not be written.')
+                  ' -- debug log will not be written.')
     except KeyboardInterrupt:
         # Need to catch this separately or else it will end up ignored by
         # virtue of the next clause catching all Exceptions.
         os._exit()
-    except Exception as ex:
+    except Exception as ex:             # noqa: PIE786
+        log(str(ex))
         note_warn(f'Unable to create log file {antiformat(log_file)}'
-                  + ' -- debug log will not be written.')
+                  ' -- debug log will not be written.')
 
     # Make settings accessible in other parts of the program.
     os.environ['DEBUG'] = str(debug_arg != 'OUT')
@@ -516,7 +515,7 @@ def config_signals():
 def config_backup_dir(backup_dir):
     '''Configure the directory used for backing up FOLIO records.'''
     if not backup_dir:
-        default_backups =  join(_DIRS.user_data_dir, 'Backups')
+        default_backups = join(_DIRS.user_data_dir, 'Backups')
         backup_dir = config('BACKUP_DIR', default = default_backups)
     if exists(backup_dir) and not isdir(backup_dir):
         note_error(f'Not a directory: {antiformat(backup_dir)}')
@@ -525,7 +524,7 @@ def config_backup_dir(backup_dir):
         log(f'creating backup directory {antiformat(backup_dir)}')
         try:
             makedirs(backup_dir)
-        except OSError as ex:
+        except OSError:
             note_error(f'Unable to create backup directory {antiformat(backup_dir)}')
             sys.exit(1)
     if not writable(backup_dir):
@@ -611,7 +610,7 @@ def warn_if_demo_mode():
     if config('DEMO_MODE', cast = bool):
         put_warning('Demo mode in effect').style(
             'position: absolute; left: calc(50% - 5.5em); width: 11em;'
-            + 'height: 25px; padding: 0 10px; top: 0; z-index: 2')
+            'height: 25px; padding: 0 10px; top: 0; z-index: 2')
     else:
         log('Demo mode not in effect')
 
@@ -632,14 +631,13 @@ def check_credentials():
     if not Folio().credentials_valid():
         # FOLIO might have invalidated users' tokens.
         if confirm('The FOLIO token may have expired, or else the given '
-                   + ' credentials are invalid. Click "OK" to review the '
-                   + ' credentials and try to regenerate the token, or click '
-                   + ' "Cancel" to quit Foliage now.'):
+                   ' credentials are invalid. Click "OK" to review the '
+                   ' credentials and try to regenerate the token, or click '
+                   ' "Cancel" to quit Foliage now.'):
             edit_and_use_credentials()
         else:
             notify('Invalid FOLIO credentials, or expired token.')
             quit_app(ask_confirm = False)
-
 
 
 # Main entry point.
@@ -650,6 +648,7 @@ def check_credentials():
 # function that takes zero arguments.
 def console_scripts_main():
     plac.call(main)
+
 
 # The following allows users to invoke this using "python3 -m handprint".
 if __name__ == '__main__':

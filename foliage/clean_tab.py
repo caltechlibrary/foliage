@@ -21,10 +21,11 @@ from   pywebio.session import eval_js
 from   sidetrack import log
 
 from   foliage.base_tab import FoliageTab
+from   foliage.exceptions import FolioOpFailed
 from   foliage.export import export_data
 from   foliage.folio import Folio, RecordKind, IdKind, Record
 from   foliage.folio import unique_identifiers, back_up_record
-from   foliage.ui import stop_processbar, note_error
+from   foliage.ui import stop_processbar, note_error, user_file
 from   foliage.ui import tell_success, tell_failure, tell_warning, PROGRESS_BOX
 
 
@@ -43,7 +44,7 @@ class CleanTab(FoliageTab):
 # .............................................................................
 
 def tab_contents():
-    log(f'generating list tab contents')
+    log('generating list tab contents')
     return [
         put_markdown('### Phantom loans'),
         put_grid([[
@@ -78,14 +79,14 @@ _last_textbox = ''
 
 def clear_tab():
     global _last_textbox
-    log(f'clearing tab')
+    log('clearing tab')
     clear('output')
     pin.textbox_users = ''
     _last_textbox = ''
 
 
 def load_file():
-    log(f'user requesting file upload')
+    log('user requesting file upload')
     if (contents := user_file('Upload a file containing identifiers')):
         pin.textbox_users = contents
 
@@ -94,7 +95,7 @@ def stop():
     '''Stop an ongoing deletion by setting the _interrupted flag.'''
     global _interrupted
     global _last_textbox
-    log(f'stopping')
+    log('stopping')
     _interrupted = True
     _last_textbox = ''
     stop_processbar()
@@ -140,6 +141,7 @@ def wait_if_running():
 
 _results = []
 
+
 def clear_results():
     global _results
     _results = []
@@ -147,9 +149,9 @@ def clear_results():
 
 def record_result(record_or_id, success, notes):
     global _results
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
     rec = record_or_id if isinstance(record_or_id, Record) else None
-    _results.append({'id': id, 'success': success, 'notes': notes, 'record': rec})
+    _results.append({'id': id_, 'success': success, 'notes': notes, 'record': rec})
 
 
 def succeeded(record_or_id, msg, why = ''):
@@ -161,15 +163,15 @@ def succeeded(record_or_id, msg, why = ''):
 def failed(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
     record_result(record_or_id, False, msg + comment)
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_failure(f'Failed to delete **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_failure(f'Failed to delete **{id_}**{comment}: ' + msg + '.')
 
 
 def skipped(record_or_id, msg, why = ''):
     comment = (' (' + why + ')') if why else ''
     record_result(record_or_id, False, msg + comment)
-    id = record_or_id if isinstance(record_or_id, str) else record_or_id.id
-    tell_warning(f'Skipped **{id}**{comment}: ' + msg + '.')
+    id_ = record_or_id if isinstance(record_or_id, str) else record_or_id.id
+    tell_warning(f'Skipped **{id_}**{comment}: ' + msg + '.')
 
 
 def do_delete():
@@ -195,7 +197,7 @@ def do_delete():
     with use_scope('output', clear = True):
         put_grid([[
             put_scope('current_activity', [
-                put_markdown(f'_This operation can take a long time. Please be patient._'
+                put_markdown('_This operation can take a long time. Please be patient._'
                              ).style('color: DarkOrange; margin-bottom: 0')]),
         ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
@@ -235,13 +237,13 @@ def do_delete():
                     if _interrupted:
                         raise Interrupted
                     delete(loan, loan.data['itemId'], user)
-            except Interrupted as ex:
+            except Interrupted:
                 log('stopping due to interruption')
                 _interrupted = True
-            except Exception as ex:
+            except Exception as ex:     # noqa: PIE786
                 import traceback
                 log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
-                tell_failure(f'Error: ' + str(ex))
+                tell_failure('Error: ' + str(ex))
                 stop_processbar()
                 return
             finally:
@@ -285,7 +287,6 @@ def do_export(file_name):
     #   success
     #   notes
     values = []
-    folio = Folio()
     for result in _results:
         entry = {'Loan ID'            : result['id'],
                  'Operation success'  : result['success'],

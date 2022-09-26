@@ -23,6 +23,7 @@ from   foliage import __version__
 from   foliage.base_tab import FoliageTab
 from   foliage.credentials import credentials_from_user, current_credentials
 from   foliage.credentials import use_credentials
+from   foliage.ui import note_warn
 
 
 # Tab definition class.
@@ -40,32 +41,32 @@ class OtherTab(FoliageTab):
 # .............................................................................
 
 def tab_contents():
-    log(f'generating other tab contents')
+    log('generating other tab contents')
     return [
-        put_html(f'<i><b>Help for Foliage</b> is <a target="_blank"'
-                 + ' href="https://caltechlibrary.github.io/foliage"'
-                 + '>available online</a></i>.'
-                     ).style('text-align: center; margin-bottom: 1em'),
+        put_html('<i><b>Help for Foliage</b> is <a target="_blank"'
+                 ' href="https://caltechlibrary.github.io/foliage"'
+                 '>available online</a></i>.'
+                 ).style('text-align: center; margin-bottom: 1em'),
         put_grid([[
             put_markdown('Foliage stores the FOLIO credentials you provide the'
-                         + ' first time it runs, so that you don\'t have to'
-                         + ' enter them again. Click this button to update the'
-                         + ' stored credentials.'),
+                         ' first time it runs, so that you don\'t have to'
+                         ' enter them again. Click this button to update the'
+                         ' stored credentials.'),
             put_button('Edit credentials', onclick = lambda: edit_credentials(),
                        ).style('margin-left: 20px; text-align: left'),
         ], [
             put_markdown('Before performing destructive operations, Foliage'
-                         + ' saves copies of the records as they exist before'
-                         + ' modification. Click this button to open the folder'
-                         + ' containing the files. (Note: a given record may'
-                         + ' have multiple backups with different time stamps.)'),
+                         ' saves copies of the records as they exist before'
+                         ' modification. Click this button to open the folder'
+                         ' containing the files. (Note: a given record may'
+                         ' have multiple backups with different time stamps.)'),
             put_button('Show backups', onclick = lambda: show_backup_dir(),
                        ).style('margin-left: 20px; margin-top: 0.8em'),
         ], [
             put_markdown('The debug log file contains a detailed trace of'
-                         + ' every action that Foliage takes. This can be'
-                         + ' useful when trying to resolve bugs and other'
-                         + ' problems.'),
+                         ' every action that Foliage takes. This can be'
+                         ' useful when trying to resolve bugs and other'
+                         ' problems.'),
             put_button('Show log file', onclick = lambda: show_log_file(),
                        ).style('margin-left: 20px; text-align: left'),
         ]], cell_widths = 'auto 170px', cell_heights = '29% 42% 29%'),
@@ -89,7 +90,7 @@ def edit_credentials():
 
 
 def show_backup_dir():
-    log(f'user invoked Show backup dir')
+    log('user invoked Show backup dir')
     webbrowser.open_new("file://" + config('BACKUP_DIR'))
 
 

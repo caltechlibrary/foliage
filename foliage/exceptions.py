@@ -22,7 +22,6 @@ file "LICENSE" for more information.
 
 class FoliageException(Exception):
     '''Base class for Foliage exceptions.'''
-    pass
 
 
 # Exception classes.
@@ -30,9 +29,7 @@ class FoliageException(Exception):
 
 class FolioOpFailed(FoliageException):
     '''Requested operation was unsuccessful.'''
-    pass
 
 
 class FolioError(FoliageException):
     '''Unrecoverable problem involving interactions with the FOLIO server.'''
-    pass

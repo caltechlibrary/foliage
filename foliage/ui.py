@@ -263,7 +263,7 @@ def close_splash_screen():
         # pyi_splash only exists inside the PyInstaller-produced executable.
         import pyi_splash
         pyi_splash.close()
-    except Exception as ex:
+    except Exception as ex:             # noqa: PIE786
         # Only log an error if running the PyInstaller-produced app.
         if inside_pyinstaller_app():
             log('exception trying to close splash screen: ' + str(ex))
@@ -284,7 +284,7 @@ def confirm(question, danger = False):
     pins = [
         put_buttons([
             {'label': 'Cancel', 'value': False, 'color': 'secondary'},
-            {'label': 'OK',     'value': True, 'color': ok_color},
+            {'label': 'OK'    , 'value': True, 'color': ok_color},
         ], onclick = clk).style('float: right')
     ]
     popup(title = '⚠️ ' + question, content = pins, closable = False)
@@ -364,8 +364,8 @@ def user_file(instructions):
     '''
     result = file_upload(instructions,
                          help_text = 'The file can be in any of the following'
-                         + ' formats: .txt (plain text), .csv (comma-separated'
-                         + '  values), .xlsx (Excel).')
+                         ' formats: .txt (plain text), .csv (comma-separated'
+                         '  values), .xlsx (Excel).')
     if result and result['filename'] != UPLOAD_CANCEL_MARKER:
         if result['mime_type'] in ['text/plain', 'text/csv']:
             return result['content'].decode()
@@ -379,15 +379,15 @@ def user_file(instructions):
             # The rows will be tuples. Flatten everything out as text.
             try:
                 return '\n'.join(flattened(ws.values))
-            except Exception as ex:
+            except Exception as ex:     # noqa: PIE786
                 log('failed to get flattened worksheet: ' + str(ex))
                 notify('Unable to extract values from this spreadsheet.'
-                       + ' This is probably an error in Foliage. Please'
-                       + ' report it to the developers.')
+                       ' This is probably an error in Foliage. Please'
+                       ' report it to the developers.')
         else:
             notify('This type of file is currently unsupported.'
-                   + f' (MIME type {result["mime_type"]}.) Please contact the'
-                   + 'developers to request support for this type.')
+                   f' (MIME type {result["mime_type"]}.) Please contact the'
+                   'developers to request support for this type.')
             return None
     return None
 
@@ -419,6 +419,7 @@ def user_file(instructions):
 # (E.g., before the main GUI loop is started.)
 
 qtapp = QApplication([''])
+
 
 def tell_success(text):
     '''Wrapper around put_success(...) that also formats markdown.'''

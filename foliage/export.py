@@ -22,7 +22,7 @@ from   slugify import slugify
 import threading
 
 from   foliage.folio import RecordKind
-from   foliage.ui import note_error
+from   foliage.ui import note_error, note_warn
 
 
 # Main functions.
@@ -42,7 +42,7 @@ def export_records(records, kind):
         clicked_ok = val
         event.set()
 
-    log(f'asking user for output format')
+    log('asking user for output format')
     pins = [
         put_radio('file_fmt', options = [('CSV', 'csv', True), ('JSON', 'json')]),
         put_buttons([
@@ -91,8 +91,8 @@ def export_data(data_list, filename):
         for item_dict in sorted(data_list, key = lambda d: d[sort_key]):
             writer.writerow(item_dict)
         tmp.seek(0)
-        bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
-        download(filename, bytes)
+        bytes_ = BytesIO(tmp.read().encode('utf8')).getvalue()
+        download(filename, bytes_)
 
 
 # Miscellaneous helper functions.
@@ -134,8 +134,8 @@ def export_records_csv(records, kind):
         for item_dict in sorted(records, key = lambda d: d[name_key]):
             writer.writerow(item_dict)
         tmp.seek(0)
-        bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
-        download(f'{slugify(kind)}-records.csv', bytes)
+        bytes_ = BytesIO(tmp.read().encode('utf8')).getvalue()
+        download(f'{slugify(kind)}-records.csv', bytes_)
 
 
 def export_records_json(records, kind):
@@ -146,5 +146,5 @@ def export_records_json(records, kind):
     with StringIO() as tmp:
         json.dump(records_json, tmp)
         tmp.seek(0)
-        bytes = BytesIO(tmp.read().encode('utf8')).getvalue()
-        download(f'{slugify(kind)}-records.json', bytes)
+        bytes_ = BytesIO(tmp.read().encode('utf8')).getvalue()
+        download(f'{slugify(kind)}-records.json', bytes_)

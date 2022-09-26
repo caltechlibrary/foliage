@@ -175,7 +175,7 @@ class SystemWidget():
             try:
                 out, err = self.widget_process.communicate(timeout = 1)
                 log('widget process output: ' + str(out))
-            except:
+            except Exception:           # noqa: PIE786
                 import signal
                 log('sending SIGTERM to widget process')
                 self.widget_process.send_signal(signal.SIGTERM)
@@ -219,9 +219,9 @@ class SystemWidget():
             icon = QtGui.QIcon()
             data_dir = join(dirname(__file__), 'data')
             log('reading widget icons from ' + data_dir)
-            icon.addFile(join(data_dir, 'foliage-icon-256x256.png'), QtCore.QSize(256,256))
-            icon.addFile(join(data_dir, 'foliage-icon-128x128.png'), QtCore.QSize(128,128))
-            icon.addFile(join(data_dir, 'foliage-icon-64x64.png'),   QtCore.QSize(64,64))
+            icon.addFile(join(data_dir, 'foliage-icon-256x256.png'), QtCore.QSize(256, 256))
+            icon.addFile(join(data_dir, 'foliage-icon-128x128.png'), QtCore.QSize(128, 128))
+            icon.addFile(join(data_dir, 'foliage-icon-64x64.png')  , QtCore.QSize(64, 64))
             app.setWindowIcon(icon)
             mw = QtWidgets.QMainWindow()
             mw.setWindowIcon(icon)
@@ -268,7 +268,7 @@ class SystemWidget():
             wait(2)
 
         from threading import Thread
-        log(f'starting taskbar icon widget in a subthread')
+        log('starting taskbar icon widget in a subthread')
         thread = Thread(target = show_widget, daemon = True, args = ())
         thread.start()
         # Note we never join() the thread, b/c that would block.  We start the

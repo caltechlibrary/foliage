@@ -15,7 +15,7 @@ from   commonpy.interrupt import wait, interrupt, reset_interrupts
 from   pprint import pformat
 from   pywebio.output import put_text, put_markdown, put_row, put_html
 from   pywebio.output import popup, close_popup, put_buttons, put_button
-from   pywebio.output import use_scope, clear, put_table, put_grid
+from   pywebio.output import use_scope, clear, put_table, put_grid, put_scope
 from   pywebio.output import put_code, put_processbar, set_processbar
 from   pywebio.output import clear_scope
 from   pywebio.pin import pin, put_textarea, put_radio, put_checkbox
@@ -47,13 +47,13 @@ class LookupTab(FoliageTab):
 # .............................................................................
 
 def tab_contents():
-    log(f'generating lookup tab contents')
+    log('generating lookup tab contents')
     return [
         put_grid([[
             put_markdown('Input one or more item barcode, item id, item hrid,'
-                         + ' instance id, instance hrid, instance accession'
-                         + ' number, loan id, loan hrid, user id, or user'
-                         + ' barcode below, or upload a file containing them.'),
+                         ' instance id, instance hrid, instance accession'
+                         ' number, loan id, loan hrid, user id, or user'
+                         ' barcode below, or upload a file containing them.'),
             put_button('Upload', outline = True,
                        onclick = lambda: load_file()).style('text-align: right'),
         ]], cell_widths = 'auto 100px'),
@@ -61,22 +61,22 @@ def tab_contents():
         put_grid([[
             put_radio('select_kind', inline = True,
                       label = 'Kind of record to retrieve:',
-                      options = [ ('Item', RecordKind.ITEM, True),
-                                  ('Holdings', RecordKind.HOLDINGS),
-                                  ('Instance', RecordKind.INSTANCE),
-                                  ('Loan', RecordKind.LOAN),
-                                  ('User', RecordKind.USER)]),
+                      options = [('Item', RecordKind.ITEM, True),
+                                 ('Holdings', RecordKind.HOLDINGS),
+                                 ('Instance', RecordKind.INSTANCE),
+                                 ('Loan', RecordKind.LOAN),
+                                 ('User', RecordKind.USER)]),
             put_checkbox("open_loans", inline = True,
                          options = [('Search open loans only', True, True)],
                          help_text = ('When searching for loans (and users,'
-                                      + ' based on loans), limit searches to'
-                                      + ' open loans only. Deselect'
-                                      + ' to search all loans.')),
+                                      ' based on loans), limit searches to'
+                                      ' open loans only. Deselect'
+                                      ' to search all loans.')),
         ]], cell_widths = '54% 46%'),
         put_grid([[
             put_grid([[
                 put_text('Format in which to display records:'),
-            ],[
+            ], [
                 put_radio('show_raw', inline = True,
                           options = [('Summary', 'summary', True),
                                      ('Raw data', 'json')]),
@@ -85,8 +85,8 @@ def tab_contents():
                          options = [('Use inventory API for items and instances',
                                      True, True)],
                          help_text = ("FOLIO's Inventory API shows more fields but"
-                                      + ' some values are computed. Deselect to'
-                                      + ' get pure records from the storage API.')),
+                                      ' some values are computed. Deselect to'
+                                      ' get pure records from the storage API.')),
         ]], cell_widths = '54% 46%'),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
@@ -111,7 +111,7 @@ _location_map = None
 
 
 def load_file():
-    log(f'user requesting file upload')
+    log('user requesting file upload')
     if (contents := user_file('Upload a file containing identifiers')):
         pin.textbox_find = contents
 
@@ -120,7 +120,7 @@ def init_location_map():
     global _location_map
     if _location_map is None:
         folio = Folio()
-        _location_map = {x.data['id']:x.data['name']
+        _location_map = {x.data['id']: x.data['name']
                          for x in folio.types(TypeKind.LOCATION)}
 
 
@@ -140,7 +140,8 @@ def inputs_are_unchanged():
 def clear_tab():
     global _last_textbox
     global _last_inventory_api
-    log(f'clearing tab')
+    global _last_open_loans
+    log('clearing tab')
     clear('output')
     pin.textbox_find = ''
     pin.inventory_api = [True]
@@ -153,7 +154,7 @@ def stop():
     '''Stop an ongoing lookup by setting the _interrupted flag.'''
     global _interrupted
     global _last_textbox
-    log(f'stopping')
+    log('stopping')
     _interrupted = True
     _last_textbox = ''
     stop_processbar()
@@ -244,7 +245,7 @@ def do_find():
     with use_scope('output', clear = True):
         put_grid([[
             put_scope('current_activity', [
-                put_markdown(f'_Certain lookups take a long time. Please be patient._'
+                put_markdown('_Certain lookups take a long time. Please be patient._'
                              ).style('color: DarkOrange; margin-bottom: 0')]),
         ], [
             put_processbar('bar', init = 1/steps).style('margin-top: 11px'),
@@ -253,23 +254,23 @@ def do_find():
         ]], cell_widths = '85% 15%').style(PROGRESS_BOX)
         # The staff want to see location names, so we need to get the mapping.
         _running = True
-        for count, id in enumerate(identifiers, start = 2):
+        for count, id_ in enumerate(identifiers, start = 2):
             if _interrupted:
                 break
             try:
                 # Figure out what kind of identifier we were given.
-                id_kind = folio.id_kind(id)
+                id_kind = folio.id_kind(id_)
                 if id_kind is IdKind.UNKNOWN:
-                    tell_failure(f'Unrecognized identifier: **{id}**.')
+                    tell_failure(f'Unrecognized identifier: **{id_}**.')
                     continue
                 if reuse_results:
-                    records = _last_results.get(id)
+                    records = _last_results.get(id_)
                 else:
-                    records = folio.related_records(id, id_kind, kind_wanted,
+                    records = folio.related_records(id_, id_kind, kind_wanted,
                                                     pin.inventory_api, pin.open_loans)
-                    _last_results[id] = records
+                    _last_results[id_] = records
                 if not records or len(records) == 0:
-                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} **{id}**.')
+                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} **{id_}**.')
                     continue
 
                 # Report the results & how we got them.
@@ -277,19 +278,19 @@ def do_find():
                 if pin.inventory_api and kind_wanted in ['item', 'instance']:
                     source = 'inventory'
                 this = pluralized(kind_wanted + f' {source} record', records, True)
-                how = f'by searching for {id_kind} **{id}**.'
+                how = f'by searching for {id_kind} **{id_}**.'
                 tell_success(f'Found {this} {how}')
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
-                    print_record(record, id, index, show_index, pin.show_raw == 'json')
+                    print_record(record, id_, index, show_index, pin.show_raw == 'json')
                 total_found += len(records)
-            except Interrupted as ex:
+            except Interrupted:
                 log('stopping due to interruption')
                 _interrupted = True
-            except Exception as ex:
+            except Exception as ex:     # noqa: PIE786
                 import traceback
                 log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
-                tell_failure(f'Error: ' + str(ex))
+                tell_failure('Error: ' + str(ex))
                 stop_processbar()
                 return
             finally:
@@ -463,7 +464,7 @@ def print_record(record, identifier, index, show_index, show_raw):
         if 'userId' in record.data:
             put_table([
                 [f'{record.kind.title()} id' , field(record, 'id')],
-                ['Status',                     field(record, 'status', 'name')],
+                ['Status'                    , field(record, 'status', 'name')],
                 ['User id'                   , field(record, 'userId')],
                 ['Item id'                   , field(record, 'itemId')],
                 ['Loan date'                 , field(record, 'loanDate')],
@@ -474,7 +475,7 @@ def print_record(record, identifier, index, show_index, show_raw):
         else:
             put_table([
                 [f'{record.kind.title()} id' , field(record, 'id')],
-                ['Status',                     field(record, 'status', 'name')],
+                ['Status'                    , field(record, 'status', 'name')],
                 ['User id'                   , ''],
                 ['Item id'                   , field(record, 'itemId')],
                 ['Loan date'                 , field(record, 'loanDate')],
@@ -495,8 +496,8 @@ def user_wants_reuse():
 
     pins = [
         put_text('The list of identifiers and the kind of record to retrieve'
-                 + ' are unchanged from the previous lookup. Should the results'
-                 + ' be reused, or should the identifiers be looked up again?'),
+                 ' are unchanged from the previous lookup. Should the results'
+                 ' be reused, or should the identifiers be looked up again?'),
         put_html('<br>'),
         put_buttons([
             {'label': 'Reuse the results', 'value': True},

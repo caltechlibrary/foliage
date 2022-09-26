@@ -52,7 +52,7 @@ from   sidetrack import log
 from   validators.url import url as valid_url
 
 from   foliage.enum_utils import ExtendedEnum
-from   foliage.exceptions import *
+from   foliage.exceptions import FoliageException, FolioError, FolioOpFailed
 
 
 # Internal constants.
@@ -78,6 +78,7 @@ _ITEM_BARCODE_REGEX = re.compile(r'\A('
                                      r'SFL-\w+',
                                  ]) + r')\Z',
                                  re.IGNORECASE)
+
 
 # Public data types.
 # .............................................................................
@@ -239,7 +240,7 @@ class TypeKind(ExtendedEnum):
 @dataclass
 class Record():
     '''Data class for storing a single FOLIO record.'''
-    id   : str                          # The UUID.
+    id   : str                          # The UUID.  # noqa: A003
     kind : RecordKind                   # The kind of record it is.
     data : dict                         # The JSON data from FOLIO.
 
@@ -271,10 +272,10 @@ class Folio():
     def new_token(url, tenant_id, user, password):
         '''Ask FOLIO to create a token for the given url, tenant & user.'''
         if not all([url, tenant_id, user, password]):
-            log(f'given incomplete set of parameters -- can\'t proceed.')
+            log('given incomplete set of parameters -- can\'t proceed.')
             return None, 'Incomplete parameters for credentials'
         try:
-            log(f'asking FOLIO for new API token')
+            log('asking FOLIO for new API token')
             headers = {
                 'x-okapi-tenant': tenant_id,
                 'content-type': 'application/json',
@@ -298,10 +299,10 @@ class Folio():
                 return None, 'FOLIO returned an error: ' + str(error)
             else:
                 return None, f'FOLIO returned unknown code {str(resp.status_code)}'
-        except Interrupted as ex:
-            log(f'interrupted')
+        except Interrupted:
+            log('interrupted')
             return None, 'Operation was interrupted before a new token was obtained'
-        except Exception as ex:
+        except Exception as ex:         # noqa: PIE786
             log('exception trying to get new FOLIO token: ' + str(ex))
             return None, 'Encountered error trying to get token – please report this'
 
@@ -316,13 +317,13 @@ class Folio():
         tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
         token     = config('FOLIO_OKAPI_TOKEN', default = None)
         if not all([url, tenant_id, token]):
-            log(f'credentials are incomplete; cannot validate credentials')
+            log('credentials are incomplete; cannot validate credentials')
             return False
         if not valid_url(url):
-            log(f'FOLIO_OKAPI_URL value is not a valid URL')
+            log('FOLIO_OKAPI_URL value is not a valid URL')
             return False
         try:
-            log(f'testing if FOLIO credentials appear valid')
+            log('testing if FOLIO credentials appear valid')
             headers = {
                 "x-okapi-token": token,
                 "x-okapi-tenant": tenant_id,
@@ -331,8 +332,8 @@ class Folio():
             request_url = url + '/instance-statuses?limit=0'
             (resp, _) = net('get', request_url, headers = headers)
             return (resp and resp.status_code < 400)
-        except Exception as ex:
-            log(f'FOLIO credentials test failed with ' + str(ex))
+        except Exception as ex:         # noqa: PIE786
+            log('FOLIO credentials test failed with ' + str(ex))
             return False
 
 
@@ -405,7 +406,7 @@ class Folio():
             raise FolioOpFailed('FOLIO permissions error: not authorized for action')
         elif response.status_code == 404:
             # "Item not found" etc.
-            log(f'FOLIO response code 404 details: ' + response.text)
+            log('FOLIO response code 404 details: ' + response.text)
             raise FolioOpFailed('FOLIO returned an error: ' + response.text)
         elif response.status_code in [409, 500, 501]:
             # "internal server error"
@@ -426,7 +427,7 @@ class Folio():
         else:
             # A code that I didn't see in the FOLIO API documentation.
             log(f'Unrecognized FOLIO response code {response.status_code}'
-                + ' details: ' + response.text)
+                ' details: ' + response.text)
             raise FoliageException('Unexpected FOLIO response – please report this')
 
 
@@ -464,30 +465,30 @@ class Folio():
         return type_list
 
 
-    def id_kind(self, id):
+    def id_kind(self, id_):
         '''Infer the type of id given.
 
         This is currently limited to non-"type" records, i.e., items, holdings,
         instances, etc., and not the TypeKind kinds of records.
         '''
-        if id in self._kind_cache:
-            return self._kind_cache[id]
+        if id_ in self._kind_cache:
+            return self._kind_cache[id_]
 
         id_kind = IdKind.UNKNOWN
-        id = id.strip(r' \\')    # Strip backslashes that got into some barcodes
-        if (_ITEM_BARCODE_REGEX.match(id)):
-            log(f'recognized {id} as an item barcode')
+        id_ = id_.strip(r' \\')  # Strip backslashes that got into some barcodes
+        if (_ITEM_BARCODE_REGEX.match(id_)):
+            log(f'recognized {id_} as an item barcode')
             id_kind = IdKind.ITEM_BARCODE
-        elif id.startswith('it') and id[2].isdigit():
-            log(f'recognized {id} as an item hrid')
+        elif id_.startswith('it') and id_[2].isdigit():
+            log(f'recognized {id_} as an item hrid')
             id_kind = IdKind.ITEM_HRID
-        elif id.startswith('ho') and id[2].isdigit():
-            log(f'recognized {id} as an holdings hrid')
+        elif id_.startswith('ho') and id_[2].isdigit():
+            log(f'recognized {id_} as an holdings hrid')
             id_kind = IdKind.HOLDINGS_HRID
-        elif id.startswith(_AN_PREFIX):
-            log(f'recognized {id} as an accession number')
+        elif id_.startswith(_AN_PREFIX):
+            log(f'recognized {id_} as an accession number')
             id_kind = IdKind.ACCESSION
-        elif id.count('-') > 2:
+        elif id_.count('-') > 2:
             # Given a uuid, there's no way to ask Folio what kind it is, b/c
             # of Folio's microarchitecture & the lack of a central coordinating
             # authority.  So we have to ask different modules in turn.
@@ -499,9 +500,9 @@ class Folio():
                 ('/users',                      IdKind.USER_ID),
             ]
             for base, kind in record_endpoints:
-                if (response := self.request(f'{base}/{id}')):
+                if (response := self.request(f'{base}/{id_}')):
                     if response.status_code == 200:
-                        log(f'recognized {id} as {kind}')
+                        log(f'recognized {id_} as {kind}')
                         id_kind = kind
                         break
                     elif response.status_code >= 500:
@@ -519,25 +520,25 @@ class Folio():
                 ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
             ]
             for query, kind in folio_searches:
-                if (response := self.request(f'{query}{id}&limit=0')):
+                if (response := self.request(f'{query}{id_}&limit=0')):
                     if response.status_code == 200:
                         # These endpoints always return a value, even when
                         # there are no hits, so we have to look inside.
                         data = json.loads(response.text)
                         if data and int(data.get('totalRecords', 0)) > 0:
-                            log(f'recognized {id} as {kind}')
+                            log(f'recognized {id_} as {kind}')
                             id_kind = kind
                             break
                     elif response.status_code >= 500:
                         raise RuntimeError('FOLIO server error')
 
         if id_kind != IdKind.UNKNOWN:
-            log(f'caching id kind value for {id}')
-            self._kind_cache[id] = id_kind
+            log(f'caching id kind value for {id_}')
+            self._kind_cache[id_] = id_kind
         return id_kind
 
 
-    def record(self, id, id_kind = None):
+    def record(self, id_, id_kind = None):
         '''Return the record corresponding to the given id.  If the id kind
         is known, setting parameter id_kind will save multiple API calls.
 
@@ -545,30 +546,30 @@ class Folio():
         instances, etc., and not the TypeKind kinds of records.
         '''
         if not id_kind:
-            id_kind = self.id_kind(id)
-        log(f'id {id} has kind {id_kind}')
+            id_kind = self.id_kind(id_)
+        log(f'id {id_} has kind {id_kind}')
         if id_kind == IdKind.UNKNOWN:
             return None
         record_kind = IdKind.to_record_kind(id_kind)
-        if (records_list := self.related_records(id, id_kind, record_kind)):
+        if (records_list := self.related_records(id_, id_kind, record_kind)):
             if len(records_list) > 1:
-                raise RuntimeError(f'Expected 1 record for {id} but got'
-                                   + ' {len(records_list)}.')
+                raise RuntimeError(f'Expected 1 record for {id_} but got'
+                                   ' {len(records_list)}.')
             return records_list[0]
         return None
 
 
-    def related_records(self, id, id_kind, requested,
+    def related_records(self, id_, id_kind, requested,
                         use_inventory = False, open_loans_only = True):
         '''Returns a list of records found by searching for "id_kind" records
-        associated with "id".
+        associated with "id_".
         '''
         use_inv = 'using inventory API' if use_inventory else ''
-        log(f'getting {requested} record(s) for {id_kind} {id} {use_inv}')
+        log(f'getting {requested} record(s) for {id_kind} {id_} {use_inv}')
 
         def record_list(kind, key, response):
             if not response or not response.text or response.status_code == 404:
-                log(f'FOLIO returned no result searching for {id} and {kind}')
+                log(f'FOLIO returned no result searching for {id_} and {kind}')
                 return []
             try:
                 data = json.loads(response.text)
@@ -576,25 +577,25 @@ class Folio():
                 raise RuntimeError('Unexpected response format returned by FOLIO')
             if key:
                 if 'totalRecords' in data:
-                    log(f'got {data["totalRecords"]} records for {id}')
+                    log(f'got {data["totalRecords"]} records for {id_}')
                     return [Record(id = rec['id'], kind = kind, data = rec)
                             for rec in data[key]]
                 else:
                     if 'title' in data:
                         # It's a record directly and not a list of records.
-                        log(f'got 1 record for {id}')
+                        log(f'got 1 record for {id_}')
                         return [Record(id = data['id'], kind = kind, data = data)]
                     else:
                         raise RuntimeError('Unexpected data returned by FOLIO')
             else:
-                log(f'got 1 record for {id}')
+                log(f'got 1 record for {id_}')
                 return [Record(id = data['id'], kind = kind, data = data)]
 
 
         # Figure out the appropriate API endpoint and return the value(s).
         if id_kind == IdKind.TYPE_ID:
             data_extractor = partial(record_list, RecordKind.TYPE, None)
-            endpoint = f'/{requested}/{id}'
+            endpoint = f'/{requested}/{id_}'
 
         elif requested == RecordKind.ITEM:
             # Default data extractor, but this gets overriden in some cases.
@@ -603,28 +604,28 @@ class Folio():
 
             # Given an item identifier.
             if id_kind == IdKind.ITEM_ID:
-                endpoint = f'/{module}/items/{id}'
+                endpoint = f'/{module}/items/{id_}'
                 if not use_inventory:
                     data_extractor = partial(record_list, RecordKind.ITEM, None)
             elif id_kind == IdKind.ITEM_BARCODE:
-                endpoint = f'/{module}/items?query=barcode={id}'
+                endpoint = f'/{module}/items?query=barcode={id_}'
             elif id_kind == IdKind.ITEM_HRID:
-                endpoint = f'/{module}/items?query=hrid={id}'
+                endpoint = f'/{module}/items?query=hrid={id_}'
 
             # Given an instance identifier.
             elif id_kind == IdKind.INSTANCE_ID:
-                endpoint = f'/{module}/items?query=instance.id={id}&limit=10000'
+                endpoint = f'/{module}/items?query=instance.id={id_}&limit=10000'
             elif id_kind == IdKind.INSTANCE_HRID:
-                endpoint = f'/{module}/items?query=instance.hrid={id}&limit=10000'
+                endpoint = f'/{module}/items?query=instance.hrid={id_}&limit=10000'
             elif id_kind == IdKind.ACCESSION:
-                inst_id = instance_id_from_accession(id)
+                inst_id = instance_id_from_accession(id_)
                 endpoint = f'/{module}/items?query=instance.id={inst_id}&limit=10000'
 
             # Given a holdings identifier.
             elif id_kind == IdKind.HOLDINGS_ID:
-                endpoint = f'/{module}/items?query=holdingsRecordId={id}&limit=10000'
+                endpoint = f'/{module}/items?query=holdingsRecordId={id_}&limit=10000'
             elif id_kind == IdKind.HOLDINGS_HRID:
-                holdings = self.related_records(id, IdKind.HOLDINGS_HRID,
+                holdings = self.related_records(id_, IdKind.HOLDINGS_HRID,
                                                 'holdings', False, open_loans_only)
                 if not holdings:
                     return []
@@ -634,8 +635,8 @@ class Folio():
             # Given a user identifier.
             elif id_kind == IdKind.USER_ID:
                 # Can't get items for a user directly.
-                log(f'need to find loans for user {id}')
-                loans = self.related_records(id, IdKind.USER_ID, 'loan',
+                log(f'need to find loans for user {id_}')
+                loans = self.related_records(id_, IdKind.USER_ID, 'loan',
                                              use_inventory, open_loans_only)
                 if not loans:
                     return []
@@ -651,7 +652,7 @@ class Folio():
                 return items
             elif id_kind == IdKind.USER_BARCODE:
                 # Do the lookup using the user id.
-                records = self.related_records(id, IdKind.USER_BARCODE, 'user',
+                records = self.related_records(id_, IdKind.USER_BARCODE, 'user',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -662,7 +663,7 @@ class Folio():
             # Given a loan identifier.
             elif id_kind == IdKind.LOAN_ID:
                 # Have to use loan-storage and extract the item id.
-                records = self.related_records(id, id_kind, 'loan',
+                records = self.related_records(id_, id_kind, 'loan',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -670,7 +671,8 @@ class Folio():
                 return self.related_records(item_id, IdKind.ITEM_ID, 'item',
                                             use_inventory, open_loans_only)
             else:
-                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
+                raise RuntimeError(f'Unsupported combo: searching for {requested}'
+                                   f' by {id_kind.value}')
 
         elif requested == RecordKind.INSTANCE:
             # Default data extractor, but this gets overriden in some cases.
@@ -679,28 +681,28 @@ class Folio():
 
             # Given an instance identifier.
             if id_kind == IdKind.INSTANCE_ID:
-                endpoint = f'/{module}/instances/{id}'
+                endpoint = f'/{module}/instances/{id_}'
                 if not use_inventory:
                     data_extractor = partial(record_list, RecordKind.INSTANCE, None)
             elif id_kind == IdKind.INSTANCE_HRID:
-                endpoint = f'/{module}/instances?query=hrid={id}'
+                endpoint = f'/{module}/instances?query=hrid={id_}'
             elif id_kind == IdKind.ACCESSION:
-                inst_id = instance_id_from_accession(id)
+                inst_id = instance_id_from_accession(id_)
                 endpoint = f'/{module}/instances/{inst_id}'
                 if not use_inventory:
                     data_extractor = partial(record_list, RecordKind.INSTANCE, None)
 
             # Given an item identifier.
             elif id_kind == IdKind.ITEM_BARCODE:
-                endpoint = f'/{module}/instances?query=item.barcode=={id}'
+                endpoint = f'/{module}/instances?query=item.barcode=={id_}'
             elif id_kind == IdKind.ITEM_ID:
-                endpoint = f'/{module}/instances?query=item.id=={id}'
+                endpoint = f'/{module}/instances?query=item.id=={id_}'
             elif id_kind == IdKind.ITEM_HRID:
-                endpoint = f'/{module}/instances?query=item.hrid=={id}'
+                endpoint = f'/{module}/instances?query=item.hrid=={id_}'
 
             # Given a holdings identifier.
             elif id_kind == IdKind.HOLDINGS_ID:
-                holdings = self.related_records(id, IdKind.HOLDINGS_ID, 'holdings',
+                holdings = self.related_records(id_, IdKind.HOLDINGS_ID, 'holdings',
                                                 use_inventory, open_loans_only)
                 if not holdings:
                     return []
@@ -708,7 +710,7 @@ class Folio():
                 return self.related_records(instance_id, IdKind.INSTANCE_ID, 'instance',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.HOLDINGS_HRID:
-                holdings = self.related_records(id, IdKind.HOLDINGS_HRID, 'holdings',
+                holdings = self.related_records(id_, IdKind.HOLDINGS_HRID, 'holdings',
                                                 use_inventory, open_loans_only)
                 if not holdings:
                     return []
@@ -718,7 +720,7 @@ class Folio():
 
             # Given a loan identifier.
             elif id_kind == IdKind.LOAN_ID:
-                loans = self.related_records(id, IdKind.LOAN_ID, 'loan',
+                loans = self.related_records(id_, IdKind.LOAN_ID, 'loan',
                                              use_inventory, open_loans_only)
                 if not loans:
                     return []
@@ -728,7 +730,7 @@ class Folio():
 
             # Given a user identifier.
             elif id_kind == IdKind.USER_ID:
-                loans = self.related_records(id, IdKind.USER_ID, 'loan',
+                loans = self.related_records(id_, IdKind.USER_ID, 'loan',
                                              use_inventory, open_loans_only)
                 if not loans:
                     return []
@@ -741,7 +743,7 @@ class Folio():
                                                       use_inventory, open_loans_only)
                 return instances
             elif id_kind == IdKind.USER_BARCODE:
-                loans = self.related_records(id, IdKind.USER_BARCODE, 'loan',
+                loans = self.related_records(id_, IdKind.USER_BARCODE, 'loan',
                                              use_inventory, open_loans_only)
                 if not loans:
                     return []
@@ -754,14 +756,15 @@ class Folio():
                                                       use_inventory, open_loans_only)
                 return instances
             else:
-                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
+                raise RuntimeError(f'Unsupported combo: searching for {requested}'
+                                   f' by {id_kind.value}')
 
         elif requested == RecordKind.LOAN:
             if id_kind == IdKind.LOAN_ID:
-                endpoint = f'/loan-storage/loans/{id}'
+                endpoint = f'/loan-storage/loans/{id_}'
                 data_extractor = partial(record_list, RecordKind.LOAN, None)
             elif id_kind == IdKind.USER_ID:
-                endpoint = f'/loan-storage/loans?query=userId=={id}&limit=10000'
+                endpoint = f'/loan-storage/loans?query=userId=={id_}&limit=10000'
                 data_extractor = partial(record_list, RecordKind.LOAN, 'loans')
                 loans = self.request(endpoint, converter = data_extractor)
                 if not loans:
@@ -771,7 +774,7 @@ class Folio():
                 return loans
             elif id_kind == IdKind.USER_BARCODE:
                 # Can't do this one directly, so get a user id.
-                user_records = self.related_records(id, IdKind.USER_BARCODE, 'user',
+                user_records = self.related_records(id_, IdKind.USER_BARCODE, 'user',
                                                     use_inventory, open_loans_only)
                 if not user_records:
                     return []
@@ -779,7 +782,7 @@ class Folio():
                 return self.related_records(user_id, IdKind.USER_ID, 'loan',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.ITEM_ID:
-                endpoint = f'/loan-storage/loans?query=itemId=={id}&limit=10000'
+                endpoint = f'/loan-storage/loans?query=itemId=={id_}&limit=10000'
                 data_extractor = partial(record_list, RecordKind.LOAN, 'loans')
                 loans = self.request(endpoint, converter = data_extractor)
                 if not loans:
@@ -788,8 +791,8 @@ class Folio():
                     loans = [ln for ln in loans if ln.data['status']['name'] == 'Open']
                 return loans
             elif id_kind in [IdKind.ITEM_BARCODE, IdKind.ITEM_HRID]:
-                log(f'need to find item id for {id_kind} {id}')
-                records = self.related_records(id, id_kind, 'item',
+                log(f'need to find item id for {id_kind} {id_}')
+                records = self.related_records(id_, id_kind, 'item',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -798,7 +801,7 @@ class Folio():
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.INSTANCE_ID:
                 # We have to get the item id's, and look up loans on each.
-                records = self.related_records(id, IdKind.INSTANCE_ID, 'item',
+                records = self.related_records(id_, IdKind.INSTANCE_ID, 'item',
                                                use_inventory, open_loans_only)
                 loans = []
                 for item in records:
@@ -812,7 +815,7 @@ class Folio():
             elif id_kind in [IdKind.INSTANCE_HRID, IdKind.ACCESSION]:
                 # Get the instance record & do this again with the instance id,
                 # because we solved that case in the code above.
-                records = self.related_records(id, id_kind, 'instance',
+                records = self.related_records(id_, id_kind, 'instance',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -822,7 +825,7 @@ class Folio():
             elif id_kind in [IdKind.HOLDINGS_ID, IdKind.HOLDINGS_HRID]:
                 # Can't go straight from holdings records to loans. Get items
                 # under this holdings record, then get loans on those items.
-                items = self.related_records(id, id_kind, 'item',
+                items = self.related_records(id_, id_kind, 'item',
                                              use_inventory, open_loans_only)
                 loans = []
                 for item in items:
@@ -830,17 +833,18 @@ class Folio():
                                                   use_inventory, open_loans_only)
                 return loans
             else:
-                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
+                raise RuntimeError(f'Unsupported combo: searching for {requested}'
+                                   f' by {id_kind.value}')
 
         elif requested == RecordKind.USER:
             if id_kind == IdKind.USER_ID:
-                endpoint = f'/users/{id.zfill(10)}'
+                endpoint = f'/users/{id_.zfill(10)}'
                 data_extractor = partial(record_list, RecordKind.USER, None)
             elif id_kind == IdKind.USER_BARCODE:
-                endpoint = f'/users?query=barcode={id.zfill(10)}'
+                endpoint = f'/users?query=barcode={id_.zfill(10)}'
                 data_extractor = partial(record_list, RecordKind.USER, 'users')
             elif id_kind == IdKind.ITEM_ID:
-                records = self.related_records(id, IdKind.ITEM_ID, 'loan',
+                records = self.related_records(id_, IdKind.ITEM_ID, 'loan',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -851,7 +855,7 @@ class Folio():
                 else:
                     return []
             elif id_kind == IdKind.ITEM_HRID:
-                records = self.related_records(id, IdKind.ITEM_HRID, 'item',
+                records = self.related_records(id_, IdKind.ITEM_HRID, 'item',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -859,7 +863,7 @@ class Folio():
                 return self.related_records(item_id, IdKind.ITEM_ID, 'user',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.ITEM_BARCODE:
-                records = self.related_records(id, IdKind.ITEM_BARCODE, 'item',
+                records = self.related_records(id_, IdKind.ITEM_BARCODE, 'item',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -867,7 +871,7 @@ class Folio():
                 return self.related_records(item_id, IdKind.ITEM_ID, 'user',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.INSTANCE_ID:
-                loans = self.related_records(id, IdKind.INSTANCE_ID, 'loan',
+                loans = self.related_records(id_, IdKind.INSTANCE_ID, 'loan',
                                              use_inventory, open_loans_only)
                 if not loans:
                     return []
@@ -880,7 +884,7 @@ class Folio():
                                                          use_inventory, open_loans_only)
                 return user_records
             elif id_kind == IdKind.INSTANCE_HRID:
-                records = self.related_records(id, IdKind.INSTANCE_HRID, 'instance',
+                records = self.related_records(id_, IdKind.INSTANCE_HRID, 'instance',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -888,7 +892,7 @@ class Folio():
                 return self.related_records(record_id, IdKind.INSTANCE_ID, 'user',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.ACCESSION:
-                records = self.related_records(id, IdKind.ACCESSION, 'instance',
+                records = self.related_records(id_, IdKind.ACCESSION, 'instance',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -896,7 +900,7 @@ class Folio():
                 return self.related_records(record_id, IdKind.INSTANCE_ID, 'user',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.LOAN_ID:
-                records = self.related_records(id, IdKind.LOAN_ID, 'loan',
+                records = self.related_records(id_, IdKind.LOAN_ID, 'loan',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -904,7 +908,7 @@ class Folio():
                 return self.related_records(user_id, IdKind.USER_ID, 'user',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.HOLDINGS_ID:
-                records = self.related_records(id, IdKind.HOLDINGS_ID, 'holdings',
+                records = self.related_records(id_, IdKind.HOLDINGS_ID, 'holdings',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -912,7 +916,7 @@ class Folio():
                 return self.related_records(instance_id, IdKind.INSTANCE_ID, 'user',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.HOLDINGS_HRID:
-                records = self.related_records(id, IdKind.HOLDINGS_HRID, 'holdings',
+                records = self.related_records(id_, IdKind.HOLDINGS_HRID, 'holdings',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -920,33 +924,40 @@ class Folio():
                 return self.related_records(instance_id, IdKind.INSTANCE_ID, 'user',
                                             use_inventory, open_loans_only)
             else:
-                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
+                raise RuntimeError(f'Unsupported combo: searching for {requested}'
+                                   f' by {id_kind.value}')
 
         elif requested == RecordKind.HOLDINGS:
             if id_kind == IdKind.HOLDINGS_ID:
                 data_extractor = partial(record_list, RecordKind.HOLDINGS, None)
-                endpoint = f'/holdings-storage/holdings/{id}'
+                endpoint = f'/holdings-storage/holdings/{id_}'
             elif id_kind == IdKind.HOLDINGS_HRID:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                endpoint = f'/holdings-storage/holdings?query=hrid=={id}&limit=10000'
+                data_extractor = partial(record_list, RecordKind.HOLDINGS,
+                                         'holdingsRecords')
+                endpoint = f'/holdings-storage/holdings?query=hrid=={id_}&limit=10000'
             elif id_kind == IdKind.INSTANCE_ID:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                endpoint = f'/holdings-storage/holdings?query=instanceId=={id}&limit=10000'
+                data_extractor = partial(record_list, RecordKind.HOLDINGS,
+                                         'holdingsRecords')
+                endpoint = f'/holdings-storage/holdings?query=instanceId=={id_}&limit=10000'
             elif id_kind == IdKind.ITEM_BARCODE:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                endpoint = f'/holdings-storage/holdings?query=item.barcode=={id}&limit=10000'
+                data_extractor = partial(record_list, RecordKind.HOLDINGS,
+                                         'holdingsRecords')
+                endpoint = f'/holdings-storage/holdings?query=item.barcode=={id_}&limit=10000'
             elif id_kind == IdKind.ITEM_ID:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                endpoint = f'/holdings-storage/holdings?query=item.id=={id}&limit=10000'
+                data_extractor = partial(record_list, RecordKind.HOLDINGS,
+                                         'holdingsRecords')
+                endpoint = f'/holdings-storage/holdings?query=item.id=={id_}&limit=10000'
             elif id_kind == IdKind.ITEM_HRID:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                endpoint = f'/holdings-storage/holdings?query=item.hrid=={id}&limit=10000'
+                data_extractor = partial(record_list, RecordKind.HOLDINGS,
+                                         'holdingsRecords')
+                endpoint = f'/holdings-storage/holdings?query=item.hrid=={id_}&limit=10000'
             elif id_kind == IdKind.ACCESSION:
-                data_extractor = partial(record_list, RecordKind.HOLDINGS, 'holdingsRecords')
-                inst_id = instance_id_from_accession(id)
+                data_extractor = partial(record_list, RecordKind.HOLDINGS,
+                                         'holdingsRecords')
+                inst_id = instance_id_from_accession(id_)
                 endpoint = f'/holdings-storage/holdings?query=instanceId=={inst_id}&limit=10000'
             elif id_kind == IdKind.INSTANCE_HRID:
-                records = self.related_records(id, IdKind.INSTANCE_HRID, 'instance',
+                records = self.related_records(id_, IdKind.INSTANCE_HRID, 'instance',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -954,7 +965,7 @@ class Folio():
                 return self.related_records(record_id, IdKind.INSTANCE_ID, 'holdings',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.LOAN_ID:
-                records = self.related_records(id, IdKind.LOAN_ID, 'loan',
+                records = self.related_records(id_, IdKind.LOAN_ID, 'loan',
                                                use_inventory, open_loans_only)
                 if not records:
                     return []
@@ -962,25 +973,27 @@ class Folio():
                 return self.related_records(item_id, IdKind.ITEM_ID, 'holdings',
                                             use_inventory, open_loans_only)
             elif id_kind == IdKind.USER_ID:
-                loans = self.related_records(id, IdKind.USER_ID, 'loan',
+                loans = self.related_records(id_, IdKind.USER_ID, 'loan',
                                              use_inventory, open_loans_only)
                 if not loans:
                     return []
                 holdings_records = []
                 for loan in loans:
                     raise_for_interrupts()
-                    holdings_records += self.related_records(loan.id, IdKind.LOAN_ID, 'holdings',
-                                                             use_inventory, open_loans_only)
+                    holdings_records += self.related_records(loan.id, IdKind.LOAN_ID,
+                                                             'holdings', use_inventory,
+                                                             open_loans_only)
                 return holdings_records
             elif id_kind == IdKind.USER_BARCODE:
-                user = self.related_records(id, IdKind.USER_BARCODE, 'user',
+                user = self.related_records(id_, IdKind.USER_BARCODE, 'user',
                                             use_inventory, open_loans_only)
                 if not user:
                     return []
                 return self.related_records(user.id, IdKind.USER_ID, 'holdings',
                                             use_inventory, open_loans_only)
             else:
-                raise RuntimeError(f'Unsupported combo: searching for {requested} by {id_kind.value}')
+                raise RuntimeError(f'Unsupported combo: searching for {requested}'
+                                   f' by {id_kind.value}')
 
         else:
             raise RuntimeError(f'Unrecognized record type value {requested}')
@@ -1073,9 +1086,9 @@ def unique_identifiers(text):
     '''Return a list of identifiers found in the text after some cleanup.'''
     lines = text.splitlines()
     ids = flattened(re.split(r'\s+|,+|;+|:+', line) for line in lines)
-    ids = [id.strip(r'''.'":?!/''') for id in ids]
-    ids = [id for id in ids if not any(c in id for c in r'!@#$%^&*=\/')]
-    ids = [id for id in ids if any(c.isnumeric() for c in id)]
+    ids = [id_.strip(r'''.'":?!/''') for id_ in ids]
+    ids = [id_ for id_ in ids if not any(c in id_ for c in r'!@#$%^&*=\/')]
+    ids = [id_ for id_ in ids if any(c.isnumeric() for c in id_)]
     return unique(filter(None, ids))
 
 

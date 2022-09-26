@@ -42,7 +42,7 @@ class ListTab(FoliageTab):
 # .............................................................................
 
 def tab_contents():
-    log(f'generating list tab contents')
+    log('generating list tab contents')
     return [
         put_grid([[
             put_markdown('Select a FOLIO type to list:').style('margin-top: 6px'),
@@ -75,7 +75,7 @@ def tab_contents():
                 {'label': 'Location types', 'value': TypeKind.LOCATION},
                 {'label': 'Material types', 'value': TypeKind.MATERIAL},
                 {'label': 'Nature of content term types', 'value': TypeKind.NATURE_OF_CONTENT},
-#                {'label': 'Order lines', 'value': TypeKind.ORDER_LINE},
+                # {'label': 'Order lines', 'value': TypeKind.ORDER_LINE},
                 {'label': 'Organizations', 'value': TypeKind.ORGANIZATION},
                 {'label': 'Service point types', 'value': TypeKind.SERVICE_POINT},
                 {'label': 'Shelf location types', 'value': TypeKind.SHELF_LOCATION},
@@ -93,7 +93,7 @@ def tab_contents():
 # .............................................................................
 
 def clear_tab():
-    log(f'clearing tab')
+    log('clearing tab')
     clear('output')
 
 
@@ -106,7 +106,7 @@ def do_list():
         log(f'getting list of {requested} types')
         try:
             types = folio.types(requested)
-        except Exception as ex:
+        except Exception as ex:         # noqa: noqa: PIE786
             import traceback
             log('Exception info: ' + str(ex) + '\n' + traceback.format_exc())
             put_html('<br>')
@@ -135,12 +135,12 @@ def do_list():
         stop_processbar()
 
 
-def show_record(title, id, record_type):
+def show_record(title, id_, record_type):
     folio = Folio()
     try:
-        log(f'getting {record_type} record {id} from FOLIO')
+        log(f'getting {record_type} record {id_} from FOLIO')
         recs  = folio.types(record_type)
-    except Exception as ex:
+    except Exception as ex:             # noqa: noqa: PIE786
         note_error(str(ex))
         return
 
@@ -160,9 +160,9 @@ def show_record(title, id, record_type):
     close_popup()
 
 
-def link_button(name, id, title, record_type):
-    return put_button(id, link_style = True,
-                      onclick = lambda: show_record(title, id, record_type),
+def link_button(name, id_, title, record_type):
+    return put_button(id_, link_style = True,
+                      onclick = lambda: show_record(title, id_, record_type),
                       ).style('margin-left: 0; margin-top: 0.25em; margin-bottom: 0.5em')
 
 

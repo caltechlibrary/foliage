@@ -11,6 +11,7 @@ file "LICENSE" for more information.
 
 from enum import Enum, EnumMeta
 
+
 # The following class was based in part on the posting by user "Pierre D" at
 # https://stackoverflow.com/a/65225753/743730 made on 2020-12-09.
 
@@ -30,4 +31,3 @@ class MetaEnum(EnumMeta):
 
 class ExtendedEnum(str, Enum, metaclass = MetaEnum):
     '''Extend Enum class with a function allowing a test for containment.'''
-    pass

@@ -17,6 +17,7 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
+
 class FoliageTab():
     def contents(self):
         '''Return a dict of elements {'title': '...', 'content': [objects]}.'''
