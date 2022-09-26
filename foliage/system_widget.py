@@ -99,8 +99,7 @@ file "LICENSE" for more information.
 '''
 
 from   commonpy.interrupt import wait
-import os
-from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
+from   os.path import exists, dirname, join, realpath
 from   sidetrack import log
 import sys
 

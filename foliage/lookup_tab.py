@@ -9,34 +9,27 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
-from   commonpy.data_utils import unique, pluralized, flattened
+from   commonpy.data_utils import pluralized
 from   commonpy.exceptions import Interrupted
-from   commonpy.file_utils import exists, readable
-from   commonpy.interrupt import wait, interrupt, interrupted, reset_interrupts
-import json
+from   commonpy.interrupt import wait, interrupt, reset_interrupts
 from   pprint import pformat
-from   pywebio.input import input, select, checkbox, radio
-from   pywebio.input import NUMBER, TEXT, input_update, input_group
 from   pywebio.output import put_text, put_markdown, put_row, put_html
-from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
-from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
-from   pywebio.output import put_success, put_info, put_table, put_grid, span
-from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
-from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column, put_scope, clear_scope, get_scope
-from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
-from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
-from   pywebio.session import run_js, eval_js
-from   sidetrack import set_debug, log
+from   pywebio.output import popup, close_popup, put_buttons, put_button
+from   pywebio.output import use_scope, clear, put_table, put_grid
+from   pywebio.output import put_code, put_processbar, set_processbar
+from   pywebio.output import clear_scope
+from   pywebio.pin import pin, put_textarea, put_radio, put_checkbox
+from   pywebio.session import eval_js
+from   sidetrack import log
 import threading
 
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_records
 from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
 from   foliage.folio import unique_identifiers
-from   foliage.ui import confirm, notify, user_file, stop_processbar
+from   foliage.ui import user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
-from   foliage.ui import note_info, note_warn, note_error, PROGRESS_BOX
+from   foliage.ui import note_error, PROGRESS_BOX
 
 
 # Tab definition class.

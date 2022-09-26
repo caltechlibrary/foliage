@@ -9,24 +9,13 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
-from   commonpy.data_utils import unique, pluralized, flattened
-from   commonpy.file_utils import exists, readable, open_file
-from   commonpy.interrupt import wait
+from   commonpy.file_utils import open_file
 from   decouple import config
 from   os.path import dirname
-from   pywebio.input import input, select, checkbox, radio
-from   pywebio.input import NUMBER, TEXT, input_update, input_group
-from   pywebio.output import put_text, put_markdown, put_row, put_html
-from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
-from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
-from   pywebio.output import put_success, put_info, put_table, put_grid, span
-from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
-from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column
-from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
-from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
-from   sidetrack import set_debug, log
-from   tempfile import NamedTemporaryFile
+from   pywebio.output import put_markdown, put_html
+from   pywebio.output import popup, close_popup, put_button
+from   pywebio.output import put_grid, put_scrollable, put_code
+from   sidetrack import log
 import threading
 import webbrowser
 
@@ -34,10 +23,6 @@ from   foliage import __version__
 from   foliage.base_tab import FoliageTab
 from   foliage.credentials import credentials_from_user, current_credentials
 from   foliage.credentials import use_credentials
-from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
-from   foliage.ui import quit_app, reload_page, confirm, notify
-from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
-from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
 
 
 # Tab definition class.

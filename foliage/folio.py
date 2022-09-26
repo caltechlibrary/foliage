@@ -33,28 +33,25 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
-from   commonpy.data_utils import unique, pluralized, flattened
-from   commonpy.exceptions import NoContent, ServiceFailure, RateLimitExceeded
+from   commonpy.data_utils import unique, flattened
+from   commonpy.exceptions import NoContent, RateLimitExceeded
 from   commonpy.exceptions import Interrupted, NetworkFailure
 from   commonpy.file_utils import writable
-from   commonpy.interrupt import wait, interrupted, raise_for_interrupts
-from   commonpy.string_utils import antiformat
+from   commonpy.interrupt import wait, raise_for_interrupts
 from   commonpy.network_utils import net, network_available
 from   dataclasses import dataclass
 from   datetime import datetime as dt
 from   dateutil import tz
 from   decouple import config
-from   enum import Enum, EnumMeta
 from   functools import partial
-from   fastnumbers import isint
 import json
 import os
-from   os.path import exists, dirname, join
+from   os.path import exists, join
 import re
-from   sidetrack import set_debug, log
+from   sidetrack import log
 from   validators.url import url as valid_url
 
-from   foliage.enum_utils import MetaEnum, ExtendedEnum
+from   foliage.enum_utils import ExtendedEnum
 from   foliage.exceptions import *
 
 

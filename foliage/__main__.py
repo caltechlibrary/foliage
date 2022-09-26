@@ -122,30 +122,27 @@ file "LICENSE" for more information.
 '''
 
 import sys
-from   sys import exit as exit
 if sys.version_info <= (3, 8):
     print('foliage requires Python version 3.8 or higher,')
-    print('but the current version of Python is ' +
-          str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
-    exit(1)
+    print('but the current version of Python is '
+          + str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
+    sys.exit(1)
 
 from   appdirs import AppDirs
 from   collections import ChainMap
-from   commonpy.data_utils import timestamp, pluralized
+from   commonpy.data_utils import timestamp
 from   commonpy.exceptions import Interrupted
 from   commonpy.file_utils import writable
 from   commonpy.interrupt import config_interrupt
 from   commonpy.network_utils import network_available
 from   commonpy.string_utils import antiformat
 from   decouple import config
-from   getpass import getuser
 from   fastnumbers import isint
 import faulthandler
 from   functools import partial
-from   itertools import chain
 import os
 from   os import makedirs
-from   os.path import exists, dirname, join, basename, abspath, realpath, isdir
+from   os.path import exists, dirname, join, realpath, isdir
 import plac
 import pywebio
 # PyWebIO's default is tornado, and tornado mucks with logging, so I would
@@ -154,30 +151,27 @@ import pywebio
 # the copy of PyWebIO used by Foliage is a fork where I've modified an
 # important function for detecting when the user has closed the app window.
 from   pywebio import start_server
-from   pywebio.output import put_html, put_warning, put_success
-from   pywebio.output import put_tabs, put_image
-from   pywebio.pin import pin, pin_wait_change, put_actions
+from   pywebio.output import put_html, put_warning, put_tabs, put_image
+from   pywebio.pin import pin_wait_change, put_actions
 from   pywebio.session import run_js
 from   sidetrack import set_debug, log
 from   tornado.template import Template
 
-import foliage
 from   foliage import __version__
 from   foliage.change_tab import ChangeTab
 from   foliage.credentials import credentials_from_user, credentials_from_keyring
 from   foliage.credentials import use_credentials, credentials_complete
 from   foliage.credentials import credentials_from_file, credentials_from_env
 from   foliage.delete_tab import DeleteTab
-from   foliage.enum_utils import MetaEnum, ExtendedEnum
 from   foliage.folio import Folio
 from   foliage.list_tab import ListTab
 from   foliage.lookup_tab import LookupTab
 from   foliage.other_tab import OtherTab
 from   foliage.clean_tab import CleanTab
 from   foliage.system_widget import SystemWidget
-from   foliage.ui import quit_app, reload_page, confirm, notify, inside_pyinstaller_app
-from   foliage.ui import note_info, note_warn, note_error, tell_success, tell_failure
-from   foliage.ui import image_data, user_file, JS_CODE, CSS_CODE
+from   foliage.ui import quit_app, confirm, notify, inside_pyinstaller_app
+from   foliage.ui import note_info, note_warn, note_error
+from   foliage.ui import image_data, JS_CODE, CSS_CODE
 from   foliage.ui import close_splash_screen
 
 
@@ -295,7 +289,7 @@ Command-line arguments summary
     if version:
         from foliage import print_version
         print_version()
-        exit()
+        sys.exit()
 
     config_debug(debug)                # Set up debugging before going further.
 
@@ -461,7 +455,7 @@ def config_debug(debug_arg):
                 log_dir = dirname(log_file)
                 if not writable(log_dir):
                     note_error(f'Can\'t write debug ouput in {log_dir}')
-                    exit()
+                    sys.exit()
             faulthandler.enable()
             if os.name != 'nt':         # Can't use next part on Windows.
                 import signal
@@ -526,17 +520,17 @@ def config_backup_dir(backup_dir):
         backup_dir = config('BACKUP_DIR', default = default_backups)
     if exists(backup_dir) and not isdir(backup_dir):
         note_error(f'Not a directory: {antiformat(backup_dir)}')
-        exit(1)
+        sys.exit(1)
     if not exists(backup_dir):
         log(f'creating backup directory {antiformat(backup_dir)}')
         try:
             makedirs(backup_dir)
         except OSError as ex:
             note_error(f'Unable to create backup directory {antiformat(backup_dir)}')
-            exit(1)
+            sys.exit(1)
     if not writable(backup_dir):
         note_error(f'Cannot write in backup directory: {antiformat(backup_dir)}')
-        exit(1)
+        sys.exit(1)
     log('backup dir is ' + backup_dir)
     os.environ['BACKUP_DIR'] = backup_dir
 
@@ -551,18 +545,18 @@ def config_credentials(creds_file, use_keyring):
         log('creds file supplied on command line')
         if not exists(creds_file):
             note_error(f'Credentials file does not exist: {creds_file}')
-            exit(1)
+            sys.exit(1)
         if not readable(creds_file):
             note_error(f'Credentials file not readable: {creds_file}')
-            exit(1)
+            sys.exit(1)
         creds = credentials_from_file(creds_file)
         if not creds:
             note_error(f'Failed to read credentials from {creds_file}')
-            exit(1)
+            sys.exit(1)
         if not credentials_complete(creds):
             # Consider it an error to be told to use a file and it's incomplete
             note_error(f'Incomplete credentials in {creds_file}')
-            exit(1)
+            sys.exit(1)
     if not creds:
         log('no creds supplied on command line; looking in env')
         creds = credentials_from_env()
@@ -590,7 +584,7 @@ def config_port(port):
     '''Takes the --port option and changes the Foliage port if needed.'''
     if not isint(port):
         note_error(f'Port number value is not an integer: {antiformat(port)}')
-        exit(1)
+        sys.exit(1)
     os.environ['PORT'] = str(port)
 
 

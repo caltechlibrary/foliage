@@ -25,19 +25,13 @@ file "LICENSE" for more information.
 from   commonpy.data_utils import flattened
 from   commonpy.interrupt import wait
 from   commonpy.string_utils import antiformat
-from   contextlib import contextmanager
-from   decouple import config
 import os
-from   os.path import exists, dirname, join, basename, abspath
+from   os.path import exists, dirname, join
 from   PyQt5.QtWidgets import QApplication, QMessageBox
-import pywebio
-from   pywebio.input import input, file_upload
-from   pywebio.output import put_text, put_markdown, put_row, put_html
+from   pywebio.input import file_upload
+from   pywebio.output import put_markdown
 from   pywebio.output import toast, popup, close_popup, put_buttons
 from   pywebio.output import put_success, put_warning, put_error
-from   pywebio.output import use_scope, set_scope, clear, remove
-from   pywebio.output import PopupSize, put_loading
-from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
 from   pywebio.session import run_js, eval_js
 from   rich.panel import Panel
 from   rich.style import Style
@@ -45,7 +39,7 @@ import sys
 import threading
 
 if __debug__:
-    from sidetrack import set_debug, log
+    from sidetrack import log
 
 
 # Exported constants.
@@ -318,7 +312,7 @@ def notify(msg):
     event.wait()
     close_popup()
     wait(0.25)                           # Give time for popup to go away.
-    log(f'notification popup closed explicitly')
+    log('notification popup closed explicitly')
 
 
 def stop_processbar():
@@ -340,7 +334,7 @@ def quit_app(ask_confirm = True):
     if ask_confirm:
         wait(0.25)
     if not ask_confirm or confirm('Exit Foliage?', danger = True):
-        log(f'running JS function close_window()')
+        log('running JS function close_window()')
         run_js('close_window()')
         wait(0.5)
         raise SystemExit('User quit application')
@@ -348,7 +342,7 @@ def quit_app(ask_confirm = True):
 
 def reload_page():
     '''Reload the Foliage application page.'''
-    log(f'running JS function to reload the page')
+    log('running JS function to reload the page')
     run_js('reload_page()')
 
 

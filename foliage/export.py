@@ -9,29 +9,20 @@ is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
 
-from   commonpy.data_utils import unique, pluralized, flattened
+from   commonpy.data_utils import pluralized, flattened
 from   commonpy.interrupt import wait
 import csv
 from   io import BytesIO, StringIO
 import json
-from   pywebio.input import input, select, checkbox, radio
-from   pywebio.input import NUMBER, TEXT, input_update, input_group
-from   pywebio.output import put_text, put_markdown, put_row, put_html
-from   pywebio.output import toast, popup, close_popup, put_buttons, put_button, put_error
-from   pywebio.output import use_scope, set_scope, clear, remove, put_warning
-from   pywebio.output import put_success, put_info, put_table, put_grid, span
-from   pywebio.output import put_tabs, put_image, put_scrollable, put_code, put_link
-from   pywebio.output import put_processbar, set_processbar, put_loading
-from   pywebio.output import put_column
-from   pywebio.pin import pin, pin_wait_change, put_input, put_actions
-from   pywebio.pin import put_textarea, put_radio, put_checkbox, put_select
-from   pywebio.session import run_js, eval_js, download
-from   sidetrack import set_debug, log
+from   pywebio.output import popup, close_popup, put_buttons
+from   pywebio.pin import pin, put_radio
+from   pywebio.session import download
+from   sidetrack import log
 from   slugify import slugify
 import threading
 
-from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
-from   foliage.ui import quit_app, reload_page, confirm, notify, note_error
+from   foliage.folio import RecordKind
+from   foliage.ui import note_error
 
 
 # Main functions.

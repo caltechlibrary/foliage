@@ -45,15 +45,14 @@ file "LICENSE" for more information.
 
 from   collections import namedtuple
 from   commonpy.interrupt import wait
-from   decouple import AutoConfig, Config, RepositoryEmpty, config
+from   decouple import Config, RepositoryEmpty, config
 import getpass
-import json
 import keyring
 import os
 from   pywebio.output import popup, close_popup, put_buttons, put_markdown
 from   pywebio.output import put_loading
-from   pywebio.pin import pin, put_input, put_actions, put_textarea
-from   sidetrack import set_debug, log
+from   pywebio.pin import pin, put_input
+from   sidetrack import log
 import sys
 import threading
 
