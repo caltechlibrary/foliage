@@ -176,6 +176,7 @@ def skipped(record_or_id, msg, why = ''):
 
 def do_delete():
     global _last_textbox
+    global _results
     global _interrupted
     global _running
     log('do_delete invoked')
@@ -257,7 +258,7 @@ def do_delete():
             put_grid([[
                 put_markdown('Done.'),
                 put_button('Export', outline = True,
-                           onclick = lambda: do_export(_last_results, kind_wanted),
+                           onclick = lambda: do_export('foliage-cleaning.csv'),
                            ).style('text-align: right')
             ]]).style('margin: 1.5em 17px auto 17px')
         _running = False
