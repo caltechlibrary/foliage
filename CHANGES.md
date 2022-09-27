@@ -1,5 +1,17 @@
 # Change log for foliage
 
+## ★ Version 1.5.0 (TBD) ★
+
+User-visible changes in this version:
+* :wrench: Update: this version updates the pattern used to recognize Catech accession numbers, because the accession number format seems to have been changed again by FOLIO.
+* :wrench: Update: the action buttons in the _Change records_ and _Delete records_ tabs are now colored blue instead of red. The original choice for red was motivated by a desire to warn people they were about to perform a dangerous operation, but using red in this context is also inconsisten from a user-interface perspective and probably confusing to some people.
+* :wrench: Update: Foliage now uses the storage APIs for items and holdings when doing deletions, instead of using the inventory APIs. The original motivation for using the inventory APIs for these operations was that the inventory API "does more" and might lead to more complete updates on the FOLIO server side, but because this hypothetical idea was not really ever confirmed and FOLIO's representatives use the storage APIs themselves anyway, the feeling now is that it's safer to just do what they do.
+* :ant: Bug fix: the export button in the _Clean tab_ previously did not work because of internal coding errors. Fixed.
+* :ant: Bug fix: when exporting the results of deleting records, the order of the entries in the exported list confusingly did not reflect the order in which the deletion operations were actually performed. Fixed.
+
+This version also includes some internal code cleanup that has no impact on functionality.
+
+
 ## ★ Version 1.4.1 (2022-08-04) ★
 
 This version fixes a bug in detecting errors when attempting to delete instances from the SRS subsystem. (Thanks to Mel Ray for reporting the problem.)
