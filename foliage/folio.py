@@ -139,8 +139,8 @@ class RecordKind(ExtendedEnum):
     def deletion_endpoint(kind):
         '''FOLIO API endpoint for deleting the given kind of record.'''
         mapping = {
-            RecordKind.ITEM     : '/inventory/items',
-            RecordKind.INSTANCE : '/inventory/instances',
+            RecordKind.ITEM     : '/item-storage/items',
+            RecordKind.INSTANCE : '/instance-storage/instances',
             RecordKind.HOLDINGS : '/holdings-storage/holdings',
             RecordKind.LOAN     : '/loan-storage/loans',
             RecordKind.USER     : '/users',
@@ -1076,7 +1076,7 @@ class Folio():
 
 def instance_id_from_accession(accession_number):
     '''Return an instance id constructed from an accession number.'''
-    # FOLIO ANs end with a UUID where the dashes are replaced with periods:
+    # ANs end with a UUID where the dashes are replaced with periods. E.g.:
     # cit.oai.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed
     # UUID are 32 hex chars with 4 separators (= 36 chars total).
     return accession_number[-36:].replace('.', '-')
