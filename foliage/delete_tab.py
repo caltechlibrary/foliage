@@ -59,8 +59,7 @@ def tab_contents():
         ]], cell_widths = 'auto 100px'),
         put_textarea('textbox_delete', rows = 4),
         put_row([
-            put_button('Delete records', color = 'danger',
-                       onclick = lambda: do_delete()),
+            put_button('Delete records', onclick = lambda: do_delete()),
             put_button('Clear', outline = True,
                        onclick = lambda: clear_tab()).style('text-align: right')
         ])

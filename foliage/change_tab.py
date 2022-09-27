@@ -93,8 +93,7 @@ def tab_contents():
             ]).style('margin-left: 12px'),
         ]], cell_widths = '50% 50%').style('margin-top: 1em'),
         put_row([
-            put_button('Change records', color = 'danger',
-                       onclick = lambda: do_change()),
+            put_button('Change records', onclick = lambda: do_change()),
             put_button('Clear', outline = True,
                        onclick = lambda: clear_tab()).style('text-align: right'),
         ])
