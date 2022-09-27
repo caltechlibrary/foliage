@@ -276,14 +276,9 @@ def delete_instance(instance, for_id = None):
         succeeded(instance, f'removed SRS instance record **{srs_id}**', why)
 
     # Deletions on instances are not recursive regardless of which API you use.
+    # You have to manually remove items, then holdings, then instances.
     # The following is based on Kyle Banerjee's script dated 2021-11-11 at
-    # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete
-    # but whereas that script uses the instance-storage API endpoint, this uses
-    # the inventory API. (I'm told the latter will simply forward the request
-    # to the instance storage API, but I decided to use the inventory API in
-    # case it does more in the future.) Note that this also uses the source
-    # storage API, which is a 3rd API besides the inventory API and storage
-    # API used elsewhere in Foliage. (That part comes from Banerjee's script.)
+    # https://github.com/FOLIO-FSE/shell-utilities/blob/master/instance-delete.
 
     # Start by using delete_holdings(), which will delete items too.
     folio = Folio()
