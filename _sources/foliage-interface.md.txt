@@ -6,7 +6,7 @@ When you start Foliage normally (or after it shows the one-time credentials scre
     <img src="_static/media/main-page.png">
 </figure>
 
-The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) _Look up records_ (the first one shown when Foliage starts up), (2) _Change records_, (3) _Delete records_, (4) _List UUIDs_, and (5) _Other_. They are described in detail below.
+The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) _Look up records_ (the first one shown when Foliage starts up), (2) _Change records_, (3) _Delete records_, (4) _Clean Records_, (5) _List UUIDs_, and (6) _Other_. They are described in detail below.
 
 ## Tab: look up records
 
@@ -34,7 +34,7 @@ After performing the search and displaying the results, Foliage includes a butto
 
 ## Tab: change records
 
-The _Change records_ tab provides functionality for changing the values of fields in records. You can use it to add, change, or delete values. It currently works only for item and holdings records, and only for the _Temporary location_ and _Permanent location_ fields, though this may be expanded in the future.
+The _Change records_ tab provides functionality for changing the values of fields in records. You can use it to add, change, or delete values. It currently works only for item and holdings records, and only for the _Temporary location_, _Permanent location_, and _Loan type_ fields, though this may be expanded in the future.
 
 <figure>
     <img src="_static/media/change-tab.png">
@@ -66,13 +66,13 @@ Depending on the action chosen, <span class="button color-primary">Select</span>
     <img src="_static/media/change-tab-value-selector.png">
 </figure>
 
-Once the required values have been selected for the relevant fields, click the <span class="button color-danger">Change records</span> button to proceed with the changes.
+Once the required values have been selected for the relevant fields, click the <span class="button color-primary">Change records</span> button to proceed with the changes.
 
 ### Field matching and change operations
 
 The selectors in the _Change records_ interface are designed to ask only for the values actually needed for a given operation. The values requested are required. For example, if you select _Delete value_ as the action, the Foliage interface will require you to select a current field value and will not allow you to leave it blank , and it will not let you specify a new field value. Foliage is also strict about matching field values when it performs the changes. For example, it will not change a record's field value to a new value unless it matches the value expected to be the current value.
 
-These strict requirements are mainly motivated by the goal of reducing the chance of accidental unintended changes when long lists of records are involved, but they also have some benefits for how users can perform changes. For example, it's safe to give Foliage a list of data that may or may not have specific field values, because it will skip those that don't match. For example, suppose books from two different locations A and B are being moved to location C. You can load a list of the book barcodes, select A as the current location field value and C as the new field value, click the <span class="button color-danger">Change records</span> button to make the changes, then (without doing anything else) change the selection of the current field value to B in the user interface, and click <span class="button color-danger">Change records</span> button a second time. Since Foliage will only change matching records, the first run will change only those records that have current location A and the second run will change only those records that have current location B. Together, the two runs will have performed movers A → C and B → C.
+These strict requirements are mainly motivated by the goal of reducing the chance of accidental unintended changes when long lists of records are involved, but they also have some benefits for how users can perform changes. For example, it's safe to give Foliage a list of data that may or may not have specific field values, because it will skip those that don't match. For example, suppose books from two different locations A and B are being moved to location C. You can load a list of the book barcodes, select A as the current location field value and C as the new field value, click the <span class="button color-primary">Change records</span> button to make the changes, then (without doing anything else) change the selection of the current field value to B in the user interface, and click <span class="button color-primary">Change records</span> button a second time. Since Foliage will only change matching records, the first run will change only those records that have current location A and the second run will change only those records that have current location B. Together, the two runs will have performed movers A → C and B → C.
 
 ### Saving a log of the results
 
@@ -87,11 +87,24 @@ You may already have guessed what the _Delete records_ tab in Foliage allows you
     <img src="_static/media/delete-tab.png">
 </figure>
 
-The tab layout is simple. It includes an input box where you can type or copy-paste identifiers of item records (barcodes, unique id's, or hrid's), an <span class="button color-outline-primary">Upload</span> button that lets you upload a file of identifiers, a <span class="button color-danger">Delete records</span> button to perform the deletions, and finally, the usual <span class="button color-outline-primary">Clear</span> button to clear past output.
+The tab layout is simple. It includes an input box where you can type or copy-paste identifiers of item records (barcodes, unique id's, or hrid's), an <span class="button color-outline-primary">Upload</span> button that lets you upload a file of identifiers, a <span class="button color-primary">Delete records</span> button to perform the deletions, and finally, the usual <span class="button color-outline-primary">Clear</span> button to clear past output.
 
 ```{warning}
 As noted above, deleting a holdings record **will delete all the item records too**, for items associated with the holdings record; likewise, deleting an instance record **will delete all its holdings and items**. Use the Delete facility carefully!
 ```
+
+
+## Tab: clean records
+
+At Caltech Library, the following situation sometimes occurs. A patron may have had loans on items, and at some point one of those items may be deemed lost. Normally, Library staff need to delete the loans and delete the item records from FOLIO. However, if the regular order of events is not followed and _only_ the item record is deleted, then patron's record in FOLIO will have an associated loan record that refers to a nonexistent item. At Caltech Library, we call these _phantom loans_ because they are ghosts that haunt FOLIO and cause problems.
+
+The _Clean Records_ tab in Foliage is designed to search for loans based on user identifiers, and delete any loan records for items that cannot be found in FOLIO. Loans for items that do exist are left untouched; only loans on nonexistent items are affected.
+
+<figure>
+    <img src="_static/media/clean-records-tab.png">
+</figure>
+
+To use _Clean Records_, input or upload a list of user identifiers (either user barcodes or user id's), and click on the <span class="button color-primary">Delete phantom loans</span> button.
 
 
 ## Tab: list UUIDs

@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -56,6 +56,7 @@
     <script src="_static/underscore.js"></script>
     <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
@@ -296,6 +297,13 @@
     <li class="md-nav__item">
     
     
+      <a href="#tab-clean-records" class="md-nav__link">Tab: clean records</a>
+      
+    
+    </li>
+    <li class="md-nav__item">
+    
+    
       <a href="#tab-list-uuids" class="md-nav__link">Tab: list UUIDs</a>
       
     
@@ -372,7 +380,7 @@
 <figure>
 <img src="_static/media/main-page.png"/>
 </figure>
-<p>The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) <em>Look up records</em> (the first one shown when Foliage starts up), (2) <em>Change records</em>, (3) <em>Delete records</em>, (4) <em>List UUIDs</em>, and (5) <em>Other</em>. They are described in detail below.</p>
+<p>The interface is organized into five areas of functionality accessed by clicking on the row of tabs near the top: (1) <em>Look up records</em> (the first one shown when Foliage starts up), (2) <em>Change records</em>, (3) <em>Delete records</em>, (4) <em>Clean Records</em>, (5) <em>List UUIDs</em>, and (6) <em>Other</em>. They are described in detail below.</p>
 <section id="tab-look-up-records">
 <h2 id="tab-look-up-records">Tab: look up records<a class="headerlink" href="#tab-look-up-records" title="Permalink to this heading">¶</a></h2>
 <p>The first tab – the one visible when you start up Foliage – provides a facility for looking up any item, instance, holdings, loan, or user record using any of the common identifiers by which the records can be addressed.  Depending on the type of record, this may be a barcode, a unique id (i.e., a string that looks like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>), an “hrid” (human readable identifier), or an accession number. You can either type or paste the numbers into the text box on the page, or use the <span class="button color-outline-primary">Upload</span> button to upload a text file containing such identifiers. Identifiers can be separated by newlines, spaces, commas, colons, or semicolons; Foliage will also strip any quote characters from the input. Lastly, identifiers can be mixed: you can enter barcodes for some items and hrid’s for others all at once, and Foliage won’t care.</p>
@@ -397,7 +405,7 @@
 </section>
 <section id="tab-change-records">
 <h2 id="tab-change-records">Tab: change records<a class="headerlink" href="#tab-change-records" title="Permalink to this heading">¶</a></h2>
-<p>The <em>Change records</em> tab provides functionality for changing the values of fields in records. You can use it to add, change, or delete values. It currently works only for item and holdings records, and only for the <em>Temporary location</em> and <em>Permanent location</em> fields, though this may be expanded in the future.</p>
+<p>The <em>Change records</em> tab provides functionality for changing the values of fields in records. You can use it to add, change, or delete values. It currently works only for item and holdings records, and only for the <em>Temporary location</em>, <em>Permanent location</em>, and <em>Loan type</em> fields, though this may be expanded in the future.</p>
 <figure>
 <img src="_static/media/change-tab.png"/>
 </figure>
@@ -420,11 +428,11 @@
 <figure>
 <img src="_static/media/change-tab-value-selector.png"/>
 </figure>
-<p>Once the required values have been selected for the relevant fields, click the <span class="button color-danger">Change records</span> button to proceed with the changes.</p>
+<p>Once the required values have been selected for the relevant fields, click the <span class="button color-primary">Change records</span> button to proceed with the changes.</p>
 <section id="field-matching-and-change-operations">
 <h3 id="field-matching-and-change-operations">Field matching and change operations<a class="headerlink" href="#field-matching-and-change-operations" title="Permalink to this heading">¶</a></h3>
 <p>The selectors in the <em>Change records</em> interface are designed to ask only for the values actually needed for a given operation. The values requested are required. For example, if you select <em>Delete value</em> as the action, the Foliage interface will require you to select a current field value and will not allow you to leave it blank , and it will not let you specify a new field value. Foliage is also strict about matching field values when it performs the changes. For example, it will not change a record’s field value to a new value unless it matches the value expected to be the current value.</p>
-<p>These strict requirements are mainly motivated by the goal of reducing the chance of accidental unintended changes when long lists of records are involved, but they also have some benefits for how users can perform changes. For example, it’s safe to give Foliage a list of data that may or may not have specific field values, because it will skip those that don’t match. For example, suppose books from two different locations A and B are being moved to location C. You can load a list of the book barcodes, select A as the current location field value and C as the new field value, click the <span class="button color-danger">Change records</span> button to make the changes, then (without doing anything else) change the selection of the current field value to B in the user interface, and click <span class="button color-danger">Change records</span> button a second time. Since Foliage will only change matching records, the first run will change only those records that have current location A and the second run will change only those records that have current location B. Together, the two runs will have performed movers A → C and B → C.</p>
+<p>These strict requirements are mainly motivated by the goal of reducing the chance of accidental unintended changes when long lists of records are involved, but they also have some benefits for how users can perform changes. For example, it’s safe to give Foliage a list of data that may or may not have specific field values, because it will skip those that don’t match. For example, suppose books from two different locations A and B are being moved to location C. You can load a list of the book barcodes, select A as the current location field value and C as the new field value, click the <span class="button color-primary">Change records</span> button to make the changes, then (without doing anything else) change the selection of the current field value to B in the user interface, and click <span class="button color-primary">Change records</span> button a second time. Since Foliage will only change matching records, the first run will change only those records that have current location A and the second run will change only those records that have current location B. Together, the two runs will have performed movers A → C and B → C.</p>
 </section>
 <section id="saving-a-log-of-the-results">
 <h3 id="saving-a-log-of-the-results">Saving a log of the results<a class="headerlink" href="#saving-a-log-of-the-results" title="Permalink to this heading">¶</a></h3>
@@ -437,11 +445,20 @@
 <figure>
 <img src="_static/media/delete-tab.png"/>
 </figure>
-<p>The tab layout is simple. It includes an input box where you can type or copy-paste identifiers of item records (barcodes, unique id’s, or hrid’s), an <span class="button color-outline-primary">Upload</span> button that lets you upload a file of identifiers, a <span class="button color-danger">Delete records</span> button to perform the deletions, and finally, the usual <span class="button color-outline-primary">Clear</span> button to clear past output.</p>
+<p>The tab layout is simple. It includes an input box where you can type or copy-paste identifiers of item records (barcodes, unique id’s, or hrid’s), an <span class="button color-outline-primary">Upload</span> button that lets you upload a file of identifiers, a <span class="button color-primary">Delete records</span> button to perform the deletions, and finally, the usual <span class="button color-outline-primary">Clear</span> button to clear past output.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>As noted above, deleting a holdings record <strong>will delete all the item records too</strong>, for items associated with the holdings record; likewise, deleting an instance record <strong>will delete all its holdings and items</strong>. Use the Delete facility carefully!</p>
 </div>
+</section>
+<section id="tab-clean-records">
+<h2 id="tab-clean-records">Tab: clean records<a class="headerlink" href="#tab-clean-records" title="Permalink to this heading">¶</a></h2>
+<p>At Caltech Library, the following situation sometimes occurs. A patron may have had loans on items, and at some point one of those items may be deemed lost. Normally, Library staff need to delete the loans and delete the item records from FOLIO. However, if the regular order of events is not followed and <em>only</em> the item record is deleted, then patron’s record in FOLIO will have an associated loan record that refers to a nonexistent item. At Caltech Library, we call these <em>phantom loans</em> because they are ghosts that haunt FOLIO and cause problems.</p>
+<p>The <em>Clean Records</em> tab in Foliage is designed to search for loans based on user identifiers, and delete any loan records for items that cannot be found in FOLIO. Loans for items that do exist are left untouched; only loans on nonexistent items are affected.</p>
+<figure>
+<img src="_static/media/clean-records-tab.png"/>
+</figure>
+<p>To use <em>Clean Records</em>, input or upload a list of user identifiers (either user barcodes or user id’s), and click on the <span class="button color-primary">Delete phantom loans</span> button.</p>
 </section>
 <section id="tab-list-uuids">
 <h2 id="tab-list-uuids">Tab: list UUIDs<a class="headerlink" href="#tab-list-uuids" title="Permalink to this heading">¶</a></h2>
@@ -517,10 +534,10 @@
               
           </div>
             Last updated on
-              Aug 04, 2022.
+              Sep 28, 2022.
             <br/>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.2.2.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>
