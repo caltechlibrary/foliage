@@ -155,10 +155,10 @@ report: vars
 # make lint & make test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 lint:
-	flake8 %PROJECT_NAME%
+	flake8 foliage
 
 test tests:
-	pytest -v --cov=%PROJECT_NAME% -l tests/
+	pytest -v --cov=foliage -l tests/
 
 
 # make install ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
