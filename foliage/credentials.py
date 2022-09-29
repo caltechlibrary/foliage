@@ -45,7 +45,7 @@ file "LICENSE" for more information.
 
 from   collections import namedtuple
 from   commonpy.interrupt import wait
-from   decouple import Config, RepositoryEmpty, config
+from   decouple import Config, RepositoryIni, RepositoryEmpty, config
 import getpass
 import keyring
 import os
@@ -94,7 +94,7 @@ def credentials_from_file(creds_file):
     FOLIO_OKAPI_TOKEN = .....
     '''
     try:
-        config_file = Config(creds_file)
+        config_file = Config(RepositoryIni(source = creds_file))
     except Exception as ex:             # noqa: PIE786
         log('unable to read given creds file: ' + str(ex))
         return None
