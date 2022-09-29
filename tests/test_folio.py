@@ -1,8 +1,6 @@
 import decouple
 import pytest
 
-from foliage.folio import Folio, IdKind
-
 
 @pytest.fixture
 def define_env_vars(monkeypatch):
@@ -12,6 +10,7 @@ def define_env_vars(monkeypatch):
 
 
 def test_record_id_type(define_env_vars):
+    from foliage.folio import Folio, IdKind
     folio = Folio()
     assert folio.id_kind('35047019219716') == IdKind.ITEM_BARCODE
     assert folio.id_kind('d893839b-0309-4856-b496-0db89a0a6a04') == IdKind.ITEM_ID
