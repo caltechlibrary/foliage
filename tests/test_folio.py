@@ -1,12 +1,20 @@
-import decouple
 import pytest
 
 
 @pytest.fixture
 def define_env_vars(monkeypatch):
-    monkeypatch.setenv('FOLIO_OKAPI_URL', decouple.config('FOLIO_OKAPI_URL'))
-    monkeypatch.setenv('FOLIO_OKAPI_TENANT_ID', decouple.config('FOLIO_OKAPI_TENANT_ID'))
-    monkeypatch.setenv('FOLIO_OKAPI_TOKEN', decouple.config('FOLIO_OKAPI_TOKEN'))
+    from os import path
+    monkeypatch.chdir(path.dirname(__file__))
+
+    from decouple import Config, RepositoryIni
+    source = Config(RepositoryIni(source = 'settings.ini'))
+    url = source.get('FOLIO_OKAPI_URL')
+    tenant = source.get('FOLIO_OKAPI_TENANT_ID')
+    token = source.get('FOLIO_OKAPI_TOKEN')
+
+    monkeypatch.setenv('FOLIO_OKAPI_URL', url)
+    monkeypatch.setenv('FOLIO_OKAPI_TENANT_ID', tenant)
+    monkeypatch.setenv('FOLIO_OKAPI_TOKEN', token)
 
 
 def test_record_id_type(define_env_vars):
