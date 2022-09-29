@@ -157,7 +157,7 @@ report: vars
 lint:
 	flake8 foliage
 
-test tests:
+test tests:;
 	pytest -v --cov=foliage -l tests/
 
 
