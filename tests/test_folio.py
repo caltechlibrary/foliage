@@ -1,5 +1,4 @@
 import decouple
-import os
 import pytest
 
 from foliage.folio import Folio, IdKind
