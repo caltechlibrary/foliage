@@ -9,13 +9,13 @@
 name: Save Foliage GitHub pages
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types:
+      - published
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Run Wayback Machine action
         uses: JamieMagee/wayback@v1.3.19
