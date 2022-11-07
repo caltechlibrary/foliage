@@ -7,9 +7,20 @@
 # =============================================================================
 
 name: Save Foliage GitHub pages
-uses: JamieMagee/wayback@v1.3.19
-with:
-  url: https://caltechlibrary.github.io/foliage
-  saveErrors: true
-  saveOutlinks: true
-  saveScreenshot: true
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Run Wayback Machine action
+        uses: JamieMagee/wayback@v1.3.19
+        with:
+          url: https://caltechlibrary.github.io/foliage
+          saveErrors: true
+          saveOutlinks: true
+          saveScreenshot: true
