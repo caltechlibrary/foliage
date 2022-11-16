@@ -223,12 +223,12 @@ dmg: dist-dirs $(distdir)/$(appname)
 
 release: | test-branch release-on-github print-instructions
 
-test-branch: vars
+test-branch:;
 ifneq ($(branch),main)
 	$(error Current git branch != main. Merge changes into main first!)
 endif
 
-update-init: vars
+update-init:;
 	@sed -i .bak -e "s|^\(__version__ *=\).*|\1 '$(version)'|"  $(initfile)
 	@sed -i .bak -e "s|^\(__description__ *=\).*|\1 '$(desc)'|" $(initfile)
 	@sed -i .bak -e "s|^\(__url__ *=\).*|\1 '$(url)'|"	    $(initfile)
@@ -236,17 +236,17 @@ update-init: vars
 	@sed -i .bak -e "s|^\(__email__ *=\).*|\1 '$(email)'|"	    $(initfile)
 	@sed -i .bak -e "s|^\(__license__ *=\).*|\1 '$(license)'|"  $(initfile)
 
-update-meta: vars
+update-meta:;
 	@sed -i .bak -e "/version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" codemeta.json
 
-update-citation: vars
+update-citation:;
 	$(eval date  := $(shell date "+%F"))
 	@sed -i .bak -e "/^date-released/ s/[0-9][0-9-]*/$(date)/" CITATION.cff
 	@sed -i .bak -e "/^version/ s/[0-9].[0-9][0-9]*.[0-9][0-9]*/$(version)/" CITATION.cff
 
 edited := codemeta.json $(initfile) CITATION.cff
 
-commit-updates: vars
+commit-updates:;
 	git add $(edited)
 	git diff-index --quiet HEAD $(edited) || \
 	    git commit -m"Update stored version number" $(edited)
