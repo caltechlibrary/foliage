@@ -1,26 +1,16 @@
 # =============================================================================
-# @file    save-docs-in-wayback-machine.yml
+# @file    archive-github-pages.yml
 # @brief   Save the Github pages in the Internet Archive
 # @author  Michael Hucka <mhucka@caltech.edu>
 # @license Please see the file named LICENSE in the repository
 # @repo    https://github.com/caltechlibrary/foliage
 # =============================================================================
 
-name: Save Foliage GitHub pages
-
 on:
   release:
-    types:
-      - published
-
+    types: [published]
 jobs:
-  deploy:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Run Wayback Machine action
-        uses: JamieMagee/wayback@v1.3.19
-        with:
-          url: https://caltechlibrary.github.io/foliage
-          saveErrors: true
-          saveOutlinks: true
-          saveScreenshot: true
+  Workflow:
+    uses: caltechlibrary/waystation@main
+    with:
+      debug: true
