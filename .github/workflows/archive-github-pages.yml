@@ -11,6 +11,8 @@ on:
     types: [published]
 jobs:
   Workflow:
-    uses: caltechlibrary/waystation@main
-    with:
-      debug: true
+    steps:
+      - uses: caltechlibrary/waystation@main
+        with:
+          dry_run: true
+          debug: true
