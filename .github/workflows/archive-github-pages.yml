@@ -9,6 +9,9 @@
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - main
 jobs:
   Workflow:
     steps:
