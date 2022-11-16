@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.5.1 (2022-11-16) ★
+
+This release has no user-visible or functional changes. It only updates the `Makefile` and some GitHub workflows.
+
+
 ## ★ Version 1.5.0 (2022-09-29) ★
 
 User-visible changes in this version:
