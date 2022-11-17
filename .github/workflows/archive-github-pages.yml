@@ -16,7 +16,8 @@ jobs:
   Workflow:
     runs-on: ubuntu-latest
     steps:
-      - uses: caltechlibrary/waystation@main
+      - name: Archive project GitHub Pages in the Internet Archive
+        uses: caltechlibrary/waystation@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           dry_run: true
