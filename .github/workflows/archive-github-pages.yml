@@ -10,9 +10,6 @@ name: Archive latest GitHub Pages in IA
 on:
   release:
     types: [published]
-  push:
-    branches:
-      - main
 jobs:
   Workflow:
     runs-on: ubuntu-latest
