@@ -6,6 +6,7 @@
 # @repo    https://github.com/caltechlibrary/foliage
 # =============================================================================
 
+name: Archive latest GitHub Pages in IA
 on:
   release:
     types: [published]
@@ -16,8 +17,7 @@ jobs:
   Workflow:
     runs-on: ubuntu-latest
     steps:
-      - name: Archive project GitHub Pages in the Internet Archive
-        uses: caltechlibrary/waystation@main
+      - uses: caltechlibrary/waystation@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           dry_run: true
