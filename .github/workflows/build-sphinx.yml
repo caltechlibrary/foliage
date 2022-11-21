@@ -9,7 +9,7 @@
 # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-static-site-generators-with-python
 # =============================================================================
 
-name: Update docs on GitHub
+name: Build docs & publish as GH Pages
 
 on:
   push:
@@ -20,10 +20,10 @@ jobs:
   deploy:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3.1.0
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - name: Set up Python
+        uses: actions/setup-python@v4.3.0
         with:
           python-version: '3.8'
 
@@ -34,13 +34,13 @@ jobs:
 
       - name: Get pip cache dir
         id: pip-cache
-        run: echo "::set-output name=dir::$(pip cache dir)"
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -48,14 +48,13 @@ jobs:
         run: |
           python3 -m pip install "myst-parser[linkify]"
           python3 -m pip install sphinx-material
-          python3 -m pip install sphinxcontrib-mermaid
 
-      - name: Build
+      - name: Generate HTML files
         run: |
           cd docs
           make html
 
-      - name: Deploy
+      - name: Publish HTML files on GitHub pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
