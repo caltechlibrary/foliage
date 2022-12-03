@@ -7,7 +7,7 @@ authors:
     given-names: Mike
     family-names: Hucka
     orcid: "0000-0001-9105-5960"
-version: "1.5.1"
+version: "1.5.2"
 abstract: "A tool to do bulk changes in FOLIO using the OKAPI API"
 repository-code: "https://github.com/caltechlibrary/foliage"
 type: software
@@ -16,4 +16,4 @@ keywords:
   - FOLIO
   - batch operations
   - desktop software
-date-released: 2022-11-16
+date-released: 2022-12-02

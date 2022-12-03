@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.5.2 (2022-11-16) ★
+
+This version catches an error than can result when the user tries to upload a `.xlsx` file that is not truly an Excel spreadsheet.
+
+
 ## ★ Version 1.5.1 (2022-11-16) ★
 
 This release has no user-visible or functional changes. It only updates the `Makefile` and some GitHub workflows.
