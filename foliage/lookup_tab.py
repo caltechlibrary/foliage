@@ -353,7 +353,7 @@ def notes(record, field_name):
         if len(notes) == 0:
             return ''
         elif isinstance(notes[0], dict):
-            return '\n'.join(n['note'] for n in notes)
+            return '\n'.join((n['note'] or '') for n in notes)
         else:
             return '\n'.join(str(note) for note in notes)
     else:
