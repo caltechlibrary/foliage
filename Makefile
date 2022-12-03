@@ -54,6 +54,10 @@ aboutfile := ABOUT.html
 winreadme := dev/one-page-docs/read-me-first-windows/read-me-first.html
 macreadme := dev/one-page-docs/read-me-first-macos/read-me-first.html
 
+# Color codes used in messages below.
+green	  := $(shell tput setaf 2)
+reset	  := $(shell tput sgr0)
+
 
 # Print help if no command is given ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -82,10 +86,6 @@ help:
 	@echo '  open an editor to let you edit release notes, and run'
 	@echo '  "gh release create" followed by "gh release upload".'
 	@echo '  Note: this will NOT upload to PyPI, nor create binaries.'
-	@echo ''
-	@echo 'make update-doi'
-	@echo '  Update the DOI inside the README.md file.'
-	@echo '  This is only to be done after doing a "make release".'
 	@echo ''
 	@echo 'make binary'
 	@echo '  Create binary using PyInstaller.'
@@ -129,27 +129,29 @@ vars:
 	$(eval doi_tail  := $(lastword $(subst ., ,$(doi))))
 	$(info Gathering data -- this takes a few moments ... Done.)
 
+# Note: the seemingly-misaligned equals signs in the code below are not really
+# misaligned; it's adjusted for differences in tabs & spaces in the output.
 report: vars
-	@echo os	= $(os)
-	@echo name	= $(name)
-	@echo version	= $(version)
-	@echo url	= $(url)
-	@echo desc	= $(desc)
-	@echo author	= $(author)
-	@echo email	= $(email)
-	@echo license	= $(license)
-	@echo branch	= $(branch)
-	@echo repo	= $(repo)
-	@echo id	= $(id)
-	@echo id_url	= $(id_url)
-	@echo doi_url	= $(doi_url)
-	@echo doi	= $(doi)
-	@echo doi_tail	= $(doi_tail)
-	@echo initfile  = $(initfile)
-	@echo appname	= $(appname)
-	@echo distdir	= $(distdir)
-	@echo builddir	= $(builddir)
-	@echo zipfile	= $(zipfile)
+	@$(info $(green)os$(reset)	  = $(os))
+	$(info $(green)name$(reset)	  = $(name))
+	$(info $(green)version$(reset)	  = $(version))
+	$(info $(green)url$(reset)	  = $(url))
+	$(info $(green)desc$(reset)	  = $(desc))
+	$(info $(green)author$(reset)	  = $(author))
+	$(info $(green)email$(reset)	  = $(email))
+	$(info $(green)license$(reset)	  = $(license))
+	$(info $(green)branch$(reset)	  = $(branch))
+	$(info $(green)repo$(reset)	  = $(repo))
+	$(info $(green)id$(reset)	  = $(id))
+	$(info $(green)id_url$(reset)	  = $(id_url))
+	$(info $(green)doi_url$(reset)	  = $(doi_url))
+	$(info $(green)doi$(reset)	  = $(doi))
+	$(info $(green)doi_tail$(reset)  = $(doi_tail))
+	$(info $(green)initfile$(reset)  = $(initfile))
+	$(info $(green)appname$(reset)	  = $(appname))
+	$(info $(green)distdir$(reset)	  = $(distdir))
+	$(info $(green)builddir$(reset)  = $(builddir))
+	$(info $(green)zipfile$(reset)	  = $(zipfile))
 
 
 # make lint & make test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
