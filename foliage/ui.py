@@ -372,15 +372,27 @@ def user_file(instructions):
         elif result['mime_type'] in EXCEL_MIME_TYPES:
             # It's an excel .xsl or .xslx file.
             import io
+            import zipfile
             from openpyxl import load_workbook
-            content = io.BytesIO(result['content'])
-            wb = load_workbook(content)
-            ws = wb.active
-            # The rows will be tuples. Flatten everything out as text.
             try:
+                content = io.BytesIO(result['content'])
+                wb = load_workbook(content)
+                ws = wb.active
+                # The rows will be tuples. Flatten everything out as text.
                 return '\n'.join(flattened(ws.values))
-            except Exception as ex:     # noqa: PIE786
-                log('failed to get flattened worksheet: ' + str(ex))
+            except zipfile.BadZipFile:
+                # The user might have saved a text file and renamed it .xlsx.
+                # Try to simply decode the bytes and hope for the best.
+                try:
+                    return result['content'].decode('utf-8')
+                except Exception as ex:  # noqa: PIE786
+                    log('failed to parse spreasheet: ' + str(ex))
+                    notify('Spreadsheet is not in a recognized format.'
+                           ' The file name ends in .xlsx, but Foliage was not'
+                           ' able to interpret it as an Excel spreadsheet.'
+                           ' Please report this to the developers.')
+            except Exception as ex:      # noqa: PIE786
+                log('failed to extract content from spreasheet: ' + str(ex))
                 notify('Unable to extract values from this spreadsheet.'
                        ' This is probably an error in Foliage. Please'
                        ' report it to the developers.')
