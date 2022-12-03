@@ -1,6 +1,11 @@
 # Change log for foliage
 
-## ★ Version 1.5.2 (2022-11-16) ★
+## ★ Version 1.5.3 (2022-12-02) ★
+
+This version fixes a bug in the _Lookup_ tab that occurs when printing a summary of an instance record that has a `None` value in the tag data field.
+
+
+## ★ Version 1.5.2 (2022-12-02) ★
 
 This version catches an error than can result when the user tries to upload a `.xlsx` file that is not truly an Excel spreadsheet.
 

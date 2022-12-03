@@ -271,7 +271,7 @@ print-instructions: vars
 	@$(info ┃ 1. Check https://github.com/$(repo)/releases )
 	@$(info ┃ 2. Wait a few seconds to let web services do their work    ┃)
 	@$(info ┃ 3. Run "make update-doi" to update the DOI in README.md    ┃)
-	@$(info ┃ 4. Run "make packages" & check the results                 ┃)
+	@$(info ┃ 4. Run "make packages" and check the results               ┃)
 	@$(info ┃ 5. Run "make test-pypi" to push to test.pypi.org           ┃)
 	@$(info ┃ 6. Check https://test.pypi.org/project/$(name) )
 	@$(info ┃ 7. Run "make pypi" to push to pypi for real                ┃)
