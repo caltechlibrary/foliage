@@ -31,21 +31,22 @@ TEST := $(foreach p,$(programs_needed),\
 # variables using "set-vars" but only when the others are needed.
 
 name	  := $(strip $(shell awk -F "=" '/^name/ {print $$2}' setup.cfg))
+title     := $(strip $(shell python3 -c 'print("$(name)".title())'))
 version	  := $(strip $(shell awk -F "=" '/^version/ {print $$2}' setup.cfg))
 url	  := $(strip $(shell awk -F "=" '/^url/ {print $$2}' setup.cfg))
 desc	  := $(strip $(shell awk -F "=" '/^description / {print $$2}' setup.cfg))
 author	  := $(strip $(shell awk -F "=" '/^author / {print $$2}' setup.cfg))
 email	  := $(strip $(shell awk -F "=" '/^author_email/ {print $$2}' setup.cfg))
 license	  := $(strip $(shell awk -F "=" '/^license / {print $$2}' setup.cfg))
-appname   := $(strip $(shell python3 -c 'print("$(name)".title()+".app")'))
 platform  := $(strip $(shell python3 -c 'import sys; print(sys.platform)'))
 os	  := $(subst $(platform),darwin,macos)
 branch	  := $(shell git rev-parse --abbrev-ref HEAD)
 initfile  := $(name)/__init__.py
 distdir   := dist/$(os)
 builddir  := build/$(os)
+appname   := $(title).app
 zipfile   := $(distdir)/$(name)-$(version)-$(os).zip
-dmgfile   := $(distdir)/$(name)-$(version)-$(os).dmg
+dmgfile   := $(distdir)/$(name)-$(version)-$(os)-installer.dmg
 pagetmpl  := dev/one-page-docs/pandoc-template/template.html5
 pagecss   := dev/one-page-docs/sakura-css/sakura.css
 # These next ones are for the Windows installer, but I have to create them
@@ -134,6 +135,7 @@ vars:
 report: vars
 	@$(info $(green)os$(reset)	  = $(os))
 	$(info $(green)name$(reset)	  = $(name))
+	$(info $(green)title$(reset)	  = $(title))
 	$(info $(green)version$(reset)	  = $(version))
 	$(info $(green)url$(reset)	  = $(url))
 	$(info $(green)desc$(reset)	  = $(desc))
@@ -207,8 +209,8 @@ codesign: pyinstaller
 dmg: dist-dirs $(distdir)/$(appname)
 	# Unwrap the text file so it looks nicer in the installer's window.
 	awk 'BEGIN {RS="\n\n"; FS="\n"} \
-	    {for (i=1;i<=NF;i++) printf $$i " "; printf "\n\n"}' LICENSE \
-	     > $(distdir)/license.txt
+	#     {for (i=1;i<=NF;i++) printf $$i " "; printf "\n\n"}' LICENSE \
+	#      > $(distdir)/license.txt
 	# If you see an error like the following from create-dmg on macOS, it
 	# means ImageMagick failed because it can't find the dynamic library.
 	#    Error: write EPIPE
@@ -216,7 +218,9 @@ dmg: dist-dirs $(distdir)/$(appname)
 	# To fix it, set DYLD_LIBRARY_PATH appropriately in your shell.
 	origdir=$(CURDIR)
 	cd $(distdir)
-	create-dmg --overwrite $(appname)
+	# Note: create-dmg is from https://github.com/sindresorhus/create-dmg
+	create-dmg --overwrite --dmg-title="Foliage installer" $(appname)
+	mv "$(title) $(version)".dmg "$(title) $(version) installer".dmg 
 	cd $(origdir)
 	-rm -f $(distdir)/license.txt
 
