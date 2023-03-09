@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.5.4 (2023-03-08) ★
+
+This version fixes another bug in the _Lookup_ tab, one that occurs when printing a summary of an instance record that has an incomplete note field.
+
+
 ## ★ Version 1.5.3 (2022-12-02) ★
 
 This version fixes a bug in the _Lookup_ tab that occurs when printing a summary of an instance record that has a `None` value in the tag data field.
