@@ -25,3 +25,4 @@ linkify-it-py
 myst-parser
 sphinx-material
 sphinxcontrib-mermaid
+twine
