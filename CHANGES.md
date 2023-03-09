@@ -1,5 +1,10 @@
 # Change log for foliage
 
+## ★ Version 1.5.5 (2023-03-09) ★
+
+Externally, this release only updates copyright years inside files such as the LICENSE file. Internally, the Makefile commands for producing the macOS installer have been slightly tweaked.
+
+
 ## ★ Version 1.5.4 (2023-03-08) ★
 
 This version fixes another bug in the _Lookup_ tab, one that occurs when printing a summary of an instance record that has an incomplete note field.
