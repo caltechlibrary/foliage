@@ -52,14 +52,11 @@
     <link rel="stylesheet" type="text/css" href="_static/material.css" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/sphinx_highlight.js"></script>
-    <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Nitty-gritty details" href="nitty.html" />
@@ -90,8 +87,7 @@
         <a href="index.html" title="Foliage"
            class="md-header-nav__button md-logo">
           
-              <img src="_static/foliage-icon-white-sm.png" height="26"
-                   alt="Home logo">
+            &nbsp;
           
         </a>
       </div>
@@ -178,7 +174,7 @@
   <label class="md-nav__title md-nav__title--site" for="__drawer">
     <a href="index.html" title="Foliage" class="md-nav__button md-logo">
       
-        <img src="_static/foliage-icon-white-sm.png" alt=" logo" width="48" height="48">
+        <img src="_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="index.html"
@@ -395,12 +391,12 @@
 <li><p><em>Kind of record to retrieve</em>: The five radio boxes allow you to select the kind of record to retrieve based on the identifiers given. One of Foliage’s powerful features is that it lets you use one kind of record identifier to search for <em>other</em> kinds of records. For example, you can supply item barcodes and select <em>Instance</em> as the type of record to retrieve, and Foliage will retrieve the instance records for the given identifiers. Or you can select <em>Loan</em> as the type to retrieve and find out if there are any loans out for the given items. To take another example, you could provide a user identifier, select <em>Item</em> as the kind of record to retrieve, and get back a list of the items on loan to the user.</p></li>
 <li><p><em>Search open loans only</em>: When searching for loans, Foliage can be told to consider only open loans, or all loans. You can use this checkbox to choose what Foliage should do. Use this option with caution: unchecking this will cause Foliage to retrieve any loans, including closed loans from the history of loans for every item in the input, which could potentially be a long list and take a very long time to retrieve.</p></li>
 <li><p><em>Output format</em>: Foliage can present the output either in a summary format or in the raw data format retrieved from the FOLIO server. The summary format is a custom tabular format that shows a subset of the fields from each record. Different record kinds are presented with different fields in the output.</p></li>
-<li><p><em>Use inventory <span class="xref myst">API</span> for items and instances</em>: Items and instances in FOLIO come in two slightly different record formats, depending on which one of two FOLIO APIs are used to retrieve them. The so-called “inventory” API returns results that have slightly more data compared to the so-called “storage” API. The additional fields are computed by FOLIO and are not actually stored with the records. The additional information can be useful when exploring items and instances, but because the inventory API does not represent what is actually stored by FOLIO, it is better to deselect this option and make Foliage use the storage API if you are working with records for the purpose of changing field values or performing other actions.</p></li>
+<li><p><em>Use inventory <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> for items and instances</em>: Items and instances in FOLIO come in two slightly different record formats, depending on which one of two FOLIO APIs are used to retrieve them. The so-called “inventory” API returns results that have slightly more data compared to the so-called “storage” API. The additional fields are computed by FOLIO and are not actually stored with the records. The additional information can be useful when exploring items and instances, but because the inventory API does not represent what is actually stored by FOLIO, it is better to deselect this option and make Foliage use the storage API if you are working with records for the purpose of changing field values or performing other actions.</p></li>
 </ul>
 </section>
 <section id="saving-the-results">
 <h3 id="saving-the-results">Saving the results<a class="headerlink" href="#saving-the-results" title="Permalink to this heading">¶</a></h3>
-<p>After performing the search and displaying the results, Foliage includes a button named <span class="button color-outline-primary">Export</span> at the bottom of the page. This allows you to export a list of all the records you looked up as a file in <span class="xref myst">CSV</span> or <span class="xref myst">JSON</span> format.</p>
+<p>After performing the search and displaying the results, Foliage includes a button named <span class="button color-outline-primary">Export</span> at the bottom of the page. This allows you to export a list of all the records you looked up as a file in <a class="reference internal" href="#glossary.html#CSV"><span class="xref myst">CSV</span></a> or <a class="reference internal" href="#glossary.html#JSON"><span class="xref myst">JSON</span></a> format.</p>
 </section>
 </section>
 <section id="tab-change-records">
@@ -462,12 +458,12 @@
 </section>
 <section id="tab-list-uuids">
 <h2 id="tab-list-uuids">Tab: list UUIDs<a class="headerlink" href="#tab-list-uuids" title="Permalink to this heading">¶</a></h2>
-<p>Many data fields in FOLIO records take values drawn from controlled vocabularies. These vocabularies consist of unique identifiers (<span class="xref myst">UUIDs</span> – strings that look like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>). Each different type of field in a record can take on values from a specific list of values.</p>
+<p>Many data fields in FOLIO records take values drawn from controlled vocabularies. These vocabularies consist of unique identifiers (<a class="reference internal" href="#glossary.html#UUID"><span class="xref myst">UUIDs</span></a> – strings that look like <code class="docutils literal notranslate"><span class="pre">f6fac97a-ee31-4300-aef6-b63be4ea23a2</span></code>). Each different type of field in a record can take on values from a specific list of values.</p>
 <p>Finding out the possible values is not easy to do directly in FOLIO. To help compensate, Foliage offers a simple way to list the possible values of various identifier types. This can be done in the <em>List UUIDs</em> tab.</p>
 <figure>
 <img src="_static/media/list-uuids-tab.png"/>
 </figure>
-<p>The operation of the <em>List UUIDs</em> tab is simple: select a type of <span class="xref myst">UUIDs</span> from the pop-up menu, and click the <span class="button color-primary">Get list</span> button to make Foliage retrieve the list of identifiers from FOLIO. Shown below is an example of doing this for the “Holdings type” list.</p>
+<p>The operation of the <em>List UUIDs</em> tab is simple: select a type of <a class="reference internal" href="#glossary.html#UUID"><span class="xref myst">UUIDs</span></a> from the pop-up menu, and click the <span class="button color-primary">Get list</span> button to make Foliage retrieve the list of identifiers from FOLIO. Shown below is an example of doing this for the “Holdings type” list.</p>
 <figure>
 <img src="_static/media/list-uuids-example.png"/>
 </figure>
@@ -475,12 +471,12 @@
 </section>
 <section id="tab-other">
 <h2 id="tab-other">Tab: other<a class="headerlink" href="#tab-other" title="Permalink to this heading">¶</a></h2>
-<p>The <em>Other</em> tab has already been mentioned above in the section on <span class="xref myst">Authentication</span>. On this tab, Foliage provides three buttons, shown in the screenshot below:</p>
+<p>The <em>Other</em> tab has already been mentioned above in the section on <a class="reference internal" href="#authentication"><span class="xref myst">Authentication</span></a>. On this tab, Foliage provides three buttons, shown in the screenshot below:</p>
 <figure>
 <img src="_static/media/other-tab.png"/>
 </figure>
 <ul class="simple">
-<li><p>The <span class="button color-primary">Edit credentials</span> button allows you to edit the credentials used by Foliage for interacting with the FOLIO server. This includes the user name and password for FOLIO, the URL for the FOLIO server, and the tenant id. As mentioned in the <span class="xref myst">section on authentication</span>, Foliage does not store your user name and password, so when you click this button to edit the credentials, those fields will be blank and you will have to enter them again.</p></li>
+<li><p>The <span class="button color-primary">Edit credentials</span> button allows you to edit the credentials used by Foliage for interacting with the FOLIO server. This includes the user name and password for FOLIO, the URL for the FOLIO server, and the tenant id. As mentioned in the <a class="reference internal" href="#authentication"><span class="xref myst">section on authentication</span></a>, Foliage does not store your user name and password, so when you click this button to edit the credentials, those fields will be blank and you will have to enter them again.</p></li>
 <li><p>The <span class="button color-primary">Show backups</span> button opens a Windows Explorer or macOS Finder window (depending on your operating system) on the folder where Foliage writes backups of every record it changes or deletes before it makes any change to the record. The backups are organized by the unique identifier of the record in question; within each subfolder, you will find a file named after the time the backup was made and containing the raw record data in a format known as <a class="reference external" href="https://en.wikipedia.org/wiki/JSON">JSON</a>. This is a simple backup scheme meant only as a last-ditch safety measure to guard against catastrophic errors. Note: Foliage does not offer a way of restoring records from these backup files. If you need to restore a record using these backups, consult with the FOLIO experts at your institution.</p></li>
 <li><p>The <span class="button color-primary">Show log file</span> button displays a log of all the actions taken by Foliage since it was started in the current session. The information is quite detailed and probably not much use to anyone but the developers of Foliage, but they can be useful when trying to investigate program bugs and other problems.</p></li>
 </ul>
@@ -534,10 +530,10 @@
               
           </div>
             Last updated on
-              Dec 03, 2022.
+              Mar 09, 2023.
             <br/>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 6.1.3.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>

@@ -52,14 +52,11 @@
     <link rel="stylesheet" type="text/css" href="_static/material.css" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/sphinx_highlight.js"></script>
-    <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Starting Foliage" href="first-time-usage.html" />
@@ -90,8 +87,7 @@
         <a href="index.html" title="Foliage"
            class="md-header-nav__button md-logo">
           
-              <img src="_static/foliage-icon-white-sm.png" height="26"
-                   alt="Home logo">
+            &nbsp;
           
         </a>
       </div>
@@ -178,7 +174,7 @@
   <label class="md-nav__title md-nav__title--site" for="__drawer">
     <a href="index.html" title="Foliage" class="md-nav__button md-logo">
       
-        <img src="_static/foliage-icon-white-sm.png" alt=" logo" width="48" height="48">
+        <img src="_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="index.html"
@@ -379,7 +375,7 @@
 <p>There are multiple ways of installing Foliage, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using <code class="docutils literal notranslate"><span class="pre">pip</span></code>.  Please choose the alternative that suits you.</p>
 <section id="preliminary-requirements">
 <h2 id="preliminary-requirements">Preliminary requirements<a class="headerlink" href="#preliminary-requirements" title="Permalink to this heading">¶</a></h2>
-<p>Foliage is written in <a class="reference external" href="https://www.python.org">Python 3</a> and makes use of some additional Python software libraries that are installed automatically during the <span class="xref myst">installation steps</span>. It also assumes a macOS, Windows or Linux environment, and a working Internet connection.</p>
+<p>Foliage is written in <a class="reference external" href="https://www.python.org">Python 3</a> and makes use of some additional Python software libraries that are installed automatically during the <a class="reference internal" href="#installation"><span class="std std-ref">installation steps</span></a>. It also assumes a macOS, Windows or Linux environment, and a working Internet connection.</p>
 </section>
 <section id="installation-instructions">
 <h2 id="installation-instructions">Installation instructions<a class="headerlink" href="#installation-instructions" title="Permalink to this heading">¶</a></h2>
@@ -390,7 +386,7 @@
 <section id="alternative-2-installing-foliage-using-pipx">
 <h3 id="alternative-2-installing-foliage-using-pipx"><em>Alternative 2: installing Foliage using <code class="docutils literal notranslate"><span class="pre">pipx</span></code></em><a class="headerlink" href="#alternative-2-installing-foliage-using-pipx" title="Permalink to this heading">¶</a></h3>
 <p>You can use <a class="reference external" href="https://pypa.github.io/pipx/">pipx</a> to install Foliage. Pipx will install it into a separate Python environment that isolates the dependencies needed by Foliage from other Python programs on your system, and yet the resulting <code class="docutils literal notranslate"><span class="pre">foliage</span></code> command wil be executable from any shell – like any normal program on your computer. If you do not already have <code class="docutils literal notranslate"><span class="pre">pipx</span></code> on your system, it can be installed in a variety of easy ways and it is best to consult <a class="reference external" href="https://pypa.github.io/pipx/installation/">Pipx’s installation guide</a> for instructions. Once you have pipx on your system, you can install Foliage with the following command:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pipx install foliage
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pipx<span class="w"> </span>install<span class="w"> </span>foliage
 </pre></div>
 </div>
 <p>Pipx can also let you run Foliage directly using <code class="docutils literal notranslate"><span class="pre">pipx</span> <span class="pre">run</span> <span class="pre">foliage</span></code>, although in that case, you must always prefix every <code class="docutils literal notranslate"><span class="pre">foliage</span></code> command with <code class="docutils literal notranslate"><span class="pre">pipx</span> <span class="pre">run</span></code>.  Consult the <a class="reference external" href="https://github.com/pypa/pipx#walkthrough-running-an-application-in-a-temporary-virtual-environment">documentation for <code class="docutils literal notranslate"><span class="pre">pipx</span> <span class="pre">run</span></code></a> for more information.</p>
@@ -399,11 +395,11 @@
 <h3 id="alternative-3-installing-foliage-using-pip"><em>Alternative 3: installing Foliage using <code class="docutils literal notranslate"><span class="pre">pip</span></code></em><a class="headerlink" href="#alternative-3-installing-foliage-using-pip" title="Permalink to this heading">¶</a></h3>
 <p>The instructions below assume you have a Python 3 interpreter installed on your computer.  Note that the default on macOS at least through 10.14 (Mojave) is Python <strong>2</strong> – please first install Python version 3 and familiarize yourself with running Python programs on your system before proceeding further.</p>
 <p>You should be able to install <code class="docutils literal notranslate"><span class="pre">foliage</span></code> with <a class="reference external" href="https://pip.pypa.io/en/stable/installing/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a> for Python 3.  To install <code class="docutils literal notranslate"><span class="pre">foliage</span></code> from the <a class="reference external" href="https://pypi.org">Python package repository (PyPI)</a>, run the following command:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python3 -m pip install foliage
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>foliage
 </pre></div>
 </div>
 <p>As an alternative to getting it from <a class="reference external" href="https://pypi.org">PyPI</a>, you can use <code class="docutils literal notranslate"><span class="pre">pip</span></code> to install <code class="docutils literal notranslate"><span class="pre">foliage</span></code> directly from GitHub:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python3 -m pip install git+https://github.com/calitechlibrary/foliage.git
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/calitechlibrary/foliage.git
 </pre></div>
 </div>
 <p><em>If you already installed Foliage once before</em>, and want to update to the latest version, add <code class="docutils literal notranslate"><span class="pre">--upgrade</span></code> to the end of either command line above.</p>
@@ -411,13 +407,13 @@
 <section id="alternative-4-installing-foliage-from-sources">
 <h3 id="alternative-4-installing-foliage-from-sources"><em>Alternative 4: installing Foliage from sources</em><a class="headerlink" href="#alternative-4-installing-foliage-from-sources" title="Permalink to this heading">¶</a></h3>
 <p>If  you prefer to install Foliage directly from the source code, you can do that too. To get a copy of the files, you can clone the GitHub repository:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/caltechlibrary/foliage
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/caltechlibrary/foliage
 </pre></div>
 </div>
 <p>Alternatively, you can download the files as a ZIP archive using this link directly from your browser using this link: <a class="reference external" href="https://github.com/caltechlibrary/foliage/archive/refs/heads/main.zip">https://github.com/caltechlibrary/foliage/archive/refs/heads/main.zip</a></p>
 <p>Next, after getting a copy of the files,  run <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> inside the code directory:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> foliage
-python3 setup.py install
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>foliage
+python3<span class="w"> </span>setup.py<span class="w"> </span>install
 </pre></div>
 </div>
 </section>
@@ -471,10 +467,10 @@ python3 setup.py install
               
           </div>
             Last updated on
-              Dec 03, 2022.
+              Mar 09, 2023.
             <br/>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 6.1.3.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>

@@ -52,14 +52,11 @@
     <link rel="stylesheet" type="text/css" href="_static/material.css" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/sphinx_highlight.js"></script>
-    <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Glossary" href="glossary.html" />
@@ -90,8 +87,7 @@
         <a href="index.html" title="Foliage"
            class="md-header-nav__button md-logo">
           
-              <img src="_static/foliage-icon-white-sm.png" height="26"
-                   alt="Home logo">
+            &nbsp;
           
         </a>
       </div>
@@ -178,7 +174,7 @@
   <label class="md-nav__title md-nav__title--site" for="__drawer">
     <a href="index.html" title="Foliage" class="md-nav__button md-logo">
       
-        <img src="_static/foliage-icon-white-sm.png" alt=" logo" width="48" height="48">
+        <img src="_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="index.html"
@@ -382,16 +378,16 @@
 <p>In the <em>Look up records</em> tab, you can search for records by simply typing any kind of identifier into the search box. You can also start with one kind of record identifier (e.g., item records) and as Foliage to look up a different kind of record (e.g., loans) by starting with one kind of identifier and telling Foliage to follow the chain of references to get a different kind of record. Depending on what exactly you want to do, some of these operations can be slower than others.</p>
 <section id="identifying-the-identifiers">
 <h3 id="identifying-the-identifiers">Identifying the identifiers<a class="headerlink" href="#identifying-the-identifiers" title="Permalink to this heading">¶</a></h3>
-<p>The first thing Foliage has to do with identifiers in the <em>Look up records</em> tab is to infer the kind of identifiers that you have typed into the window. Unfortunately, the way that FOLIO itself works prevents Foliage from doing this in a simple way: there is no single FOLIO <span class="xref myst">API</span> endpoint where you can ask “what kind of record does this identifier belong to?”. Foliage has to resort to using a combination of pattern recognition and one-by-one questioning to get an answer. This makes some lookups slower than others.</p>
+<p>The first thing Foliage has to do with identifiers in the <em>Look up records</em> tab is to infer the kind of identifiers that you have typed into the window. Unfortunately, the way that FOLIO itself works prevents Foliage from doing this in a simple way: there is no single FOLIO <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> endpoint where you can ask “what kind of record does this identifier belong to?”. Foliage has to resort to using a combination of pattern recognition and one-by-one questioning to get an answer. This makes some lookups slower than others.</p>
 <p>Here is the sequence of tests that Foliage performs on every identifier typed into the lookup box. It stops as soon as it finds an answer:</p>
 <ol class="arabic simple">
 <li><p>If it’s an integer with length &gt; 7 and starts with <code class="docutils literal notranslate"><span class="pre">350</span></code>, it’s an item barcode.</p></li>
-<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">it</span></code> and the 3rd character is a number, it’s an item record <span class="xref myst">HRID</span>.</p></li>
-<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">ho</span></code> and the 3rd character is a number, it’s a holdings record <span class="xref myst">HRID</span>.</p></li>
+<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">it</span></code> and the 3rd character is a number, it’s an item record <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a>.</p></li>
+<li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">ho</span></code> and the 3rd character is a number, it’s a holdings record <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a>.</p></li>
 <li><p>If it starts with <code class="docutils literal notranslate"><span class="pre">clc.</span></code>, it’s an instance record accession number.</p></li>
 <li><p>Does it contain a dash (<code class="docutils literal notranslate"><span class="pre">-</span></code>)?</p>
 <ul class="simple">
-<li><p><em>Yes</em>:, it’s a unique identifier of some kind, but it’s impossible to tell what kind by simply looking at the identifier. Foliage has to contact each of the following FOLIO subsystems  (which requires a separate network <span class="xref myst">API</span> call) to ask whether it recognizes the unique identifier:</p>
+<li><p><em>Yes</em>:, it’s a unique identifier of some kind, but it’s impossible to tell what kind by simply looking at the identifier. Foliage has to contact each of the following FOLIO subsystems  (which requires a separate network <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> call) to ask whether it recognizes the unique identifier:</p>
 <ol class="arabic simple">
 <li><p>item storage: is this an item record id?</p></li>
 <li><p>instance storage: is this an instance record id?</p></li>
@@ -400,28 +396,28 @@
 <li><p>user storage: is this a user id?</p></li>
 </ol>
 </li>
-<li><p><em>No</em>: the identifier is ambiguous (e.g., something like <code class="docutils literal notranslate"><span class="pre">634546</span></code>) and could be either an <span class="xref myst">HRID</span> of a kind that doesn’t follow the usual pattern, or else a user barcode. Similar to the “yes” case, Foliage has to make separate <span class="xref myst">API</span> calls to ask different FOLIO subsystems, one after another, if any recognizes the identifier:</p>
+<li><p><em>No</em>: the identifier is ambiguous (e.g., something like <code class="docutils literal notranslate"><span class="pre">634546</span></code>) and could be either an <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a> of a kind that doesn’t follow the usual pattern, or else a user barcode. Similar to the “yes” case, Foliage has to make separate <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> calls to ask different FOLIO subsystems, one after another, if any recognizes the identifier:</p>
 <ol class="arabic simple">
 <li><p>user storage: is this a user barcode?</p></li>
-<li><p>instance storage: is this an instance record <span class="xref myst">HRID</span>?</p></li>
-<li><p>item storage: is this an item record <span class="xref myst">HRID</span>?</p></li>
-<li><p>holdings storage: is this a holdings record <span class="xref myst">HRID</span>?</p></li>
+<li><p>instance storage: is this an instance record <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a>?</p></li>
+<li><p>item storage: is this an item record <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a>?</p></li>
+<li><p>holdings storage: is this a holdings record <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a>?</p></li>
 </ol>
 </li>
 </ul>
 </li>
 <li><p>If none of the above succeeds, then Foliage reports the identifier as being unrecognized.</p></li>
 </ol>
-<p>The above hopefully explains why some lookups are slower than others. The worst-case scenario is <span class="xref myst">HRID</span> that belong to user records; then, Foliage has to make a total of 5 <span class="xref myst">API</span> calls to determine the identifier kind (first asking, and failing, for item, instance, holdings, and loan, before getting a positive answer for user).</p>
+<p>The above hopefully explains why some lookups are slower than others. The worst-case scenario is <a class="reference internal" href="#glossary.html#HRID"><span class="xref myst">HRID</span></a> that belong to user records; then, Foliage has to make a total of 5 <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> calls to determine the identifier kind (first asking, and failing, for item, instance, holdings, and loan, before getting a positive answer for user).</p>
 <p>Note that the order in which the calls are made is arbitrary and based on guessing what Foliage users might look up most often. The order can be changed, but at present, the tests are done in sequence, so changing the order will simply make some <em>other</em> kind of record slower to identify.</p>
 </section>
 <section id="one-record-leads-to-another">
 <h3 id="one-record-leads-to-another">One record leads to another<a class="headerlink" href="#one-record-leads-to-another" title="Permalink to this heading">¶</a></h3>
-<p>The <em>Look up records</em> tab allows you to find a chosen kind of record by starting with a <em>different</em> kind of record identifier. An example of this is starting with an item identifier and getting back loan records for loans involving that item. To achieve this, Foliage sometimes has to do multiple steps, to follow the chain of references between records in FOLIO. Here is a rough summary of how many steps (and thus how slow) different kinds of operations are. Keep in mind that Foliage first has to figure out what kind of identifier it has been given (as discussed in the previous section), so the following steps occur <em>after</em> – and in addition to – any <span class="xref myst">API</span> calls needed for that.</p>
+<p>The <em>Look up records</em> tab allows you to find a chosen kind of record by starting with a <em>different</em> kind of record identifier. An example of this is starting with an item identifier and getting back loan records for loans involving that item. To achieve this, Foliage sometimes has to do multiple steps, to follow the chain of references between records in FOLIO. Here is a rough summary of how many steps (and thus how slow) different kinds of operations are. Keep in mind that Foliage first has to figure out what kind of identifier it has been given (as discussed in the previous section), so the following steps occur <em>after</em> – and in addition to – any <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> calls needed for that.</p>
 <ol class="arabic simple">
-<li><p>Direct lookups of the same kind of identifier (e.g., item records given item identifiers) are fastest and need only a single <span class="xref myst">API</span> call.</p></li>
-<li><p>FOLIO item records point to holdings records, and holdings records point to instance records. Going between them takes 1 or 2 <span class="xref myst">API</span> calls, depending on whether FOLIO happens to support a search query for that combination. Not all combinations are covered. For example, getting an instance record given a holdings record id takes 2 <span class="xref myst">API</span> calls: first Foliage uses the holdings id to retrieve the holdings record (first <span class="xref myst">API</span> call), reads the instance identifier inside that record, and then retrieves the actual instance record (second <span class="xref myst">API</span> call).</p></li>
-<li><p>Looking up items, holdings and instances starting from user identifiers can take an unpredictable number of <span class="xref myst">API</span> calls, based on the number of loans that the user currently has or (if searching for all loans and not only open loans) that the user has <em>ever</em> made. For example, asking for instance records given a user id requires, for every loan, (a) retrieving the loan record to get the identifier of the item loaned, and then  (b) getting the instance record for that item identifier.  Some users have made dozens of loans, so this process can take an extremely long time.</p></li>
+<li><p>Direct lookups of the same kind of identifier (e.g., item records given item identifiers) are fastest and need only a single <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> call.</p></li>
+<li><p>FOLIO item records point to holdings records, and holdings records point to instance records. Going between them takes 1 or 2 <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> calls, depending on whether FOLIO happens to support a search query for that combination. Not all combinations are covered. For example, getting an instance record given a holdings record id takes 2 <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> calls: first Foliage uses the holdings id to retrieve the holdings record (first <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> call), reads the instance identifier inside that record, and then retrieves the actual instance record (second <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> call).</p></li>
+<li><p>Looking up items, holdings and instances starting from user identifiers can take an unpredictable number of <a class="reference internal" href="#glossary.html#API"><span class="xref myst">API</span></a> calls, based on the number of loans that the user currently has or (if searching for all loans and not only open loans) that the user has <em>ever</em> made. For example, asking for instance records given a user id requires, for every loan, (a) retrieving the loan record to get the identifier of the item loaned, and then  (b) getting the instance record for that item identifier.  Some users have made dozens of loans, so this process can take an extremely long time.</p></li>
 </ol>
 </section>
 </section>
@@ -516,10 +512,10 @@
               
           </div>
             Last updated on
-              Dec 03, 2022.
+              Mar 09, 2023.
             <br/>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 6.1.3.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>
