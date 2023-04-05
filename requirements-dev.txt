@@ -23,6 +23,7 @@ flake8-simplify            >= 0.19.2
 
 linkify-it-py
 myst-parser
+sphinx-autobuild
 sphinx-material
 sphinxcontrib-mermaid
 twine
