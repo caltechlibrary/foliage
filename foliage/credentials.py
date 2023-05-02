@@ -55,6 +55,7 @@ from   pywebio.pin import pin, put_input
 from   sidetrack import log
 import sys
 import threading
+from   validators.url import url as valid_url
 
 if sys.platform.startswith('win'):
     import keyring.backends
@@ -160,6 +161,16 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             if confirm('Cannot proceed without all credentials. Try again?'):
                 tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
                 return credentials_from_user(initial_creds = tmp)
+            return None
+        else:
+            return None
+
+    if not valid_url(pin.url):
+        log('given URL that doesn\'t look like a uRL: ' + pin.url)
+        if confirm('This does not look like a URL: "' + pin.url + '"'
+                   + ' – would you like to edit the value and try again?'):
+            tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)
+            return credentials_from_user(initial_creds = tmp)
         else:
             return None
 
@@ -168,7 +179,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
                                        user = pin.user, password = pin.password)
 
     if error:
-        notify('Failed to get a token: ' + error + '.')
+        notify('Failed to get a token. ' + error + '.')
         return None
     else:
         note_info('New FOLIO API token obtained.')
