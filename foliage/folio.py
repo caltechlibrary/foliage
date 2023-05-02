@@ -292,7 +292,15 @@ class Folio():
                 log(f'got new token from FOLIO: {token}')
                 return token, None
             elif resp.status_code == 422:
-                return None, 'FOLIO rejected the information given'
+                msg = 'FOLIO rejected the information given'
+                try:
+                    if errors := json.loads(resp.text).get('errors', []):
+                        text = errors[0].get('message', '')
+                        if text:
+                            msg += (': ' + text)
+                except json.JSONDecodeError:
+                    log('could not extract error message from FOLIO reply')
+                return None, msg
             elif isinstance(error, Interrupted):
                 raise_for_interrupts()
             elif error:
