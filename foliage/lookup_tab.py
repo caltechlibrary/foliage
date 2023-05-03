@@ -108,6 +108,7 @@ _last_kind = None
 _last_inventory_api = True
 _last_open_loans = True
 _location_map = None
+_loan_map = None
 
 
 def load_file():
@@ -119,9 +120,19 @@ def load_file():
 def init_location_map():
     global _location_map
     if _location_map is None:
+        log('building map of location names')
         folio = Folio()
         _location_map = {x.data['id']: x.data['name']
                          for x in folio.types(TypeKind.LOCATION)}
+
+
+def init_loan_map():
+    global _loan_map
+    if _loan_map is None:
+        log('building map of loan types')
+        folio = Folio()
+        _loan_map = {x.data['id']: x.data['name']
+                     for x in folio.types(TypeKind.LOAN)}
 
 
 def inputs_are_unchanged():
@@ -240,7 +251,6 @@ def do_find():
     kind_wanted = pin.select_kind
     steps = len(identifiers) + 1
     folio = Folio()
-    init_location_map()
     total_found = 0
     with use_scope('output', clear = True):
         put_grid([[
@@ -329,7 +339,6 @@ def field(record, field_name, subfield_name = None, list_joiner = ', '):
 
 
 def location(record, field_name):
-    global _location_map
     if field_name not in record.data:
         return ''
     location_data = record.data[field_name]
@@ -338,8 +347,11 @@ def location(record, field_name):
             return f'{location_data["name"]}  ({location_data["id"]})'
         else:
             return location_data["id"]
-    elif location_data and location_data in _location_map:
-        return f'{_location_map[location_data]}  ({location_data})'
+    elif location_data:
+        global _location_map
+        init_location_map()
+        if location_data in _location_map:
+            return f'{_location_map[location_data]}  ({location_data})'
     return '(unknown location)'
 
 
@@ -360,6 +372,23 @@ def notes(record, field_name):
         return notes
 
 
+def loan_type(record, field_name):
+    if field_name not in record.data:
+        return ''
+    loan_type = record.data[field_name]
+    if isinstance(loan_type, dict):
+        if 'name' in loan_type:
+            return f'{loan_type["name"]}  ({loan_type["id"]})'
+        else:
+            return loan_type["id"]
+    elif loan_type:
+        global _loan_map
+        init_loan_map()
+        if loan_type in _loan_map:
+            return f'{_loan_map[loan_type]}  ({loan_type})'
+    return '(unknown loan type)'
+
+
 def print_record(record, identifier, index, show_index, show_raw):
     log(f'printing {record.kind} record {record.id}')
     if show_index:
@@ -378,6 +407,7 @@ def print_record(record, identifier, index, show_index, show_raw):
                 [f'{record.kind.title()} id' , field(record, 'id')],
                 ['Effective location'        , location(record, 'effectiveLocation')],
                 ['Permanent location'        , location(record, 'permanentLocation')],
+                ['Loan type'                 , loan_type(record, 'permanentLoanType')],
                 ['Status'                    , field(record, 'status', 'name')],
                 ['Tags'                      , field(record, 'tags', 'tagsList')],
                 ['Notes'                     , notes(record, 'notes')],
@@ -393,6 +423,7 @@ def print_record(record, identifier, index, show_index, show_raw):
                 [f'{record.kind.title()} id' , field(record, 'id')],
                 ['Effective location'        , location(record, 'effectiveLocationId')],
                 ['Permanent location'        , location(record, 'permanentLocationId')],
+                ['Loan type'                 , loan_type(record, 'permanentLoanTypeId')],
                 ['Tags'                      , field(record, 'tags', 'tagsList')],
                 ['Notes'                     , notes(record, 'notes')],
                 ['HRID'                      , field(record, 'hrid')],
