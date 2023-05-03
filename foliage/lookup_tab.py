@@ -46,6 +46,8 @@ class LookupTab(FoliageTab):
 # Tab layout.
 # .............................................................................
 
+column_widths = '54% 46%'
+
 def tab_contents():
     log('generating lookup tab contents')
     return [
@@ -72,22 +74,23 @@ def tab_contents():
                                       ' based on loans), limit searches to'
                                       ' open loans only. Deselect'
                                       ' to search all loans.')),
-        ]], cell_widths = '54% 46%'),
+        ]], cell_widths = column_widths),
         put_grid([[
             put_grid([[
                 put_text('Format in which to display records:'),
             ], [
                 put_radio('show_raw', inline = True,
                           options = [('Summary', 'summary', True),
+                                     ('Enhanced summary', 'enhanced'),
                                      ('Raw data', 'json')]),
             ]]),
             put_checkbox("inventory_api", inline = True,
-                         options = [('Use inventory API for items and instances',
+                         options = [('Use FOLIO "inventory" API',
                                      True, True)],
                          help_text = ("FOLIO's Inventory API shows more fields but"
                                       ' some values are computed. Deselect to'
                                       ' get pure records from the storage API.')),
-        ]], cell_widths = '54% 46%'),
+        ]], cell_widths = column_widths),
         put_row([
             put_button('Look up records', onclick = lambda: do_find()),
             put_text(''),    # Adds a column, pushing next item to the right.
@@ -292,7 +295,7 @@ def do_find():
                 tell_success(f'Found {this} {how}')
                 show_index = (len(records) > 1)
                 for index, record in enumerate(records, start = 1):
-                    print_record(record, id_, index, show_index, pin.show_raw == 'json')
+                    print_record(record, id_, index, show_index, pin.show_raw)
                 total_found += len(records)
             except Interrupted:
                 log('stopping due to interruption')
@@ -389,18 +392,18 @@ def loan_type(record, field_name):
     return '(unknown loan type)'
 
 
-def print_record(record, identifier, index, show_index, show_raw):
+def print_record(record, identifier, index, show_index, format):
     log(f'printing {record.kind} record {record.id}')
     if show_index:
         put_markdown(f'{record.kind.title()} record #{index}:')
-
-    if show_raw:
+    if format == 'json':
         put_code(pformat(record.data, indent = 2))
-    elif record.kind is RecordKind.ITEM:
-        # Caution: left-hand values contain nonbreaking spaces (invisible here).
+        return
+    # Caution: left-hand values contain nonbreaking spaces (invisible here).
+    if record.kind is RecordKind.ITEM:
         if 'title' in record.data:
             # Inventory record version.
-            put_table([
+            table = [
                 ['Title'                     , field(record, 'title')],
                 ['Barcode'                   , field(record, 'barcode')],
                 ['Call number'               , field(record, 'callNumber')],
@@ -414,10 +417,10 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['HRID'                      , field(record, 'hrid')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
         else:
             # Storage record version.
-            put_table([
+            table = [
                 ['Barcode'                   , field(record, 'barcode')],
                 ['Call number'               , field(record, 'itemLevelCallNumber')],
                 [f'{record.kind.title()} id' , field(record, 'id')],
@@ -429,15 +432,13 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['HRID'                      , field(record, 'hrid')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
     elif record.kind is RecordKind.INSTANCE:
-        # Caution: left-hand values contain nonbreaking spaces (invisible here).
+        call_number = ''
         if field(record, 'classifications'):
             call_number = record.data['classifications'][0]['classificationNumber']
-        else:
-            call_number = ''
         if 'tags' in record.data:
-            put_table([
+            table = [
                 ['Title'                     , field(record, 'title')],
                 ['Call number'               , call_number],
                 [f'{record.kind.title()} id' , field(record, 'id')],
@@ -446,9 +447,9 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['HRID'                      , field(record, 'hrid')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
         else:
-            put_table([
+            table = [
                 ['Title'                     , field(record, 'title')],
                 ['Call number'               , call_number],
                 [f'{record.kind.title()} id' , field(record, 'id')],
@@ -456,11 +457,10 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Notes'                     , notes(record, 'notes')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
     elif record.kind is RecordKind.HOLDINGS:
-        # Caution: left-hand values contain nonbreaking spaces (invisible here).
         if 'effectiveLocationId' in record.data:
-            put_table([
+            table = [
                 [f'{record.kind.title()} id' , field(record, 'id')],
                 ['HRID'                      , field(record, 'hrid')],
                 ['Holdings type id'          , field(record, 'holdingsTypeId')],
@@ -469,9 +469,9 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Permanent location'        , location(record, 'permanentLocationId')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
         else:
-            put_table([
+            table = [
                 [f'{record.kind.title()} id' , field(record, 'id')],
                 ['HRID'                      , field(record, 'hrid')],
                 ['Holdings type id'          , field(record, 'holdingsTypeId')],
@@ -480,20 +480,19 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Permanent location'        , location(record, 'permanentLocationId')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
     elif record.kind is RecordKind.USER:
-        # Caution: left-hand values contain nonbreaking spaces (invisible here).
-        put_table([
+        table = [
             ['Username'                  , field(record, 'username')],
             ['Barcode'                   , field(record, 'barcode')],
             [f'{record.kind.title()} id' , field(record, 'id')],
             ['Patron group'              , field(record, 'patronGroup')],
             ['Created'                   , field(record, 'metadata', 'createdDate')],
             ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-        ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+        ]
     elif record.kind is RecordKind.LOAN:
         if 'userId' in record.data:
-            put_table([
+            table = [
                 [f'{record.kind.title()} id' , field(record, 'id')],
                 ['Status'                    , field(record, 'status', 'name')],
                 ['User id'                   , field(record, 'userId')],
@@ -502,9 +501,9 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Due date'                  , field(record, 'dueDate')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
         else:
-            put_table([
+            table = [
                 [f'{record.kind.title()} id' , field(record, 'id')],
                 ['Status'                    , field(record, 'status', 'name')],
                 ['User id'                   , ''],
@@ -513,7 +512,57 @@ def print_record(record, identifier, index, show_index, show_raw):
                 ['Due date'                  , field(record, 'dueDate')],
                 ['Created'                   , field(record, 'metadata', 'createdDate')],
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
-            ]).style('font-size: 90%; margin: auto 17px 1.5em 17px')
+            ]
+
+    # FIXME need store the additional info for export
+    if format == 'enhanced' and record.kind == RecordKind.ITEM:
+        # Add info about other items on the holdings & instances records.
+        folio = Folio()
+        holdings_id = record.data['holdingsRecordId']
+        items = folio.related_records(holdings_id, IdKind.HOLDINGS_ID, RecordKind.ITEM)
+        num_items = len(items)
+        if num_items > 1:
+            item_info = f'Yes ({pluralized("other", num_items - 1, True)})'
+        else:
+            item_info = 'No (this is the only one)'
+
+        instances = folio.related_records(holdings_id, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
+        instance = instances[0]
+        other_holdings = folio.related_records(instance.id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
+        num_holdings = len(other_holdings)
+        if num_holdings > 1:
+            holdings_info = f'Yes ({pluralized("other", num_holdings - 1, True)})'
+        else:
+            holdings_info = 'No (this is the only one)'
+
+        table.append(['Parent holdings record'         , holdings_id])
+        table.append(['Other items in holdings record?', item_info])
+        table.append(['Parent instance record'         , instance.id])
+        table.append(['Other holdings on instance?'    , holdings_info])
+
+    elif format == 'enhanced' and record.kind == RecordKind.HOLDINGS:
+        folio = Folio()
+        items = folio.related_records(record.id, IdKind.HOLDINGS_ID, RecordKind.ITEM)
+        num_items = len(items)
+        if num_items > 1:
+            item_info = f'Yes ({pluralized("other", num_items - 1, True)})'
+        else:
+            item_info = 'No (this is the only one)'
+
+        instances = folio.related_records(record.id, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
+        instance = instances[0]
+        other_holdings = folio.related_records(instance.id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
+        num_holdings = len(other_holdings)
+        if num_holdings > 1:
+            holdings_info = f'Yes ({pluralized("other", num_holdings - 1, True)})'
+        else:
+            holdings_info = 'No (this is the only one)'
+
+        table.append(['Other items on holdings record?', item_info])
+        table.append(['Parent instance record'         , instance.id])
+        table.append(['Other holdings on instance?'    , holdings_info])
+
+    put_table(table).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
 
 def user_wants_reuse():
