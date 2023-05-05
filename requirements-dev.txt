@@ -27,3 +27,5 @@ sphinx-autobuild
 sphinx-material
 sphinxcontrib-mermaid
 twine
+wheel
+
