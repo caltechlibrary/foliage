@@ -341,20 +341,22 @@ def field(record, field_name, subfield_name = None, list_joiner = ', '):
         return str(value)
 
 
-def location(record, field_name):
+def location(record, field_name, include_id=True):
     if field_name not in record.data:
         return ''
     location_data = record.data[field_name]
     if isinstance(location_data, dict):
         if 'name' in location_data:
-            return f'{location_data["name"]}  ({location_data["id"]})'
+            id_info = f' ({location_data["id"]})' if include_id else ''
+            return f'{location_data["name"]}{id_info}'
         else:
             return location_data["id"]
     elif location_data:
         global _location_map
         init_location_map()
         if location_data in _location_map:
-            return f'{_location_map[location_data]}  ({location_data})'
+            id_info = f' ({location_data})' if include_id else ''
+            return f'{_location_map[location_data]}{id_info}'
     return '(unknown location)'
 
 
@@ -515,52 +517,61 @@ def print_record(record, identifier, index, show_index, format):
             ]
 
     # FIXME need store the additional info for export
-    if format == 'enhanced' and record.kind == RecordKind.ITEM:
-        # Add info about other items on the holdings & instances records.
+    # FIXME check that this works if "use inventory records" is unchecked
+
+    # Define some helpers for the enhanced format.
+    def item_info(hid):
         folio = Folio()
-        holdings_id = record.data['holdingsRecordId']
-        items = folio.related_records(holdings_id, IdKind.HOLDINGS_ID, RecordKind.ITEM)
+        items = folio.related_records(hid, IdKind.HOLDINGS_ID, RecordKind.ITEM)
         num_items = len(items)
+        text = str(num_items)
         if num_items > 1:
-            item_info = f'Yes ({pluralized("other", num_items - 1, True)})'
+            if record.kind == RecordKind.ITEM:
+                text += ' (including this item)'
         else:
-            item_info = 'No (this is the only one)'
+            if record.kind == RecordKind.ITEM:
+                text += ' (this is the only item on the holdings record)'
+        return text
 
-        instances = folio.related_records(holdings_id, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
-        instance = instances[0]
-        other_holdings = folio.related_records(instance.id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
-        num_holdings = len(other_holdings)
+    def holdings_info(iid):
+        folio = Folio()
+        holdings = folio.related_records(iid, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
+        num_holdings = len(holdings)
         if num_holdings > 1:
-            holdings_info = f'Yes ({pluralized("other", num_holdings - 1, True)})'
+            prefix = '<br>&nbsp;&nbsp;&bull;&nbsp;'
+            holdings_list = []
+            for h in holdings:
+                if 'effectiveLocationId' in h.data:
+                    loc = location(h, 'effectiveLocationId', False)
+                else:
+                    loc = location(h, 'permanentLocationId', False)
+                holdings_list.append(loc + f' (holdings record: {h.id})')
+            locations = prefix + prefix.join(holdings_list)
+            return put_html(f'{num_holdings} holdings records in total:{locations}')
         else:
-            holdings_info = 'No (this is the only one)'
+            if record.kind == RecordKind.HOLDINGS:
+                return '1 (there are no other holdings records on the instance)'
+            else:
+                return '1 (including this holdings record)'
 
-        table.append(['Parent holdings record'         , holdings_id])
-        table.append(['Other items in holdings record?', item_info])
-        table.append(['Parent instance record'         , instance.id])
-        table.append(['Other holdings on instance?'    , holdings_info])
-
+    # Add additional info when doing an enhanced summary.
+    if format == 'enhanced' and record.kind == RecordKind.ITEM:
+        folio = Folio()
+        hid = record.data['holdingsRecordId']
+        instances = folio.related_records(hid, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
+        instance = instances[0]
+        iid = instance.id
+        table.append(['Parent holdings record'             , hid])
+        table.append(['Total items on the holdings record' , item_info(hid)])
+        table.append(['Parent instance record'             , iid])
+        table.append(['Total holdings records on the instance', holdings_info(iid)])
     elif format == 'enhanced' and record.kind == RecordKind.HOLDINGS:
         folio = Folio()
-        items = folio.related_records(record.id, IdKind.HOLDINGS_ID, RecordKind.ITEM)
-        num_items = len(items)
-        if num_items > 1:
-            item_info = f'Yes ({pluralized("other", num_items - 1, True)})'
-        else:
-            item_info = 'No (this is the only one)'
-
-        instances = folio.related_records(record.id, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
-        instance = instances[0]
-        other_holdings = folio.related_records(instance.id, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
-        num_holdings = len(other_holdings)
-        if num_holdings > 1:
-            holdings_info = f'Yes ({pluralized("other", num_holdings - 1, True)})'
-        else:
-            holdings_info = 'No (this is the only one)'
-
-        table.append(['Other items on holdings record?', item_info])
-        table.append(['Parent instance record'         , instance.id])
-        table.append(['Other holdings on instance?'    , holdings_info])
+        hid = record.id
+        iid = record.data['instanceId']
+        # The summary table for holdings already has the holdings & instance id's.
+        table.append(['Total items on this holdings record'   , item_info(hid)])
+        table.append(['Total holdings records on the instance', holdings_info(iid)])
 
     put_table(table).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
