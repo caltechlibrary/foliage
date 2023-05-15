@@ -49,3 +49,5 @@ jobs:
           community:      ${{github.event.inputs.community || env.community}}
           parent_record:  ${{github.event.inputs.parent_record || env.parent_record}}
           release_tag:    ${{github.event.inputs.release_tag || 'latest'}}
+
+name: Archive releases in InvenioRDM
