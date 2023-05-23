@@ -353,6 +353,8 @@ clean-other:;
 	rm -fr __pycache__ $(name)/__pycache__ .eggs
 	rm -rf .cache
 	rm -rf .pytest_cache
+	rm -f *.bak
+	rm -f tests/*.log
 
 .PHONY: release release-on-github update-init update-meta update-citation \
 	print-instructions packages clean test-pypi pypi extra-files dmg \
