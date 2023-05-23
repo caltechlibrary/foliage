@@ -516,9 +516,6 @@ def print_record(record, identifier, index, show_index, format):
                 ['Updated'                   , field(record, 'metadata', 'updatedDate')],
             ]
 
-    # FIXME need store the additional info for export
-    # FIXME check that this works if "use inventory records" is unchecked
-
     # Define some helpers for the enhanced format.
     def item_info(hid):
         folio = Folio()
@@ -561,18 +558,33 @@ def print_record(record, identifier, index, show_index, format):
         instances = folio.related_records(hid, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
         instance = instances[0]
         iid = instance.id
+        total_items = item_info(hid)
+        total_holdings = holdings_info(iid)
+
         table.append(['Parent holdings record'             , hid])
-        table.append(['Total items on the holdings record' , item_info(hid)])
+        table.append(['Total items on the holdings record' , total_items])
         table.append(['Parent instance record'             , iid])
-        table.append(['Total holdings records on the instance', holdings_info(iid)])
+        table.append(['Total holdings records on the instance', total_holdings])
+
+        additions = {'parentHoldingsRecord'                 : hid,
+                     'totalItemsOnHoldingsRecord'           : total_items,
+                     'parentInstanceRecord'                 : iid,
+                     'totalHoldingsRecordsOnParentInstance' : total_holdings}
+        record.data['computedByFoliage'] = additions
     elif format == 'enhanced' and record.kind == RecordKind.HOLDINGS:
         folio = Folio()
         hid = record.id
         iid = record.data['instanceId']
-        # The summary table for holdings already has the holdings & instance id's.
-        table.append(['Total items on this holdings record'   , item_info(hid)])
-        table.append(['Total holdings records on the instance', holdings_info(iid)])
+        total_items = item_info(hid)
+        total_holdings = holdings_info(iid)
 
+        # The summary table for holdings already has the holdings & instance id's.
+        table.append(['Total items on this holdings record'   , total_items])
+        table.append(['Total holdings records on the instance', total_holdings])
+
+        additions = {'totalItemsOnThisHoldingsRecord': total_items,
+                     'totalHoldingsRecordsOnParentInstance': total_holdings}
+        record.data['computedByFoliage'] = additions
     put_table(table).style('font-size: 90%; margin: auto 17px 1.5em 17px')
 
 
