@@ -1,4 +1,14 @@
-# Change log for foliage
+# Change log for Foliage
+
+## ★ Version 1.6.0 (TBD) ★
+
+Changes in this version:
+* In the dialog for entering credentials, Foliage now checks that the value given for the OKAPI URL actually looks like a URL, to help guard against a common error where the user swaps the URL and tenant ID values. Foliage also reports error messages from Folio when the user name or user password does not exist, instead of (unhelpfully) only reporting that Folio rejected the request.
+* The _Look up records_ tab now prints the item loan type when the search is for item records.
+* The _Look up records_ tab now has a new _Enhanced summary_ option; this adds additional computed field values to the summary table, at the cost of requiring additional time to look up the field values.
+* The _Look up records_ tab now exports all values, even those not found. In the output (whether CSV or JSON), records which were not found will have empty field values except for the identifier field.
+* The file `requirements.txt` has updates to versions of dependencies.
+
 
 ## ★ Version 1.5.5 (2023-03-09) ★
 
