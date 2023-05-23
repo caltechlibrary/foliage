@@ -26,7 +26,7 @@ import threading
 from   foliage.base_tab import FoliageTab
 from   foliage.export import export_records
 from   foliage.folio import Folio, RecordKind, IdKind, TypeKind
-from   foliage.folio import unique_identifiers
+from   foliage.folio import unique_identifiers, Record
 from   foliage.ui import user_file, stop_processbar
 from   foliage.ui import tell_success, tell_warning, tell_failure
 from   foliage.ui import note_error, PROGRESS_BOX
@@ -212,6 +212,29 @@ def wait_if_running():
     enable_lookup_button(True)
 
 
+def nonexistent_record_stub(id_, id_kind):
+    data = {'id': ''}
+
+    if id_kind in [IdKind.ITEM_BARCODE, IdKind.USER_BARCODE]:
+        data['barcode'] = id_
+    elif id_kind in [IdKind.ITEM_ID, IdKind.HOLDINGS_ID, IdKind.INSTANCE_ID,
+                     IdKind.USER_ID, IdKind.LOAN_ID, IdKind.TYPE_ID,
+                     IdKind.ACCESSION]:
+        data['id'] = id_
+    elif id_kind in [IdKind.ITEM_HRID, IdKind.HOLDINGS_HRID, IdKind.INSTANCE_HRID]:
+        data['hrid'] = id_
+
+    if id_kind in [IdKind.INSTANCE_ID, IdKind.INSTANCE_HRID]:
+        data['title'] = ''
+    # Item records from the storage API don't have 'title', so we don't add it
+    # unless we're using the inventory API.
+    if pin.inventory_api and id_kind in [IdKind.ITEM_BARCODE, IdKind.ITEM_ID,
+                                         IdKind.ITEM_HRID]:
+        data['title'] = ''
+
+    return Record(id_, id_kind, data)
+
+
 # Summary of the basic flow of control:
 #
 # User clicks "look up records", thus invoking do_find().
@@ -281,10 +304,13 @@ def do_find():
                 else:
                     records = folio.related_records(id_, id_kind, kind_wanted,
                                                     pin.inventory_api, pin.open_loans)
-                    _last_results[id_] = records
-                if not records or len(records) == 0:
-                    tell_failure(f'No {kind_wanted} record(s) found for {id_kind} **{id_}**.')
-                    continue
+                    if not records or len(records) == 0:
+                        tell_failure(f'No {kind_wanted} record(s) found for'
+                                     f' {id_kind} **{id_}**.')
+                        _last_results[id_] = [nonexistent_record_stub(id_, id_kind)]
+                        continue
+                    else:
+                        _last_results[id_] = records
 
                 # Report the results & how we got them.
                 source = 'storage'
