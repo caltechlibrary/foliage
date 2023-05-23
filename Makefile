@@ -234,6 +234,8 @@ ifneq ($(branch),main)
 	$(error Current git branch != main. Merge changes into main first!)
 endif
 
+update-all: update-init update-meta update-citation
+
 update-init:;
 	@sed -i .bak -e "s|^\(__version__ *=\).*|\1 '$(version)'|"  $(initfile)
 	@sed -i .bak -e "s|^\(__description__ *=\).*|\1 '$(desc)'|" $(initfile)
