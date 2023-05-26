@@ -196,9 +196,25 @@ $(aboutfile): README.html
 
 pyinstaller $(distdir)/$(appname): | vars dependencies
 	@mkdir -p $(distdir)
+	if [[ -n "$SSH_TTY" ]]; then
+	    # Needed when building over SSH to a macOS machine.
+	    echo
+	    echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	    echo The following password prompt is for allowing codesigning
+	    security unlock-keychain login.keychain
+	    echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	fi
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
-	# PyInstaller creates this but we don't use it.
-	-rm -rf $(distdir)/foliage
+	# PyInstaller creates directory "foliage" but we don't use it.
+	if [[ $(shell realpath `pwd`) =~ ^/Volumes ]]; then
+	    # When I'm doing this over a mounted volume between macOS machines,
+	    # normal deletion fails for unknown reasons (not permissions).
+	    # I suspect it's an interaction between APFS and SMB running on
+	    # different versions of macOS. Anyway, here's a gross hack.
+	    mv -f $(distdir)/foliage $(distdir)/ok-to-delete-$$RANDOM
+	else
+	    rm -rf $(distdir)/foliage
+	fi
 
 codesign: pyinstaller
 	@$(if $(CODESIGN_IDENTITY),,$(error CODESIGN_IDENTITY is not set))
@@ -219,8 +235,9 @@ dmg: dist-dirs $(distdir)/$(appname)
 	origdir=$(CURDIR)
 	cd $(distdir)
 	# Note: create-dmg is from https://github.com/sindresorhus/create-dmg
+	# Beware: do NOT install the one from Homebrew -- it's a different one.
 	create-dmg --overwrite --dmg-title="Foliage installer" $(appname)
-	mv "$(title) $(version)".dmg "$(title) $(version) installer".dmg 
+	mv "$(title) $(version)".dmg "$(title) $(version) installer".dmg
 	cd $(origdir)
 	-rm -f $(distdir)/license.txt
 
@@ -339,7 +356,13 @@ clean-dist: vars
 	    $(distdir)/$(name)-$(version)-py3-none-any.whl
 
 really-clean-dist:;
-	rm -fr $(distdir)
+	if [[ $(shell realpath `pwd`) =~ ^/Volumes ]]; then
+	    # When I'm doing this over a mounted volume between macOS machines,
+	    # normal deletion fails for unknown reasons (not file permissions).
+	    mv -f $(distdir) $(distdir)-ok-to-delete-$$RANDOM
+	else
+	    rm -fr $(distdir)
+	fi
 
 clean-build:;
 	rm -rf $(builddir)
