@@ -156,8 +156,9 @@ executable         = EXE(application_pyz,
                          upx = True,
                          runtime_tmpdir = None,
                          bootloader_ignore_signals = False,
-                         codesign_identity = None,
-                         entitlements_file = None,
+                         #codesign_identity = 'Apple Development: Michael Hucka (D7AL34MY6U)',
+                         codesign_identity = 'Mac Developer: Michael Hucka (D7AL34MY6U)',
+                         entitlements_file = 'entitlements.plist',
                          # To debug run problems, first try setting console
                          # to True. If that doesn't reveal enough, then try
                          # setting debug to True. (Debug produces a lot of
