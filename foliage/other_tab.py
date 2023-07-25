@@ -49,7 +49,7 @@ def tab_contents():
                  ).style('text-align: center; margin-bottom: 1em'),
         put_grid([[
             put_markdown('Foliage stores the FOLIO credentials you provide the'
-                         ' first time it runs, so that you don\'t have to'
+                         " first time it runs, so that you don't have to"
                          ' enter them again. Click this button to update the'
                          ' stored credentials.'),
             put_button('Edit credentials', onclick = lambda: edit_credentials(),

@@ -166,7 +166,7 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             return None
 
     if not valid_url(pin.url):
-        log('given URL that doesn\'t look like a uRL: ' + pin.url)
+        log("given URL that doesn't look like a uRL: " + pin.url)
         if confirm('This does not look like a URL: "' + pin.url + '"'
                    + ' – would you like to edit the value and try again?'):
             tmp = Credentials(url = pin.url, tenant_id = pin.tenant_id, token = None)

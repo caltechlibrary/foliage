@@ -272,7 +272,7 @@ class Folio():
     def new_token(url, tenant_id, user, password):
         '''Ask FOLIO to create a token for the given url, tenant & user.'''
         if not all([url, tenant_id, user, password]):
-            log('given incomplete set of parameters -- can\'t proceed.')
+            log("given incomplete set of parameters -- can\'t proceed.")
             return None, 'Incomplete parameters for credentials'
         try:
             log('asking FOLIO for new API token')
