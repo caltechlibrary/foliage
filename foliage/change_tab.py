@@ -411,7 +411,7 @@ def change_item(item, given_hrec = None, context = ''):
 
     # If the change is to a temporary location field or loan type, we can
     # make the change without having to change a holdings record.
-    if pin.chg_field in ['Temporary location', 'Loan type']:
+    if pin.chg_field in ['Temporary location', 'Loan type', 'Material type']:
         return True
 
     # Not a temporary location change. Were we given the holdings record in the
@@ -632,4 +632,7 @@ known_fields = {
     'Loan type': Field(type = TypeKind.LOAN,
                        key = 'permanentLoanTypeId',
                        delete_ok = []),
+    'Material type': Field(type = TypeKind.MATERIAL,
+                           key = 'materialTypeId',
+                           delete_ok = []),
 }
