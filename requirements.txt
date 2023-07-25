@@ -23,9 +23,9 @@ sidetrack       >= 2.0.1
 tornado         == 6.1
 python-slugify  == 8.0.1
 validators      == 0.20.0
-wand            == 0.6.7
+wand            == 0.6.11
 
 # This is a fork of PyWebIo with a couple of minor but crucial modifications.
 # It cannot be left in this file because PyPI will not accept a distribution
 # with a dependency in this form.
-pywebio @ git+https://github.com/mhucka/PyWebIO.git@2af53fc
+#pywebio @ git+https://github.com/mhucka/PyWebIO.git@2af53fc
