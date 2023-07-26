@@ -199,10 +199,11 @@ pyinstaller $(distdir)/$(appname): | vars dependencies
 	if [[ -n "$SSH_TTY" ]]; then
 	    # Needed when building over SSH to a macOS machine.
 	    echo
-	    echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	    echo The following password prompt is for allowing codesigning
+	    echo ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+	    echo ┃ The next password prompt is to allow codesigning ┃
+	    echo ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 	    security unlock-keychain login.keychain
-	    echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	    echo ""
 	fi
 	pyinstaller --distpath $(distdir) --clean --noconfirm pyinstaller-$(os).spec
 	# PyInstaller creates directory "foliage" but we don't use it.
