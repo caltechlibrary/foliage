@@ -6,7 +6,7 @@
   "codeRepository": "https://github.com/caltechlibrary/foliage",
   "issueTracker": "https://github.com/caltechlibrary/foliage/issues",
   "license": "https://github.com/caltechlibrary/foliage/blob/main/LICENSE",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "author": [
     {
       "@type": "Person",
