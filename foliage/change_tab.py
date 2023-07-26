@@ -71,7 +71,7 @@ def tab_contents():
                 [put_row([
                     put_button('Select', onclick = lambda: select_field_name()
                                ).style('text-align: left'),
-                    put_textarea('chg_field', rows = 1, readonly = True),
+                    put_textarea('field', rows = 1, readonly = True),
                 ], size = '95px auto').style('text-align: right')],
                 [put_text('Select the action to perform:')],
                 [put_radio('chg_op', inline = True,
@@ -108,12 +108,12 @@ def tab_contents():
 # operation type (add value, change value, delete value), we want different
 # buttons and fields to look visually "unavailable" as a clue to the user
 # that they don't have to fill in those values.  However, PyWebIO doesn't
-# provide a way to control the properties of the elements dynamically: there's
-# PyWebIO API for changing a CSS attribute at run-time.
+# provide a way to control the properties of the elements dynamically --
+# there's no PyWebIO API for changing a CSS attribute at run-time.
 #
-# One *can* do it using JavaScript using well-known methods, and PyWebIO
+# One *can* do it using JavaScript and well-known JavaScript methods.  PyWebIO
 # *does* provide a function (eval_js) to execute JavaScript at run-time in
-# the web page.  But, here we face a new challenge: how do do you refer to
+# the web page, but, here we face a new challenge: how do do you refer to
 # the things on the page whose CSS attributes you want to change?
 #
 # For some of the elements, it's possible to target them by searching for the
@@ -134,8 +134,8 @@ def tab_contents():
 #  1. Add distinguishing features to specific elements using one of the few
 #     CSS/HTML controls that PyWebIO does provide, namely the style()
 #     function, to add a property that we can uniquely find in the DOM at run
-#     time.  I'm using the z-index, setting it specific numbers (8 and 9) in
-#     tab_contents() above.  The z-index is not used for anything else on
+#     time.  I'm using the z-index, setting it to specific numbers (8 and 9)
+#     in tab_contents() above.  The z-index is not used for anything else on
 #     this page so it's irrelevant as far as layout is concerned.
 #
 #  2. Invoke some JavaScript code in the web page that uses jQuery to look
@@ -174,7 +174,7 @@ def clear_tab():
     clear('output')
     pin.textbox_ids = ''
     pin.chg_op = 'add'
-    pin.chg_field = ''
+    pin.field = ''
     pin.old_value = ''
     pin.new_value = ''
     update_tab('add')
@@ -183,10 +183,25 @@ def clear_tab():
 def select_field_name():
     # Clear any previous value.
     pin.new_value = ''
-    if (answer := selected('Select field to change', known_fields)):
-        # Show the selected value.
-        pin.chg_field = answer
+    if (answer := selection('Select field to change', known_fields)):
+        pin.field = answer
         log(f'user selected field {answer}')
+        # If it's a change-only field, disable the add & delete operations.
+        # Once again, there's no direct way to manipulate the elements on the
+        # page, so here I resorted to using jquery again.
+        if known_fields[answer].change_only:
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"change\\\\""]').attr('checked', true);''')
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"change\\\\""]').trigger('click');''')
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"add\\\\""]').attr('disabled', true);''')
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"delete\\\\""]').attr('disabled', true);''')
+            update_tab('change')
+        else:
+            # If it's a regular field, make sure all operations are enabled.
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"add\\\\""]').attr('disabled', false);''')
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"delete\\\\""]').attr('disabled', false);''')
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"add\\\\""]').attr('checked', true);''')
+            eval_js('''$('input[name="chg_op"]').filter('[value="\\\\"add\\\\""]').trigger('click');''')
+            update_tab('add')
 
 
 def select_field_value(old_new):
@@ -197,24 +212,24 @@ def select_field_value(old_new):
         or (old_new == 'new' and pin.chg_op == 'delete')):
         return
 
-    if not pin.chg_field:
+    if not pin.field:
         notify('Please first select the field to be changed.')
         return
 
-    fname = pin.chg_field.lower()
+    fname = pin.field.lower()
     log(f'getting list of values for {fname}')
-    type_list = Folio().types(known_fields[pin.chg_field].type)
+    type_list = Folio().types(known_fields[pin.field].type)
     if not type_list:
         note_error(f'Could not retrieve the list of possible {fname} values')
         return
     value_list = sorted(item.data['name'] for item in type_list)
-    if (val := selected(f'Select the {old_new} value for {fname}', value_list)):
+    if (val := selection(f'Select the {old_new} value for {fname}', value_list)):
         field = old_new + '_value'
         setattr(pin, field, val)
-        log(f'user selected {old_new} field value {val}')
+        log(f'user selection {old_new} field value {val}')
 
 
-def selected(title, values):
+def selection(title, values):
     log('showing list selection popup')
     event = threading.Event()
     clicked_ok = False
@@ -225,7 +240,7 @@ def selected(title, values):
         event.set()
 
     pins = [
-        put_select('list_selection', options = values),
+        put_select('field_selection', options = values),
         put_buttons([
             {'label': 'Submit', 'value': True},
             {'label': 'Cancel', 'value': False, 'color': 'secondary'},
@@ -237,11 +252,11 @@ def selected(title, values):
     wait(0.5)                           # Give time for popup to go away.
 
     log(f'user {"made a selection" if clicked_ok else "cancelled"}')
-    return pin.list_selection if clicked_ok else None
+    return pin.field_selection if clicked_ok else None
 
 
-def all_selections_made():
-    return (pin.chg_field
+def form_filled_out():
+    return (pin.field
             and ((pin.chg_op == 'add' and pin.new_value)
                  or (pin.chg_op == 'delete' and pin.old_value)
                  or (pin.chg_op == 'change' and pin.new_value and pin.old_value)))
@@ -307,7 +322,7 @@ def do_change():
     if not identifiers:
         note_error('Please input at least one barcode or other type of id.')
         return
-    if not all_selections_made():
+    if not form_filled_out():
         note_error('Missing selections – cannot proceed until form is filled out.')
         return
     if not confirm('Proceed with changes to records in FOLIO?', danger = True):
@@ -392,7 +407,7 @@ def do_change():
 
 
 def change_holdings(record):
-    if pin.chg_field == 'Permanent location' and pin.chg_op != 'change':
+    if pin.field == 'Permanent location' and pin.chg_op != 'change':
         # Holdings always have a perm loc., so can only change it.
         skipped(record.id, 'Cannot add or delete a permanent'
                 ' location field on holdings records')
@@ -411,12 +426,12 @@ def change_item(item, given_hrec = None, context = ''):
 
     # If the change is to a temporary location field or loan type, we can
     # make the change without having to change a holdings record.
-    if pin.chg_field in ['Temporary location', 'Loan type', 'Material type']:
+    if pin.field in ['Temporary location', 'Loan type', 'Material type']:
         return True
 
     # Not a temporary location change. Were we given the holdings record in the
     # input too? Then we should have done the change already.
-    field_key = known_fields[pin.chg_field].key
+    field_key = known_fields[pin.field].key
     if given_hrec:
         if item.data[field_key] == given_hrec.data[field_key]:
             return True
@@ -551,10 +566,10 @@ def change_record(record, context = ''):
     folio = Folio()
     # Get the list of known values for this type (folio.py will have cached
     # it) and create a mapping of value names to value objects.
-    value_type = known_fields[pin.chg_field].type
+    value_type = known_fields[pin.field].type
     values = {x.data['name']: x.data for x in folio.types(value_type)}
 
-    field_key = known_fields[pin.chg_field].key
+    field_key = known_fields[pin.field].key
     if (current_value := record.data.get(field_key, None)):
         if pin.chg_op == 'add':
             skipped(record.id, f'item _{field_key}_ has an existing value', context)
@@ -570,7 +585,7 @@ def change_record(record, context = ''):
             record.data[field_key] = values[pin.new_value]['id']
         elif pin.chg_op == 'delete':
             # Some fields on some record kinds must always exist.
-            if record.kind in known_fields[pin.chg_field].delete_ok:
+            if record.kind in known_fields[pin.field].delete_ok_kinds:
                 log(f'deleting field {field_key} from item {record.id}')
                 del record.data[field_key]
             else:
@@ -601,7 +616,7 @@ def save_changes(record, context = ''):
             return False
 
     # Report the outcome to the user.
-    field = 'field _' + known_fields[pin.chg_field].key + '_'
+    field = 'field _' + known_fields[pin.field].key + '_'
     text = {'add': 'added to', 'change': 'changed in', 'delete': 'deleted from'}
     action = text[pin.chg_op]
     succeeded(record.id, f'{field} {action} {record.kind} record', context)
@@ -620,19 +635,23 @@ def do_export(file_name):
     export_data(values, file_name)
 
 
-Field = namedtuple('Field', 'type key delete_ok')
+Field = namedtuple('Field', 'type key change_only delete_ok_kinds')
 
 known_fields = {
     'Temporary location': Field(type = TypeKind.LOCATION,
                                 key = 'temporaryLocationId',
-                                delete_ok = [RecordKind.ITEM, RecordKind.HOLDINGS]),
+                                change_only = False,
+                                delete_ok_kinds = [RecordKind.ITEM, RecordKind.HOLDINGS]),
     'Permanent location': Field(type = TypeKind.LOCATION,
                                 key = 'permanentLocationId',
-                                delete_ok = [RecordKind.ITEM]),
-    'Loan type': Field(type = TypeKind.LOAN,
-                       key = 'permanentLoanTypeId',
-                       delete_ok = []),
-    'Material type': Field(type = TypeKind.MATERIAL,
-                           key = 'materialTypeId',
-                           delete_ok = []),
+                                change_only = False,
+                                delete_ok_kinds = [RecordKind.ITEM]),
+    'Loan type'         : Field(type = TypeKind.LOAN,
+                                key = 'permanentLoanTypeId',
+                                change_only = False,
+                                delete_ok_kinds = []),
+    'Material type'     : Field(type = TypeKind.MATERIAL,
+                                key = 'materialTypeId',
+                                change_only = True,
+                                delete_ok_kinds = []),
 }
