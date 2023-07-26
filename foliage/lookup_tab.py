@@ -561,7 +561,7 @@ def print_record(record, identifier, index, show_index, format):
         holdings = folio.related_records(iid, IdKind.INSTANCE_ID, RecordKind.HOLDINGS)
         num_holdings = len(holdings)
         if num_holdings > 1:
-            prefix = '<br>&nbsp;&nbsp;&bull;&nbsp;'
+            prefix = '\n  • '
             holdings_list = []
             for h in holdings:
                 if 'effectiveLocationId' in h.data:
@@ -570,7 +570,7 @@ def print_record(record, identifier, index, show_index, format):
                     loc = location(h, 'permanentLocationId', False)
                 holdings_list.append(loc + f' (holdings record: {h.id})')
             locations = prefix + prefix.join(holdings_list)
-            return put_html(f'{num_holdings} holdings records in total:{locations}')
+            return f'{num_holdings} holdings records in total:{locations}'
         else:
             if record.kind == RecordKind.HOLDINGS:
                 return '1 (there are no other holdings records on the instance)'
