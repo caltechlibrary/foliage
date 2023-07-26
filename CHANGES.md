@@ -1,5 +1,12 @@
 # Change log for Foliage
 
+## ★ Version 1.7.0 (2023-07-26) ★
+
+Changes in this version:
+* The _Change_ tab now lets you change item material types.
+* The minimum version of Python has been increased to 3.9.
+
+
 ## ★ Version 1.6.0 (2023-05-23) ★
 
 Changes in this version:
