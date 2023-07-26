@@ -4,6 +4,7 @@
 
 Changes in this version:
 * The _Change_ tab now lets you change item material types.
+* A bug in the CSV export from the _Look up records_ tab has been fixed. If the "enhanced summary" option was selected, some records ended up with values such as `<pywebio.io_ctrl.Output object at 0x09705028>`. This should not happen anymore.
 * The minimum version of Python has been increased to 3.9.
 
 
