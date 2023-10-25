@@ -7,7 +7,7 @@ authors:
     given-names: Mike
     family-names: Hucka
     orcid: "0000-0001-9105-5960"
-version: "1.7.0"
+version: "1.7.2"
 abstract: "Foliage (FOLIo chAnGe Editor): a tool to do bulk changes in FOLIO using the OKAPI API"
 repository-code: "https://github.com/caltechlibrary/foliage"
 type: software

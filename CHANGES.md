@@ -1,5 +1,10 @@
 # Change log for Foliage
 
+## ★ Version 1.7.2 (2023-10-25) ★
+
+Fix botched version number update in just-released version.
+
+
 ## ★ Version 1.7.1 (2023-10-25) ★
 
 With this version, Foliage now increments the value of the `_version` field when performing change operations. This solves an error involving optimistic locking and versions when performing multistep operations in the _Change records_ tab.
