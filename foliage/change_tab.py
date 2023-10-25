@@ -419,10 +419,10 @@ def change_item(item, given_hrec = None, context = ''):
     '''Change the item and also update its parent holdings.'''
 
     # Try to change the item but without saving it yet. If we fail, bail.
-    if not change_record(item, context):
-        return False
-    else:
+    if change_record(item, context):
         save_changes(item)
+    else:
+        return False
 
     # If the change is to a temporary location field or loan type, we can
     # make the change without having to change a holdings record.
@@ -469,6 +469,7 @@ def change_item(item, given_hrec = None, context = ''):
             # Found a holdings record that has the new location => case 1.
             log(f'updating {item.id}\'s holdings record to be {h.id}')
             item.data['holdingsRecordId'] = h.id
+            item.data['_version'] += 1
             if config('DEMO_MODE', cast = bool):
                 log(f'demo mode – pretending to save {item.id}')
             else:
@@ -500,7 +501,7 @@ def change_item(item, given_hrec = None, context = ''):
         log(f'need to create new holdings record for moving {item.id}')
         import copy
         new_holdings = copy.deepcopy(hrec)
-        # These next fields are assigned automatically the Folio server.
+        # These next fields are assigned automatically by the Folio server.
         del new_holdings.data['id']
         del new_holdings.data['hrid']
         del new_holdings.data['metadata']
@@ -521,6 +522,7 @@ def change_item(item, given_hrec = None, context = ''):
 
         log(f'changing location of {item.id} to new holdings record {new_id}')
         item.data['holdingsRecordId'] = new_id
+        item.data['_version'] += 1
         if config('DEMO_MODE', cast = bool):
             log(f'demo mode – pretending to save {item.id}')
         else:
