@@ -58,8 +58,8 @@ from   PyInstaller.utils.hooks import copy_metadata
 here = getcwd()
 setup_file = join(here, 'setup.cfg')
 if not exists(setup_file):
-    raise RuntimeError(f'Must run PyInstaller from the same directory as the '
-                       + f'setup.cfg file. Could not find it here ({here}).')
+    raise RuntimeError('Must run PyInstaller from the same directory as the '
+                       f'setup.cfg file. Could not find it here ({here}).')
 
 
 # Gather information.
@@ -78,16 +78,16 @@ with open('setup.cfg', 'r') as setup_file:
 
 # Format of the following list: ('source file', 'destination in bundle').
 
-data_files = [ ('foliage/data/index.tpl', 'data'),
-               # I don't know why the next ones need 'foliage/data' for the
-               # destination and just 'data' like the one above.
-               ('foliage/data/foliage-icon-r.png', 'foliage/data'),
-               ('foliage/data/foliage-icon.png', 'foliage/data'),
-               ('foliage/data/macos-systray-widget/macos-systray-widget',
-                'foliage/data/macos-systray-widget/'),
-               # My local hacked copy of PyWebIO.
-               ('../PyWebIO/pywebio/platform/tpl', 'pywebio/platform/tpl'),
-               ('../PyWebIO/pywebio/html', 'pywebio/html'),
+data_files = [('foliage/data/index.tpl', 'data'),
+              # I don't know why the next ones need 'foliage/data' for the
+              # destination and just 'data' like the one above.
+              ('foliage/data/foliage-icon-r.png', 'foliage/data'),
+              ('foliage/data/foliage-icon.png', 'foliage/data'),
+              ('foliage/data/macos-systray-widget/macos-systray-widget',
+               'foliage/data/macos-systray-widget/'),
+              # My local hacked copy of PyWebIO.
+              ('../PyWebIO/pywebio/platform/tpl', 'pywebio/platform/tpl'),
+              ('../PyWebIO/pywebio/html', 'pywebio/html'),
               ]
 
 # The data_files setting below, for humanize, fixes this run-time error:
@@ -156,8 +156,7 @@ executable         = EXE(application_pyz,
                          upx = True,
                          runtime_tmpdir = None,
                          bootloader_ignore_signals = False,
-                         #codesign_identity = 'Apple Development: Michael Hucka (D7AL34MY6U)',
-                         codesign_identity = 'Mac Developer: Michael Hucka (D7AL34MY6U)',
+                         codesign_identity = 'Developer ID Application: Michael Hucka (FBQTM3C6ZA)',
                          entitlements_file = 'entitlements.plist',
                          # To debug run problems, first try setting console
                          # to True. If that doesn't reveal enough, then try
