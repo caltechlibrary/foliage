@@ -239,6 +239,39 @@ def delete_instance(instance, for_id = None):
     why = f'for request to delete FOLIO instance record {instance.id}'
     folio = Folio()
 
+    # Before we delete instances, we have to delete title relationships.
+    def pst_response_converter(response):
+        if not response or not response.text:
+            log('no response received from FOLIO')
+            return None
+        if response.status_code == 404:
+            log(f'assuming 404 means {instance.id} has no preceding-succeeding titles')
+            return None
+        return response.json()
+
+    query = f'precedingInstanceId=={instance.id}%20or%20succeedingInstanceId=={instance.id}'
+    pstget = f'/preceding-succeeding-titles?query=%28{query}%29'
+    data_json = folio.request(pstget, converter = pst_response_converter)
+    if (not data_json
+        or 'precedingSucceedingTitles' not in data_json
+        or data_json['totalRecords'] == 0):
+        log(f'{instance.id} has no preceding-succeeding titles – no action needed there')
+    else:
+        num_pst = len(data_json['precedingSucceedingTitles'])
+        log(f'{instance.id} has {num_pst} preceding-succeeding titles')
+        if config('DEMO_MODE', cast = bool):
+            log(f'demo mode in effect – pretending to delete preceding/succeeding titles')
+        else:
+            try:
+                for pst_record in data_json['precedingSucceedingTitles']:
+                    log(f'deleting preceeding-succeeding title relationship {pst_record}')
+                    pstdel = f"/preceding-succeeding-titles/{pst_record['id']}"
+                    response = folio.request(pstdel, op = 'delete')
+            except FolioOpFailed as ex:
+                failed(instance, str(ex), why)
+                return False
+        succeeded(instance, f'deleted {num_pst} preceding/succeeding title relationships', why)
+
     # Deletions must be done in two separate places: source storage (SRS), and
     # the regular instance/holdings/items storage APIs. Kyle Banerjee said in
     # personal communication of 2022-07-27 that SRS should be done first.
@@ -249,9 +282,9 @@ def delete_instance(instance, for_id = None):
             return None
         if response.status_code == 404:
             # Assume this is a case of an instance lacking a Marc record.
-            log('No SRS record found')
+            log('no SRS record found')
             return None
-        return json.loads(response.text)
+        return response.json()
 
     srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
     data_json = folio.request(srsget, converter = srs_response_converter)
@@ -262,14 +295,14 @@ def delete_instance(instance, for_id = None):
         failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
     else:
-        srs_id = data_json["matchedId"]
+        srs_id = data_json["id"]
         if config('DEMO_MODE', cast = bool):
             log(f'demo mode in effect – pretending to delete {srs_id} from SRS')
         else:
             try:
                 log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
                 srsdel = f'/source-storage/records/{srs_id}'
-                folio.request(srsdel, op = 'delete')
+                response = folio.request(srsdel, op = 'delete')
             except FolioOpFailed as ex:
                 failed(instance, str(ex), why)
                 return False
