@@ -350,9 +350,9 @@ class Folio():
         In case of rate limits being hit, this will retry the operation.
         '''
         headers = {
-            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
+            "x-okapi-token" : config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
-            "content-type":   "application/json",
+            "content-type"  : "application/json",
         }
 
         url = config('FOLIO_OKAPI_URL') + api
@@ -500,11 +500,11 @@ class Folio():
             # of Folio's microarchitecture & the lack of a central coordinating
             # authority.  So we have to ask different modules in turn.
             record_endpoints = [
-                ('/item-storage/items',         IdKind.ITEM_ID),
-                ('/instance-storage/instances', IdKind.INSTANCE_ID),
-                ('/holdings-storage/holdings',  IdKind.HOLDINGS_ID),
-                ('/loan-storage/loans',         IdKind.LOAN_ID),
-                ('/users',                      IdKind.USER_ID),
+                ('/item-storage/items'         , IdKind.ITEM_ID),
+                ('/instance-storage/instances' , IdKind.INSTANCE_ID),
+                ('/holdings-storage/holdings'  , IdKind.HOLDINGS_ID),
+                ('/loan-storage/loans'         , IdKind.LOAN_ID),
+                ('/users'                      , IdKind.USER_ID),
             ]
             for base, kind in record_endpoints:
                 if (response := self.request(f'{base}/{id_}')):
@@ -518,13 +518,13 @@ class Folio():
             # We have a value that's more ambiguous. Try some searches.
             # Most hrid's will follow the pattern above, so try other cases 1st.
             folio_searches = [
-                ('/users?query=barcode=',                   IdKind.USER_BARCODE),
+                ('/users?query=barcode='                   , IdKind.USER_BARCODE),
                 # Caltech ID's are same as user barcodes with a leading 000.
                 # Let's try to help people who type in a CITUID without the 0's.
-                ('/users?query=barcode=000',                IdKind.USER_BARCODE),
-                ('/instance-storage/instances?query=hrid=', IdKind.INSTANCE_HRID),
-                ('/item-storage/items?query=hrid=',         IdKind.ITEM_HRID),
-                ('/holdings-storage/holdings?query=hrid=',  IdKind.HOLDINGS_HRID),
+                ('/users?query=barcode=000'                , IdKind.USER_BARCODE),
+                ('/instance-storage/instances?query=hrid=' , IdKind.INSTANCE_HRID),
+                ('/item-storage/items?query=hrid='         , IdKind.ITEM_HRID),
+                ('/holdings-storage/holdings?query=hrid='  , IdKind.HOLDINGS_HRID),
             ]
             for query, kind in folio_searches:
                 if (response := self.request(f'{query}{id_}&limit=0')):
@@ -1044,9 +1044,9 @@ class Folio():
         It will raise an exception with an error message if it fails.
         '''
         headers = {
-            "x-okapi-token":  config('FOLIO_OKAPI_TOKEN'),
+            "x-okapi-token" : config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
-            "content-type":   "application/json",
+            "content-type"  : "application/json",
         }
         log(f'requesting Folio to {what} record: ' + str(record))
         if what == 'create':

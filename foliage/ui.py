@@ -460,8 +460,8 @@ def note_info(text):
         # We don't print info-level msgs in this case.
         pass
     else:
-        from rich import print
-        print('[green]' + text + '[/]')
+        from rich import print as rich_print
+        rich_print('[green]' + text + '[/]')
 
 
 def note_warn(text):
@@ -475,9 +475,9 @@ def note_warn(text):
         title = 'Foliage' if os.name == 'nt' else 'Foliage warning'
         QMessageBox.warning(None, title, 'Warning: ' + text)
     else:
-        from rich import print
+        from rich import print as rich_print
         width = 79 if len(text) > 75 else (len(text) + 4)
-        print(Panel(text, style = Style.parse('yellow'), width = width))
+        rich_print(Panel(text, style = Style.parse('yellow'), width = width))
 
 
 def note_error(text):
@@ -491,6 +491,6 @@ def note_error(text):
         title = 'Foliage' if os.name == 'nt' else 'Foliage error'
         QMessageBox.critical(None, title, 'Error: ' + text)
     else:
-        from rich import print
+        from rich import print as rich_print
         width = 79 if len(text) > 75 else (len(text) + 4)
-        print(Panel(text, style = Style.parse('red'), width = width))
+        rich_print(Panel(text, style = Style.parse('red'), width = width))

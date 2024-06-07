@@ -48,7 +48,7 @@ class LookupTab(FoliageTab):
 
 column_widths = '54% 46%'
 
-def tab_contents():
+def tab_contents():                     # noqa: E302
     log('generating lookup tab contents')
     return [
         put_grid([[
@@ -420,11 +420,11 @@ def loan_type(record, field_name):
     return '(unknown loan type)'
 
 
-def print_record(record, identifier, index, show_index, format):
+def print_record(record, identifier, index, show_index, format_):
     log(f'printing {record.kind} record {record.id}')
     if show_index:
         put_markdown(f'{record.kind.title()} record #{index}:')
-    if format == 'json':
+    if format_ == 'json':
         put_code(pformat(record.data, indent = 2))
         return
     # Caution: left-hand values contain nonbreaking spaces (invisible here).
@@ -578,7 +578,7 @@ def print_record(record, identifier, index, show_index, format):
                 return '1 (including this holdings record)'
 
     # Add additional info when doing an enhanced summary.
-    if format == 'enhanced' and record.kind == RecordKind.ITEM:
+    if format_ == 'enhanced' and record.kind == RecordKind.ITEM:
         folio = Folio()
         hid = record.data['holdingsRecordId']
         instances = folio.related_records(hid, IdKind.HOLDINGS_ID, RecordKind.INSTANCE)
@@ -597,7 +597,7 @@ def print_record(record, identifier, index, show_index, format):
                      'parentInstanceRecord'                 : iid,
                      'totalHoldingsRecordsOnParentInstance' : total_holdings}
         record.data['computedByFoliage'] = additions
-    elif format == 'enhanced' and record.kind == RecordKind.HOLDINGS:
+    elif format_ == 'enhanced' and record.kind == RecordKind.HOLDINGS:
         folio = Folio()
         hid = record.id
         iid = record.data['instanceId']

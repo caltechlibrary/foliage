@@ -127,7 +127,7 @@ def export_records_csv(records, kind):
 
     def name_id_key(column_name):
         return (column_name != name_key, column_name != 'id', column_name)
-    columns = sorted(list(columns), key = lambda x: name_id_key(x))
+    columns = sorted(columns, key = lambda x: name_id_key(x))
 
     # Write into an in-memory, file-like object & tell PyWebIO to download it.
     with StringIO() as tmp:

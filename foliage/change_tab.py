@@ -208,8 +208,9 @@ def select_field_value(old_new):
     # No way to prevent clicks when the op is not valid, so just ignore them.
     # Setting an old field value is only valid for change and delete.
     # Setting a new field value is only valid for add and change.
-    if ((old_new == 'old' and pin.chg_op == 'add')
-        or (old_new == 'new' and pin.chg_op == 'delete')):
+    not_allowed = ((old_new == 'old' and pin.chg_op == 'add')
+                   or (old_new == 'new' and pin.chg_op == 'delete'))
+    if not_allowed:
         return
 
     if not pin.field:
@@ -572,7 +573,7 @@ def change_record(record, context = ''):
     values = {x.data['name']: x.data for x in folio.types(value_type)}
 
     field_key = known_fields[pin.field].key
-    if (current_value := record.data.get(field_key, None)):
+    if (current_value := record.data.get(field_key)):
         if pin.chg_op == 'add':
             skipped(record.id, f'item _{field_key}_ has an existing value', context)
             return False

@@ -57,11 +57,10 @@ import sys
 import threading
 from   validators.url import url as valid_url
 
+import keyring.backends
 if sys.platform.startswith('win'):
-    import keyring.backends
     from keyring.backends.Windows import WinVaultKeyring
 if sys.platform.startswith('darwin'):
-    import keyring.backends
     from keyring.backends.OS_X import Keyring
 
 from foliage.folio import Folio
@@ -132,10 +131,10 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
                      ' Your FOLIO login & password will_'
                      ' **not** _be stored after this form disappears; only'
                      ' the token, URL and tenant id will be stored._'),
-        put_input('user',      label = 'FOLIO user name'),
-        put_input('password',  label = 'FOLIO password', type = 'password'),
-        put_input('url',       label = 'OKAPI URL', value = current.url),
-        put_input('tenant_id', label = 'Tenant id', value = current.tenant_id),
+        put_input('user'      , label = 'FOLIO user name'),
+        put_input('password'  , label = 'FOLIO password', type = 'password'),
+        put_input('url'       , label = 'OKAPI URL', value = current.url),
+        put_input('tenant_id' , label = 'Tenant id', value = current.tenant_id),
         put_buttons([
             {'label': 'Submit', 'value': True},
             {'label': 'Cancel', 'value': False, 'color': 'danger'},

@@ -20,7 +20,7 @@ On some systems, version 3.x of the Python interpreter and `pip` are available u
 Debian-based systems still ship with older versions of Python by
 default. To install a modern version of Python and the associated version of `pip`, run the following command:
 
-```
+```python
 sudo apt install python3 python3-pip
 ```
 
@@ -33,13 +33,13 @@ The version of Python that comes with macOS through at least macOS 10.15 (Catali
 
 If you are using macOS and MacPorts, the following command will install a recent version of Python 3:
 
-```
+```python
 sudo port install python3 py38-pip
 ```
 
 After running the command above, you should be able to invoke the Python interpreter using the command `python3`. You can verify the version of Python and `pip` with the following commands:
 
-```
+```python
 python3 --version
 python3 -m pip --version
 ```
@@ -48,7 +48,7 @@ python3 -m pip --version
 
 If you are using [HomeBrew](https://brew.sh), the corresponding commands are as follows:
 
-```
+```python
 brew install python3
 ```
 

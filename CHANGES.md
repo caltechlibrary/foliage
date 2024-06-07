@@ -13,6 +13,7 @@ With this version, Foliage now increments the value of the `_version` field when
 ## ★ Version 1.7.0 (2023-07-26) ★
 
 Changes in this version:
+
 * The _Change_ tab now lets you change item material types.
 * A bug in the CSV export from the _Look up records_ tab has been fixed. If the "enhanced summary" option was selected, some records ended up with values such as `<pywebio.io_ctrl.Output object at 0x09705028>`. This should not happen anymore.
 * The minimum version of Python has been increased to 3.9.
@@ -21,6 +22,7 @@ Changes in this version:
 ## ★ Version 1.6.0 (2023-05-23) ★
 
 Changes in this version:
+
 * In the dialog for entering credentials, Foliage now checks that the value given for the OKAPI URL actually looks like a URL, to help guard against a common error where the user swaps the URL and tenant ID values. Foliage also reports error messages from Folio when the user name or user password does not exist, instead of (unhelpfully) only reporting that Folio rejected the request.
 * The _Look up records_ tab now prints the item loan type when the search is for item records.
 * The _Look up records_ tab now has a new _Enhanced summary_ option; this adds additional computed field values to the summary table, at the cost of requiring additional time to look up the field values.
@@ -56,6 +58,7 @@ This release has no user-visible or functional changes. It only updates the `Mak
 ## ★ Version 1.5.0 (2022-09-29) ★
 
 User-visible changes in this version:
+
 * :wrench: Update: this version updates the pattern used to recognize Catech accession numbers, because the accession number format seems to have been changed again by FOLIO.
 * :wrench: Update: the action buttons in the _Change records_ and _Delete records_ tabs are now colored blue instead of red. The original choice for red was motivated by a desire to warn people they were about to perform a dangerous operation, but using red in this context is also inconsisten from a user-interface perspective and probably confusing to some people.
 * :wrench: Update: Foliage now uses the storage APIs for items and holdings when doing deletions, instead of using the inventory APIs. The original motivation for using the inventory APIs for these operations was that the inventory API "does more" and might lead to more complete updates on the FOLIO server side, but because this hypothetical idea was not really ever confirmed and FOLIO's representatives use the storage APIs themselves anyway, the feeling now is that it's safer to just do what they do.
@@ -79,6 +82,7 @@ This version fixes a serious bug in how deletions of instance records were done 
 ## ★ Version 1.3.0 (2022-07-13) ★
 
 This version adds new new features:
+
 * The _Change Records_ tab now supports changing the loan type on records.
 * A new tab, _Clean Records_, is available. It currently has one capability: to delete "phantom" loans based on user id's, meaning loan records associated with users but for items that no longer exist in Folio.
 
@@ -86,12 +90,14 @@ This version adds new new features:
 ## ★ Version 1.2.8 (2022-06-10) ★
 
 Changes in this version:
+
 * Fix a bug reported by Donna W. on 2022-06-09, in which it would incorrectly report all loans on the instance associated with a given holdings record, instead of only considering the items attached to the given holdings record.
 
 
 ## ★ Version 1.2.7 (2022-06-03) ★
 
 Changes in this version:
+
 * Fixes an error deleting instance records that didn't have a corresponding SRS record. The new approach just ignores a missing SRS record and proceeds with deletions in the FOLIO storage and inventory systems.
 * Now accepts Caltech user id's with or without the leading `000`. Previously, unless a UID had the the form `0001234567`, Foliage would fail to find records. Now it tries a second time after adding leading 0's.
 * Updates some dependency versions in `requirements.txt`.
@@ -105,6 +111,7 @@ A late-breaking discovery forced another release. It turns out that PyPI will no
 ## ★ Version 1.2.5 (2022-05-11) ★
 
 Changes in this version:
+
 * Use a fork of PyWebIO 1.4.0 with just the changes I need to fix a couple of limitations in the framework. Foliage's `requirements.txt` file references the fork in GitHub, so that installation of Foliage will get that version instead of the official PyWebIO version from PyPI.
 * Update the (internal) constant used to recognize accession numbers.
 * Fix a UI bug in the _Look up records_ tab, wherein clicking the _Look up records_ button while it was already running could result in multiple output streams and confusing output.
@@ -113,6 +120,7 @@ Changes in this version:
 ## ★ Version 1.2.4 (2022-04-01) ★
 
 Changes in this version:
+
 * If the FOLIO token is invalidated by EBSCO, then when Foliage starts up, the only option given to the user is to quit. If the user couldn't run the command-line version with `-K`, then they were unable to ever cause Foliage to regenerate the token. Fixed. The new code gives the user the option of editing the credentials and trying again.
 * On Windows, Excel files might not have been recognized because Foliage didn't consider enough candidate MIME types. Fixed.
 * Changed the Lookup tab to print the total number of records found (in addition to the number looked up).
@@ -131,6 +139,7 @@ This version fixes a bug in printing inventory records in summary form in the _L
 ## ★ Version 1.2.1 (2022-02-08) ★
 
 Changes:
+
 * Fix bug in printing item summary with notes, in the _Look up records_ tab.
 * Print notes for instance records in the summary view in the _Look up records_ tab.
 
@@ -138,6 +147,7 @@ Changes:
 ## ★ Version 1.2.0 (2022-02-03) ★
 
 Changes:
+
 * Fixed: it was too easy to cause the initial credentials screen to disappear by accident, and on Windows, simply switching away from Foliage and switching back would cause it to disappear, leaving the user in a lurch.
 * Fixed: exporting from the _Look up records_ tab would export all searches done in a session, not just the most recent search. It now exports only the last search done.
 * The summary table format in _Look up records_ now shows the location names, not just location identifiers, for records that have locations (items and holdings).
@@ -150,11 +160,12 @@ Changes:
 ## ★ Version 1.1.0 (2022-01-21) ★
 
 Changes:
+
 * Now automatically handles creation and deletion of holdings records as needed when changing the permanent locations of items.
 * Now supports deleting instance and holdings records.
 * Now supports uploading `.xslx` files in addition to text files, for uploading lists of identifiers.
 * Fix bug in Change tab: if the user supplied instance id's, Foliage didn't correctly detect it, and didn't complain.
-* Fix bug in exporting the UUID lists: Foliage would produce an error when attempting to export in CSV format. 
+* Fix bug in exporting the UUID lists: Foliage would produce an error when attempting to export in CSV format.
 * Fix the title of the Foliage page in web browsers; it should be "Foliage" but instead was an internal description of a function in the code.
 * Fix searching for holdings by instance hrid: Foliage would incorrectly report no holdings found.
 * Fix other internal bugs.
@@ -185,7 +196,7 @@ Highlights of the changes in this release:
 * Fixed various bugs throughtout.
 * Rewrote various internal functions for (hopefully) better clarity and logic.
 
-Finally, documentation is now available at https://caltechlibrary.github.io/foliage/
+Finally, documentation is now available at <https://caltechlibrary.github.io/foliage/>
 
 
 ## ★ Version 0.0.5 (2021-12-06) ★
@@ -214,5 +225,5 @@ First internal release at the Caltech Library.
 
 ## ★ Version 0.0.0 (2021-10-16) ★
 
-Project repository created at https://github.com/caltechlibrary/foliage
+Project repository created at <https://github.com/caltechlibrary/foliage>
 by Mike Hucka.
