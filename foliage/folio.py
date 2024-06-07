@@ -261,7 +261,6 @@ class Folio():
         # and returning the same one if the class constructor is called again.
         existing_instance = cls.__dict__.get("__folio_instance__")
         if existing_instance is not None:
-            log(f'Using previously-created FOLIO object {str(cls)}')
             return existing_instance
 
         cls.__folio_instance__ = existing_instance = object.__new__(cls)
