@@ -160,6 +160,9 @@ report: vars
 
 lint:
 	flake8 $(name)
+	markdownlint $(shell find . -name '*.md')
+	yamllint CITATION.cff $(shell find . -name '*.yml')
+	jsonlint -q codemeta.json
 
 test tests:;
 	pytest -v --cov=$(name) -l tests/
@@ -218,6 +221,9 @@ pyinstaller $(distdir)/$(appname): | vars dependencies
 	fi
 
 codesign: pyinstaller
+	# FIXME
+	# use this to get the value instead of using env var:
+	# security find-certificate -c "Apple Development" login.keychain | g labl | cut -f2 -d= | tr -d '"'
 	@$(if $(CODESIGN_IDENTITY),,$(error CODESIGN_IDENTITY is not set))
 	codesign -s $(CODESIGN_IDENTITY) \
 	     -v --deep --timestamp --entitlements entitlements.plist \
