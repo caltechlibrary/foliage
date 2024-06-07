@@ -22,7 +22,7 @@
 
 [flake8]
 # I try to stick to 80 chars, but sometimes it's more readable to go longer.
-max-line-length = 90
+max-line-length = 120
 
 ignore =
     # We prefer to put spaces around the = in keyword arg lists.
