@@ -123,9 +123,21 @@ file "LICENSE" for more information.
 
 import sys
 if sys.version_info <= (3, 8):
-    print('foliage requires Python version 3.8 or higher,')
+    print('Foliage requires Python version 3.8 or higher,')
     print('but the current version of Python is '
           + str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
+    sys.exit(1)
+
+import importlib
+if not (spec := importlib.util.find_spec('pywebio')):
+    print('Foliage requires the PyWebIO package, but the package cannot be '
+          'found. Something is wrong with the installation of Foliage or the '
+          'Python run-time environment.')
+    sys.exit(1)
+elif not spec.origin.find('versions/foliage'):
+    print('Foliage requires a customized version of PyWebIO, but although '
+          'Foliage can load PyWebIO, the PyWebIO version does not appear to '
+          'be the necessary one. Please consult the Foliage documentation.')
     sys.exit(1)
 
 from   appdirs import AppDirs
