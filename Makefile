@@ -159,7 +159,7 @@ report: vars
 # make lint & make test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 lint:
-	flake8 $(name)
+	flake8 $(name) --exclude vendor,dev,tests
 	markdownlint $(shell find . -name '*.md')
 	yamllint CITATION.cff $(shell find . -name '*.yml')
 	jsonlint -q codemeta.json
