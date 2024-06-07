@@ -1,0 +1,5 @@
+# Summary: requirements when using Windows.
+
+-r requirements.txt
+
+pywin32
