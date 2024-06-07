@@ -25,7 +25,8 @@ python-slugify  == 8.0.1
 validators      == 0.20.0
 wand            == 0.6.11
 
-# This is a fork of PyWebIo with a couple of minor but crucial modifications.
-# It cannot be left in this file because PyPI will not accept a distribution
-# with a dependency in this form.
+# The following is a fork of PyWebIo with a couple of minor but crucial
+# modifications. It cannot be put as a requirement in this file because PyPI
+# will not accept a distribution with a dependency in this form. I have to
+# install it by hand when I create a python environment to run Foliage.
 #pywebio @ git+https://github.com/mhucka/PyWebIO.git@2af53fc
