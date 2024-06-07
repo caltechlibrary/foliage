@@ -12,7 +12,6 @@ file "LICENSE" for more information.
 from   commonpy.exceptions import Interrupted
 from   commonpy.interrupt import reset_interrupts, interrupt
 from   decouple import config
-import json
 from   pywebio.output import put_markdown, put_row, put_button, use_scope
 from   pywebio.output import put_grid, clear
 from   pywebio.output import put_processbar, set_processbar
@@ -252,25 +251,26 @@ def delete_instance(instance, for_id = None):
     query = f'precedingInstanceId=={instance.id}%20or%20succeedingInstanceId=={instance.id}'
     pstget = f'/preceding-succeeding-titles?query=%28{query}%29'
     data_json = folio.request(pstget, converter = pst_response_converter)
-    if (not data_json
-        or 'precedingSucceedingTitles' not in data_json
-        or data_json['totalRecords'] == 0):
-        log(f'{instance.id} has no preceding-succeeding titles – no action needed there')
-    else:
+    has_title_relationships = (data_json
+                               and 'precedingSucceedingTitles' in data_json
+                               and data_json['totalRecords'] != 0)
+    if has_title_relationships:
         num_pst = len(data_json['precedingSucceedingTitles'])
         log(f'{instance.id} has {num_pst} preceding-succeeding titles')
         if config('DEMO_MODE', cast = bool):
-            log(f'demo mode in effect – pretending to delete preceding/succeeding titles')
+            log('demo mode in effect – pretending to delete preceding/succeeding titles')
         else:
             try:
                 for pst_record in data_json['precedingSucceedingTitles']:
                     log(f'deleting preceeding-succeeding title relationship {pst_record}')
                     pstdel = f"/preceding-succeeding-titles/{pst_record['id']}"
-                    response = folio.request(pstdel, op = 'delete')
+                    folio.request(pstdel, op = 'delete')
             except FolioOpFailed as ex:
                 failed(instance, str(ex), why)
                 return False
         succeeded(instance, f'deleted {num_pst} preceding/succeeding title relationships', why)
+    else:
+        log(f'{instance.id} has no preceding-succeeding titles – no action needed there')
 
     # Deletions must be done in two separate places: source storage (SRS), and
     # the regular instance/holdings/items storage APIs. Kyle Banerjee said in
@@ -288,13 +288,7 @@ def delete_instance(instance, for_id = None):
 
     srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
     data_json = folio.request(srsget, converter = srs_response_converter)
-    if not data_json:
-        flagged(instance, ("FOLIO SRS lacks a corresponding record, therefore"
-                           " only the instance record will be deleted"))
-    elif 'matchedId' not in data_json:
-        failed(instance, 'unexpected data from FOLIO SRS – please report this')
-        return
-    else:
+    if data_json and 'matchedId' in data_json:
         srs_id = data_json["id"]
         if config('DEMO_MODE', cast = bool):
             log(f'demo mode in effect – pretending to delete {srs_id} from SRS')
@@ -302,11 +296,17 @@ def delete_instance(instance, for_id = None):
             try:
                 log(f'deleting {instance.id} from SRS, where its id is {srs_id}')
                 srsdel = f'/source-storage/records/{srs_id}'
-                response = folio.request(srsdel, op = 'delete')
+                folio.request(srsdel, op = 'delete')
             except FolioOpFailed as ex:
                 failed(instance, str(ex), why)
                 return False
         succeeded(instance, f'removed SRS instance record **{srs_id}**', why)
+    elif 'matchedId' not in data_json:
+        failed(instance, 'unexpected data from FOLIO SRS – please report this')
+        return
+    else:
+        flagged(instance, ("FOLIO SRS lacks a corresponding record, therefore"
+                           " only the instance record will be deleted"))
 
     # Deletions on instances are not recursive regardless of which API you use.
     # You have to manually remove items, then holdings, then instances.
