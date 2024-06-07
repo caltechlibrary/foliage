@@ -1,5 +1,10 @@
 # Change log for Foliage
 
+## ★ Version 1.8.0 (2024-06-07) ★
+
+This release fixes a problem with deletion of instance records. Foliage now correctly handles preceding/succeeding title relationships when deleting instance records.
+
+
 ## ★ Version 1.7.2 (2023-10-25) ★
 
 Fix botched version number update in just-released version.
