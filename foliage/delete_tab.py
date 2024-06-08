@@ -288,7 +288,10 @@ def delete_instance(instance, for_id = None):
 
     srsget = f'/source-storage/records/{instance.id}/formatted?idType=INSTANCE'
     data_json = folio.request(srsget, converter = srs_response_converter)
-    if data_json and 'matchedId' in data_json:
+    if not data_json:
+        flagged(instance, ("FOLIO SRS lacks a corresponding record; therefore, "
+                           " only the instance record will be deleted"))
+    elif data_json.get('matchedId'):
         srs_id = data_json["id"]
         if config('DEMO_MODE', cast = bool):
             log(f'demo mode in effect – pretending to delete {srs_id} from SRS')
@@ -301,12 +304,9 @@ def delete_instance(instance, for_id = None):
                 failed(instance, str(ex), why)
                 return False
         succeeded(instance, f'removed SRS instance record **{srs_id}**', why)
-    elif 'matchedId' not in data_json:
+    else:
         failed(instance, 'unexpected data from FOLIO SRS – please report this')
         return
-    else:
-        flagged(instance, ("FOLIO SRS lacks a corresponding record, therefore"
-                           " only the instance record will be deleted"))
 
     # Deletions on instances are not recursive regardless of which API you use.
     # You have to manually remove items, then holdings, then instances.
