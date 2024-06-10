@@ -1,15 +1,13 @@
 <svg viewBox="0 0 200 34" xmlns="http://www.w3.org/2000/svg">
-  <style>.normal { font: 6px Helvetica; }</style>
+  <style>.normal { font: 6px Helvetica; color: #888888; fill: #888888; }</style>
   <rect x="1" y="1" rx="5" width="99%" height="32" style="stroke: red; stroke-width: 0.5; fill-opacity: 0; stroke-opacity: 0.8" />
-  <text x="1" y="10" class="normal"><tspan x="50%" text-anchor="middle">
-    Warning: the code currently <tspan style='alignment-baseline:inherit;font-weight:bold;'>makes assumptions about Caltech's</tspan></tspan>
+  <text x="1" y="10" class="normal" fill="#888888"><tspan x="50%" text-anchor="middle">
+    Warning: the code currently <tspan style='alignment-baseline: inherit; font-weight: bold'>makes assumptions about Caltech's</tspan></tspan>
   </text>
-  <text x="1" y="19" class="normal"><tspan x="50%" text-anchor="middle">
-    <tspan style='alignment-baseline:inherit;font-weight:bold;'>FOLIO installation</tspan>. Using it at another site will require modifying</tspan>
+  <text x="1" y="19" class="normal" fill="#888888"><tspan x="50%" text-anchor="middle">
+    <tspan style='alignment-baseline: inherit; font-weight: bold;'>FOLIO installation</tspan>. Using it at another site will require modifying</tspan>
   </text>
-  <text x="1" y="28" class="normal"><tspan x="50%" text-anchor="middle">
+  <text x="1" y="28" class="normal" fill="#888888"><tspan x="50%" text-anchor="middle">
     the code in foliage/folio.py.</tspan>
   </text>
 </svg>
-
-
