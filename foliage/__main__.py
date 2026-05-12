@@ -645,11 +645,15 @@ def check_credentials():
 
     if not credentials_complete(credentials_from_env()):
         edit_and_use_credentials()
+    # Try to refresh first so an expired access token does not trigger a prompt
+    # when the refresh token is still usable.
+    Folio()._refresh_token_if_needed(force = True)
     if not Folio().credentials_valid():
-        # FOLIO might have invalidated users' tokens.
+        # FOLIO might have invalidated users' tokens, or the refresh token may
+        # no longer be accepted.
         if confirm('The FOLIO token may have expired, or else the given '
-                   ' credentials are invalid. Click "OK" to review the '
-                   ' credentials and try to regenerate the token, or click '
+                   'credentials are invalid. Click "OK" to review the '
+                   'credentials and try to regenerate the token, or click '
                    ' "Cancel" to quit Foliage now.'):
             edit_and_use_credentials()
         else:

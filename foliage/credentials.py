@@ -77,7 +77,11 @@ _KEYRING = f'org.caltechlibrary.{__package__}'
 # Public data types.
 # .............................................................................
 
-Credentials = namedtuple('Credentials', 'url tenant_id token')
+Credentials = namedtuple(
+    'Credentials',
+    'url tenant_id token refresh_token access_token_expires refresh_token_expires',
+    defaults = (None, None, None)
+)
 
 
 # Public functions.
@@ -174,8 +178,8 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
             return None
 
     with put_loading():
-        token, error = Folio.new_token(url = pin.url, tenant_id = pin.tenant_id,
-                                       user = pin.user, password = pin.password)
+        auth, error = Folio.new_login(url = pin.url, tenant_id = pin.tenant_id,
+                                      user = pin.user, password = pin.password)
 
     if error:
         notify('Failed to get a token. ' + error + '.')
@@ -184,7 +188,12 @@ def credentials_from_user(warn_empty = True, initial_creds = None):
         note_info('New FOLIO API token obtained.')
 
     log('got credentials from user')
-    return Credentials(url = pin.url, tenant_id = pin.tenant_id, token = token)
+    return Credentials(url = pin.url,
+                       tenant_id = pin.tenant_id,
+                       token = auth.get('token'),
+                       refresh_token = auth.get('refresh_token'),
+                       access_token_expires = auth.get('access_token_expires'),
+                       refresh_token_expires = auth.get('refresh_token_expires'))
 
 
 # Explanation about the weird way this is done: the Python keyring module
@@ -215,8 +224,13 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
     if value:
         log(f'got credentials from keyring {ring}')
         parts = _decoded(value)
-        if all(parts) or partial_ok:
-            return Credentials(url = parts[0], tenant_id = parts[1], token = parts[2])
+        if all(parts[:3]) or partial_ok:
+            return Credentials(url = parts[0],
+                               tenant_id = parts[1],
+                               token = parts[2],
+                               refresh_token = parts[3],
+                               access_token_expires = parts[4],
+                               refresh_token_expires = parts[5])
     log(f'did not find a value in keyring {ring}')
     return None
 
@@ -227,7 +241,10 @@ def use_credentials(creds):
     os.environ['FOLIO_OKAPI_URL']       = creds.url
     os.environ['FOLIO_OKAPI_TENANT_ID'] = creds.tenant_id
     os.environ['FOLIO_OKAPI_TOKEN']     = creds.token
-    if config('USE_KEYRING', cast = bool):
+    os.environ['FOLIO_OKAPI_REFRESH_TOKEN'] = creds.refresh_token or ''
+    os.environ['FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES'] = creds.access_token_expires or ''
+    os.environ['FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES'] = creds.refresh_token_expires or ''
+    if config('USE_KEYRING', default = False, cast = bool):
         keyring_creds = credentials_from_keyring()
         if creds != keyring_creds:
             _store_credentials(creds)
@@ -237,7 +254,15 @@ def current_credentials():
     url       = config('FOLIO_OKAPI_URL', default = None)
     tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
     token     = config('FOLIO_OKAPI_TOKEN', default = None)
-    return Credentials(url = url, tenant_id = tenant_id, token = token)
+    refresh_token = config('FOLIO_OKAPI_REFRESH_TOKEN', default = None)
+    access_token_expires = config('FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES', default = None)
+    refresh_token_expires = config('FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES', default = None)
+    return Credentials(url = url,
+                       tenant_id = tenant_id,
+                       token = token,
+                       refresh_token = refresh_token,
+                       access_token_expires = access_token_expires,
+                       refresh_token_expires = refresh_token_expires)
 
 
 def credentials_complete(creds):
@@ -256,12 +281,18 @@ shell prompt, because control-c is normally used to interrupt programs.
 '''
 
 
-def _encoded(url, tenant_id, token):
-    return f'{url}{_SEP}{tenant_id}{_SEP}{token}'
+def _encoded(url, tenant_id, token, refresh_token = None,
+             access_token_expires = None, refresh_token_expires = None):
+    values = [url, tenant_id, token, refresh_token, access_token_expires,
+              refresh_token_expires]
+    return _SEP.join('' if value is None else value for value in values)
 
 
 def _decoded(value_string):
-    return tuple(value_string.split(_SEP))
+    values = value_string.split(_SEP)
+    if len(values) < 6:
+        values.extend([''] * (6 - len(values)))
+    return tuple(values[:6])
 
 
 def _creds_from_source(source = None, where = ''):
@@ -270,10 +301,20 @@ def _creds_from_source(source = None, where = ''):
     url       = source.get('FOLIO_OKAPI_URL', default = None)
     tenant_id = source.get('FOLIO_OKAPI_TENANT_ID', default = None)
     token     = source.get('FOLIO_OKAPI_TOKEN', default = None)
+    refresh_token = source.get('FOLIO_OKAPI_REFRESH_TOKEN', default = None)
+    access_token_expires = source.get('FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES',
+                                      default = None)
+    refresh_token_expires = source.get('FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES',
+                                       default = None)
     if not any([url, tenant_id, token]):
         log(f'no credentials found in {where}')
         return None
-    creds = Credentials(url = url, tenant_id = tenant_id, token = token)
+    creds = Credentials(url = url,
+                        tenant_id = tenant_id,
+                        token = token,
+                        refresh_token = refresh_token,
+                        access_token_expires = access_token_expires,
+                        refresh_token_expires = refresh_token_expires)
     complete = 'complete' if credentials_complete(creds) else 'not complete'
     log(f'credentials in {where} are {complete}')
     return creds
@@ -285,6 +326,11 @@ def _store_credentials(creds, ring = _KEYRING):
         keyring.set_keyring(WinVaultKeyring())
     if sys.platform.startswith('darwin'):
         keyring.set_keyring(Keyring())
-    value = _encoded(creds.url, creds.tenant_id, creds.token)
+    value = _encoded(creds.url,
+                     creds.tenant_id,
+                     creds.token,
+                     creds.refresh_token,
+                     creds.access_token_expires,
+                     creds.refresh_token_expires)
     log(f'storing credentials to keyring {_KEYRING}')
     keyring.set_password(ring, getpass.getuser(), value)
