@@ -334,7 +334,12 @@ Command-line arguments summary
         pywebio.platform.utils._index_page_tpl = index_page_template
 
         # Start the widget outside the PyWebIO app so we can stop it later.
+        # If startup fails (e.g., missing macOS helper binary in a source
+        # checkout), continue without the widget instead of exiting.
         widget = SystemWidget() if not no_widget else None
+        if widget and not widget.running():
+            log('widget failed to start; continuing without system widget')
+            widget = None
 
         # cdn = False makes it load PyWebIO JS code from our local copy.
         log('starting PyWebIO server')
