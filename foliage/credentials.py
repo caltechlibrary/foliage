@@ -64,7 +64,7 @@ if sys.platform.startswith('darwin'):
     from keyring.backends.OS_X import Keyring
 
 from foliage.folio import Folio
-from foliage.ui import confirm, note_info, notify
+from foliage.ui import confirm, note_info, notify, note_warn
 
 
 # Private constants.
@@ -245,9 +245,16 @@ def use_credentials(creds):
     os.environ['FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES'] = creds.access_token_expires or ''
     os.environ['FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES'] = creds.refresh_token_expires or ''
     if config('USE_KEYRING', default = False, cast = bool):
-        keyring_creds = credentials_from_keyring()
-        if creds != keyring_creds:
-            _store_credentials(creds)
+        try:
+            keyring_creds = credentials_from_keyring()
+            if creds != keyring_creds:
+                _store_credentials(creds)
+        except Exception as ex:         # noqa: PIE786
+            # Avoid bubbling this up through PyWebIO callbacks, which would
+            # show a generic internal error toast without useful details.
+            log('exception while storing credentials to keyring: ' + str(ex))
+            note_warn('Unable to save credentials to keyring. The updated '
+                      'credentials will be used for this session only.')
 
 
 def current_credentials():
