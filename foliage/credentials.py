@@ -73,6 +73,12 @@ from foliage.ui import confirm, note_info, notify, note_warn
 _KEYRING = f'org.caltechlibrary.{__package__}'
 '''The name of the keyring used to store server access credentials, if any.'''
 
+_KEYRING_META = _KEYRING + '.meta'
+'''Keyring entry for url, tenant id, and access token.'''
+
+_KEYRING_REFRESH = _KEYRING + '.refresh'
+'''Keyring entry for refresh token and expiry timestamps.'''
+
 
 # Public data types.
 # .............................................................................
@@ -215,9 +221,12 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
     if sys.platform.startswith('darwin'):
         log('using macos keyring')
         keyring.set_keyring(Keyring())
+    username = getpass.getuser()
+
+    # First try legacy single-entry storage for backward compatibility.
     log(f'trying to read value from {ring}')
     try:
-        value = keyring.get_password(ring, getpass.getuser())
+        value = keyring.get_password(ring, username)
     except Exception as ex:             # noqa: PIE786
         log('exception trying to get password from keyring: ' + str(ex))
         return None
@@ -231,6 +240,29 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
                                refresh_token = parts[3],
                                access_token_expires = parts[4],
                                refresh_token_expires = parts[5])
+
+    # Next try split storage used to avoid Windows credential blob limits.
+    log(f'trying to read split keyring values from {_KEYRING_META} and {_KEYRING_REFRESH}')
+    try:
+        meta_value = keyring.get_password(_KEYRING_META, username)
+        refresh_value = keyring.get_password(_KEYRING_REFRESH, username)
+    except Exception as ex:             # noqa: PIE786
+        log('exception trying to get split values from keyring: ' + str(ex))
+        return None
+
+    if meta_value:
+        log('got split credentials from keyring')
+        meta = _decoded(meta_value)
+        refresh = _decoded(refresh_value or '')
+        creds = Credentials(url = meta[0],
+                            tenant_id = meta[1],
+                            token = meta[2],
+                            refresh_token = refresh[0],
+                            access_token_expires = refresh[1],
+                            refresh_token_expires = refresh[2])
+        if credentials_complete(creds) or partial_ok:
+            return creds
+
     log(f'did not find a value in keyring {ring}')
     return None
 
@@ -333,11 +365,24 @@ def _store_credentials(creds, ring = _KEYRING):
         keyring.set_keyring(WinVaultKeyring())
     if sys.platform.startswith('darwin'):
         keyring.set_keyring(Keyring())
-    value = _encoded(creds.url,
-                     creds.tenant_id,
-                     creds.token,
-                     creds.refresh_token,
-                     creds.access_token_expires,
-                     creds.refresh_token_expires)
-    log(f'storing credentials to keyring {_KEYRING}')
-    keyring.set_password(ring, getpass.getuser(), value)
+    username = getpass.getuser()
+
+    if sys.platform.startswith('win'):
+        # Windows Credential Manager has a size limit for a single credential
+        # blob, so split large token values across two entries.
+        meta_value = _encoded(creds.url, creds.tenant_id, creds.token)
+        refresh_value = _encoded(creds.refresh_token,
+                                 creds.access_token_expires,
+                                 creds.refresh_token_expires)
+        log(f'storing credentials to split keyrings {_KEYRING_META} and {_KEYRING_REFRESH}')
+        keyring.set_password(_KEYRING_META, username, meta_value)
+        keyring.set_password(_KEYRING_REFRESH, username, refresh_value)
+    else:
+        value = _encoded(creds.url,
+                         creds.tenant_id,
+                         creds.token,
+                         creds.refresh_token,
+                         creds.access_token_expires,
+                         creds.refresh_token_expires)
+        log(f'storing credentials to keyring {ring}')
+        keyring.set_password(ring, username, value)
