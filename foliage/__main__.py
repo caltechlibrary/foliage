@@ -134,11 +134,15 @@ if not (spec := importlib.util.find_spec('pywebio')):
           'found. Something is wrong with the installation of Foliage or the '
           'Python run-time environment.')
     sys.exit(1)
-elif (spec.origin is not None) and (spec.origin.find('versions/foliage') == 0):
-    print('Foliage requires a customized version of PyWebIO, but although '
-          'Foliage can load PyWebIO, the PyWebIO version does not appear to '
-          'be the necessary one. Please consult the Foliage documentation.')
-    sys.exit(1)
+# Only validate the PyWebIO version when not running in a packaged/frozen app.
+# In packaged apps (PyInstaller), the module location is different and the
+# check would be too strict. The version is already locked at build time.
+if not getattr(sys, 'frozen', False) and (spec.origin is not None):
+    if 'versions/foliage' not in spec.origin:
+        print('Foliage requires a customized version of PyWebIO, but although '
+              'Foliage can load PyWebIO, the PyWebIO version does not appear to '
+              'be the necessary one. Please consult the Foliage documentation.')
+        sys.exit(1)
 
 from   appdirs import AppDirs
 from   collections import ChainMap
