@@ -134,7 +134,7 @@ if not (spec := importlib.util.find_spec('pywebio')):
           'found. Something is wrong with the installation of Foliage or the '
           'Python run-time environment.')
     sys.exit(1)
-elif not spec.origin.find('versions/foliage'):
+elif (spec.origin is not None) and (spec.origin.find('versions/foliage') == 0):
     print('Foliage requires a customized version of PyWebIO, but although '
           'Foliage can load PyWebIO, the PyWebIO version does not appear to '
           'be the necessary one. Please consult the Foliage documentation.')
