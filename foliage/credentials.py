@@ -223,7 +223,10 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
         keyring.set_keyring(Keyring())
     username = getpass.getuser()
 
-    # First try legacy single-entry storage for backward compatibility.
+    # DEPRECATED: legacy single-entry keyring storage.
+    # Keep this read-path temporarily for backward compatibility with older
+    # releases that stored all fields in one value. Remove in a future release
+    # after users have had time to migrate to split keyring entries.
     log(f'trying to read value from {ring}')
     try:
         value = keyring.get_password(ring, username)
@@ -241,7 +244,7 @@ def credentials_from_keyring(partial_ok = False, ring = _KEYRING):
                                access_token_expires = parts[4],
                                refresh_token_expires = parts[5])
 
-    # Next try split storage used to avoid Windows credential blob limits.
+    # Preferred path: split storage used to avoid Windows credential blob limits.
     log(f'trying to read split keyring values from {_KEYRING_META} and {_KEYRING_REFRESH}')
     try:
         meta_value = keyring.get_password(_KEYRING_META, username)
