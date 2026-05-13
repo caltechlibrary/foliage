@@ -25,14 +25,17 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-windows.txt
           python -m pip install pyinstaller
-          # Install the custom PyWebIO fork from vendor directory
-          python -m pip install vendor\github.com\mhucka\PyWebIO
 
-      - name: Recreate expected PyWebIO path
+      - name: Fetch custom PyWebIO fork
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path ..\PyWebIO | Out-Null
-          Copy-Item -Path vendor\github.com\mhucka\PyWebIO\* -Destination ..\PyWebIO\ -Recurse -Force
+          if (Test-Path ..\PyWebIO) { Remove-Item -Path ..\PyWebIO -Recurse -Force }
+          git clone https://github.com/mhucka/PyWebIO.git ..\PyWebIO
+          git -C ..\PyWebIO checkout 2af53fc
+
+      - name: Install custom PyWebIO fork
+        run: |
+          python -m pip install ..\PyWebIO
 
       - name: Generate Windows build metadata
         run: |
