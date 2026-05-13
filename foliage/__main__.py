@@ -479,10 +479,19 @@ def config_debug(debug_arg):
             if debug_arg != '-':
                 log_file = debug_arg
                 log_dir = dirname(log_file)
+                if log_dir and not exists(log_dir):
+                    makedirs(log_dir)
                 if not writable(log_dir):
                     note_error(f'Can\'t write debug ouput in {log_dir}')
                     sys.exit()
-            faulthandler.enable()
+                with open(log_file, 'a', encoding = 'utf-8'):
+                    pass
+            # In frozen Windows GUI apps, stderr may not have a valid file
+            # descriptor; treat faulthandler as optional in that case.
+            try:
+                faulthandler.enable()
+            except Exception as ex:     # noqa: PIE786
+                log(f'faulthandler unavailable: {ex}')
             if os.name != 'nt':         # Can't use next part on Windows.
                 import signal
                 from boltons.debugutils import pdb_on_signal
