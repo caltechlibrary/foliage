@@ -167,7 +167,14 @@ import pywebio
 # the copy of PyWebIO used by Foliage is a fork where I've modified an
 # important function for detecting when the user has closed the app window.
 from   pywebio import start_server
-from   pywebio.output import put_html, put_warning, put_tabs, put_image
+from   pywebio.output import put_html, put_tabs, put_image
+try:
+    from pywebio.output import put_warning
+except ImportError:
+    # Some PyWebIO variants do not provide put_warning(). Use a simple
+    # styled HTML block so startup remains compatible across builds.
+    def put_warning(message):
+        return put_html(f'<div class="alert alert-warning">{message}</div>')
 from   pywebio.pin import pin_wait_change, put_actions
 from   pywebio.session import run_js
 from   sidetrack import set_debug, log
