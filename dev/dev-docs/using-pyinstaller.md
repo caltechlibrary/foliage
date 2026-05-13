@@ -10,6 +10,20 @@ What follows is an attempt at describing everything I know about using PyInstall
 I was unable to get this to work in Python 3.9.8 on Windows; I had to downgrade to Python 3.9.7.
 
 
+## Building a Windows test executable using GitHub Actions
+
+If you do not have a Windows machine, use the workflow in `.github/workflows/windows-build.yml`.
+
+1. Open the repository on GitHub.
+2. Click **Actions**.
+3. Select **Build Windows Executable**.
+4. Click **Run workflow**.
+5. Wait for the run to finish.
+6. Open the run and download the artifact named `foliage-windows-exe`.
+
+The artifact contains `Foliage.exe`, built with `pyinstaller-win32.spec`. The executable is unsigned, so Windows may display SmartScreen warnings on first launch.
+
+
 ## PyInstaller resources
 
 Here is where I look for information when I need it:
