@@ -355,8 +355,15 @@ Command-line arguments summary
         # cdn = False makes it load PyWebIO JS code from our local copy.
         log('starting PyWebIO server')
         foliage = partial(foliage_page, widget)
+        port = os.environ['PORT']
+        allowed_origins = [
+            f'http://127.0.0.1:{port}',
+            f'http://localhost:{port}',
+        ]
         start_server(foliage, auto_open_webbrowser = True, cdn = False,
-                     port = os.environ['PORT'], debug = os.environ['DEBUG'])
+                     host = '127.0.0.1',
+                     allowed_origins = allowed_origins,
+                     port = port, debug = os.environ['DEBUG'])
     except KeyboardInterrupt:
         # Catch it, but don't treat it as an error; just stop execution.
         log('keyboard interrupt received')
