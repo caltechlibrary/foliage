@@ -134,11 +134,15 @@ if not (spec := importlib.util.find_spec('pywebio')):
           'found. Something is wrong with the installation of Foliage or the '
           'Python run-time environment.')
     sys.exit(1)
-elif not spec.origin.find('versions/foliage'):
-    print('Foliage requires a customized version of PyWebIO, but although '
-          'Foliage can load PyWebIO, the PyWebIO version does not appear to '
-          'be the necessary one. Please consult the Foliage documentation.')
-    sys.exit(1)
+# Only validate the PyWebIO version when not running in a packaged/frozen app.
+# In packaged apps (PyInstaller), the module location is different and the
+# check would be too strict. The version is already locked at build time.
+if not getattr(sys, 'frozen', False) and (spec.origin is not None):
+    if spec.origin.find('versions/foliage') == 0:
+        print('Foliage requires a customized version of PyWebIO, but although '
+              'Foliage can load PyWebIO, the PyWebIO version does not appear to '
+              'be the necessary one. Please consult the Foliage documentation.')
+        sys.exit(1)
 
 from   appdirs import AppDirs
 from   collections import ChainMap
@@ -163,7 +167,14 @@ import pywebio
 # the copy of PyWebIO used by Foliage is a fork where I've modified an
 # important function for detecting when the user has closed the app window.
 from   pywebio import start_server
-from   pywebio.output import put_html, put_warning, put_tabs, put_image
+from   pywebio.output import put_html, put_tabs, put_image
+try:
+    from pywebio.output import put_warning
+except ImportError:
+    # Some PyWebIO variants do not provide put_warning(). Use a simple
+    # styled HTML block so startup remains compatible across builds.
+    def put_warning(message):
+        return put_html(f'<div class="alert alert-warning">{message}</div>')
 from   pywebio.pin import pin_wait_change, put_actions
 from   pywebio.session import run_js
 from   sidetrack import set_debug, log
@@ -334,13 +345,25 @@ Command-line arguments summary
         pywebio.platform.utils._index_page_tpl = index_page_template
 
         # Start the widget outside the PyWebIO app so we can stop it later.
+        # If startup fails (e.g., missing macOS helper binary in a source
+        # checkout), continue without the widget instead of exiting.
         widget = SystemWidget() if not no_widget else None
+        if widget and not widget.running():
+            log('widget failed to start; continuing without system widget')
+            widget = None
 
         # cdn = False makes it load PyWebIO JS code from our local copy.
         log('starting PyWebIO server')
         foliage = partial(foliage_page, widget)
+        port = os.environ['PORT']
+        allowed_origins = [
+            f'http://127.0.0.1:{port}',
+            f'http://localhost:{port}',
+        ]
         start_server(foliage, auto_open_webbrowser = True, cdn = False,
-                     port = os.environ['PORT'], debug = os.environ['DEBUG'])
+                     host = '127.0.0.1',
+                     allowed_origins = allowed_origins,
+                     port = port, debug = os.environ['DEBUG'])
     except KeyboardInterrupt:
         # Catch it, but don't treat it as an error; just stop execution.
         log('keyboard interrupt received')
@@ -463,10 +486,19 @@ def config_debug(debug_arg):
             if debug_arg != '-':
                 log_file = debug_arg
                 log_dir = dirname(log_file)
+                if log_dir and not exists(log_dir):
+                    makedirs(log_dir)
                 if not writable(log_dir):
                     note_error(f'Can\'t write debug ouput in {log_dir}')
                     sys.exit()
-            faulthandler.enable()
+                with open(log_file, 'a', encoding = 'utf-8'):
+                    pass
+            # In frozen Windows GUI apps, stderr may not have a valid file
+            # descriptor; treat faulthandler as optional in that case.
+            try:
+                faulthandler.enable()
+            except Exception as ex:     # noqa: PIE786
+                log(f'faulthandler unavailable: {ex}')
             if os.name != 'nt':         # Can't use next part on Windows.
                 import signal
                 from boltons.debugutils import pdb_on_signal
@@ -640,11 +672,15 @@ def check_credentials():
 
     if not credentials_complete(credentials_from_env()):
         edit_and_use_credentials()
+    # Try to refresh first so an expired access token does not trigger a prompt
+    # when the refresh token is still usable.
+    Folio()._refresh_token_if_needed(force = True)
     if not Folio().credentials_valid():
-        # FOLIO might have invalidated users' tokens.
+        # FOLIO might have invalidated users' tokens, or the refresh token may
+        # no longer be accepted.
         if confirm('The FOLIO token may have expired, or else the given '
-                   ' credentials are invalid. Click "OK" to review the '
-                   ' credentials and try to regenerate the token, or click '
+                   'credentials are invalid. Click "OK" to review the '
+                   'credentials and try to regenerate the token, or click '
                    ' "Cancel" to quit Foliage now.'):
             edit_and_use_credentials()
         else:

@@ -41,9 +41,11 @@ from   commonpy.interrupt import wait, raise_for_interrupts
 from   commonpy.network_utils import net, network_available
 from   dataclasses import dataclass
 from   datetime import datetime as dt
+from   dateutil import parser as dt_parser
 from   dateutil import tz
 from   decouple import config
 from   functools import partial
+from   http.cookies import SimpleCookie
 import json
 import os
 from   os.path import exists, join
@@ -268,50 +270,151 @@ class Folio():
 
 
     @staticmethod
-    def new_token(url, tenant_id, user, password):
-        '''Ask FOLIO to create a token for the given url, tenant & user.'''
-        if not all([url, tenant_id, user, password]):
-            log("given incomplete set of parameters -- can\'t proceed.")
-            return None, 'Incomplete parameters for credentials'
+    def _cookies_from_response(response):
+        cookie = SimpleCookie()
+        # requests can provide multiple Set-Cookie values in different ways.
+        if response is None:
+            return cookie
+        raw_headers = getattr(response, 'raw', None)
+        if raw_headers and getattr(raw_headers, 'headers', None):
+            for value in raw_headers.headers.get_all('Set-Cookie'):
+                cookie.load(value)
+        if not cookie:
+            header = response.headers.get('Set-Cookie', '')
+            if header:
+                cookie.load(header)
+        return cookie
+
+
+    @staticmethod
+    def _token_from_response(response):
+        token = response.headers.get('x-okapi-token')
+        if token:
+            return token
+        cookies = Folio._cookies_from_response(response)
+        if 'folioAccessToken' in cookies:
+            return cookies['folioAccessToken'].value
+        return None
+
+
+    @staticmethod
+    def _refresh_token_from_response(response):
+        cookies = Folio._cookies_from_response(response)
+        if 'folioRefreshToken' in cookies:
+            return cookies['folioRefreshToken'].value
+        return None
+
+
+    @staticmethod
+    def _error_message_from_response(response, default):
+        msg = default
         try:
-            log('asking FOLIO for new API token')
-            headers = {
-                'x-okapi-tenant': tenant_id,
-                'content-type': 'application/json',
-            }
-            data = json.dumps({
-                'tenant': tenant_id,
-                'username': user,
-                'password': password
-            })
-            request_url = url + '/authn/login'
+            payload = json.loads(response.text)
+            if errors := payload.get('errors', []):
+                text = errors[0].get('message', '')
+                if text:
+                    msg += ': ' + text
+        except Exception:              # noqa: PIE786
+            pass
+        return msg
+
+
+    @staticmethod
+    def _parse_expirations(response):
+        try:
+            payload = json.loads(response.text)
+        except Exception:              # noqa: PIE786
+            return None, None
+        return (payload.get('accessTokenExpiration'),
+                payload.get('refreshTokenExpiration'))
+
+
+    @staticmethod
+    def _is_expired(expires_at):
+        if not expires_at:
+            return False
+        try:
+            expiration = dt_parser.isoparse(expires_at)
+            now = dt.now(tz = tz.tzutc())
+            if expiration.tzinfo is None:
+                expiration = expiration.replace(tzinfo = tz.tzutc())
+            return expiration <= now
+        except Exception:              # noqa: PIE786
+            return False
+
+
+    @staticmethod
+    def _auth_headers(tenant_id):
+        return {
+            'x-okapi-tenant': tenant_id,
+            'content-type': 'application/json',
+            'User-Agent': 'Foliage',
+            'X-Forwarded-For': '127.0.0.1',
+        }
+
+
+    @staticmethod
+    def _auth_result_from_response(response):
+        token = Folio._token_from_response(response)
+        refresh = Folio._refresh_token_from_response(response)
+        access_exp, refresh_exp = Folio._parse_expirations(response)
+        return {
+            'token': token,
+            'refresh_token': refresh,
+            'access_token_expires': access_exp,
+            'refresh_token_expires': refresh_exp,
+        }
+
+
+    @staticmethod
+    def new_login(url, tenant_id, user, password):
+        '''Ask FOLIO to create credentials for the given url, tenant & user.'''
+        if not all([url, tenant_id, user, password]):
+            log("given incomplete set of parameters -- can't proceed.")
+            return None, 'Incomplete parameters for credentials'
+
+        data = json.dumps({
+            'tenant': tenant_id,
+            'username': user,
+            'password': password
+        })
+        headers = Folio._auth_headers(tenant_id)
+        endpoint = '/authn/login-with-expiry'
+
+        try:
+            request_url = url + endpoint
+            log(f'asking FOLIO for credentials via {endpoint}')
             (resp, error) = net('post', request_url, headers = headers, data = data)
-            if resp.status_code == 201:
-                token = resp.headers['x-okapi-token']
-                log(f'got new token from FOLIO: {token}')
-                return token, None
-            elif resp.status_code == 422:
-                msg = 'FOLIO rejected the information given'
-                try:
-                    if errors := json.loads(resp.text).get('errors', []):
-                        text = errors[0].get('message', '')
-                        if text:
-                            msg += (': ' + text)
-                except json.JSONDecodeError:
-                    log('could not extract error message from FOLIO reply')
+            if resp and resp.status_code == 201:
+                auth = Folio._auth_result_from_response(resp)
+                if auth.get('token'):
+                    return auth, None
+                return None, 'FOLIO did not return an access token'
+            if resp and resp.status_code == 422:
+                msg = Folio._error_message_from_response(
+                    resp, 'FOLIO rejected the information given'
+                )
                 return None, msg
-            elif isinstance(error, Interrupted):
+            if isinstance(error, Interrupted):
                 raise_for_interrupts()
-            elif error:
+            if error:
                 return None, 'FOLIO returned an error: ' + str(error)
-            else:
+            if resp:
                 return None, f'FOLIO returned unknown code {str(resp.status_code)}'
+            return None, 'No response received from FOLIO login endpoint'
         except Interrupted:
             log('interrupted')
             return None, 'Operation was interrupted before a new token was obtained'
         except Exception as ex:         # noqa: PIE786
             log('exception trying to get new FOLIO token: ' + str(ex))
             return None, 'Encountered error trying to get token – please report this'
+
+
+    @staticmethod
+    def new_token(url, tenant_id, user, password):
+        '''Ask FOLIO to create a token for the given url, tenant & user.'''
+        auth, error = Folio.new_login(url, tenant_id, user, password)
+        return (auth.get('token') if auth else None), error
 
 
     @staticmethod
@@ -330,6 +433,7 @@ class Folio():
             log('FOLIO_OKAPI_URL value is not a valid URL')
             return False
         try:
+            Folio()._refresh_token_if_needed()
             log('testing if FOLIO credentials appear valid')
             headers = {
                 "x-okapi-token": token,
@@ -337,11 +441,68 @@ class Folio():
                 "content-type": "application/json",
             }
             request_url = url + '/instance-statuses?limit=0'
-            (resp, _) = net('get', request_url, headers = headers)
+            (resp, error) = net('get', request_url, headers = headers)
+            if resp and resp.status_code == 401:
+                if Folio()._refresh_token_if_needed(force = True):
+                    headers['x-okapi-token'] = config('FOLIO_OKAPI_TOKEN', default = '')
+                    (resp, error) = net('get', request_url, headers = headers)
+            if error and isinstance(error, Interrupted):
+                raise_for_interrupts()
             return (resp and resp.status_code < 400)
         except Exception as ex:         # noqa: PIE786
             log('FOLIO credentials test failed with ' + str(ex))
             return False
+
+
+    def _refresh_token_if_needed(self, force = False):
+        refresh_token = config('FOLIO_OKAPI_REFRESH_TOKEN', default = None)
+        if not refresh_token:
+            return False
+
+        access_exp = config('FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES', default = None)
+        refresh_exp = config('FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES', default = None)
+        if not force and not self._is_expired(access_exp):
+            return False
+        if self._is_expired(refresh_exp):
+            log('refresh token appears expired')
+            return False
+
+        url = config('FOLIO_OKAPI_URL', default = None)
+        tenant_id = config('FOLIO_OKAPI_TENANT_ID', default = None)
+        if not url or not tenant_id:
+            return False
+
+        headers = self._auth_headers(tenant_id)
+        headers['Cookie'] = f'folioRefreshToken={refresh_token}'
+        request_url = url + '/authn/refresh'
+        log('attempting token refresh via /authn/refresh')
+        (resp, error) = net('post', request_url, headers = headers)
+        if error and isinstance(error, Interrupted):
+            raise_for_interrupts()
+        if not resp or resp.status_code != 201:
+            if resp:
+                log(f'token refresh failed with status {resp.status_code}')
+            elif error:
+                log(f'token refresh failed with error {error}')
+            return False
+
+        auth = self._auth_result_from_response(resp)
+        if not auth.get('token'):
+            log('refresh succeeded but response did not include access token')
+            return False
+
+        from foliage.credentials import current_credentials, use_credentials
+        current = current_credentials()
+        use_credentials(current._replace(
+            token = auth.get('token'),
+            refresh_token = auth.get('refresh_token') or refresh_token,
+            access_token_expires = auth.get('access_token_expires')
+                                    or config('FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES', default = None),
+            refresh_token_expires = auth.get('refresh_token_expires')
+                                     or config('FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES', default = None)
+        ))
+        log('token refresh succeeded')
+        return True
 
 
     def request(self, api, op = 'get', data = None, converter = None, retry = 0):
@@ -349,6 +510,7 @@ class Folio():
         This method reads the FOLIO credentials from environment variables.
         In case of rate limits being hit, this will retry the operation.
         '''
+        self._refresh_token_if_needed()
         headers = {
             "x-okapi-token" : config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
@@ -364,6 +526,15 @@ class Folio():
         if not error:
             log(f'got result from {url}')
             return converter(response) if converter is not None else response
+        elif response and response.status_code == 401 and self._refresh_token_if_needed(force = True):
+            headers["x-okapi-token"] = config('FOLIO_OKAPI_TOKEN')
+            if data is not None:
+                (response, error) = net(op, url, headers = headers, data = data)
+            else:
+                (response, error) = net(op, url, headers = headers)
+            if not error:
+                log(f'got result from {url} after token refresh')
+                return converter(response) if converter is not None else response
         elif isinstance(error, NoContent):
             log(f'got empty content from {url}')
             return converter(response) if converter is not None else response
@@ -1043,6 +1214,7 @@ class Folio():
         This method reads the FOLIO credentials from environment variables.
         It will raise an exception with an error message if it fails.
         '''
+        self._refresh_token_if_needed()
         headers = {
             "x-okapi-token" : config('FOLIO_OKAPI_TOKEN'),
             "x-okapi-tenant": config('FOLIO_OKAPI_TENANT_ID'),
