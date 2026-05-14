@@ -22,18 +22,25 @@ on:
       release_tag:
         description: "The tag of the release to archive:"
       draft:
+        type: boolean
         default: false
         description: "Mark the record as a draft:"
       all_assets:
+        type: boolean
         default: false
         description: "Attach all GitHub assets:"
       all_metadata:
+        type: boolean
         default: false
         description: "Include additional GitHub metadata:"
       community:
         description: "Send record to InvenioRDM community:"
       parent_record:
         description: "ID of parent record (for versioning):"
+      debug:
+        type: boolean
+        default: false
+        description: "Enable debug mode (print in the GitHub Actions output):"
 jobs:
   Send_to_InvenioRDM:
     runs-on: ubuntu-latest
@@ -44,7 +51,7 @@ jobs:
           INVENIO_TOKEN:  ${{secrets.INVENIO_TOKEN}}
           all_assets:     ${{github.event.inputs.all_assets || env.all_assets}}
           all_metadata:   ${{github.event.inputs.all_metadata || env.all_metadata}}
-          debug:          ${{github.event.inputs.debug || 'false'}}
+          debug:          ${{github.event.inputs.debug || env.debug}}
           draft:          ${{github.event.inputs.draft || env.draft}}
           community:      ${{github.event.inputs.community || env.community}}
           parent_record:  ${{github.event.inputs.parent_record || env.parent_record}}

@@ -16,6 +16,5 @@ jobs:
     steps:
       - uses: caltechlibrary/waystation@main
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           dry_run: false
           debug: false
