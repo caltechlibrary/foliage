@@ -61,7 +61,12 @@ import keyring.backends
 if sys.platform.startswith('win'):
     from keyring.backends.Windows import WinVaultKeyring
 if sys.platform.startswith('darwin'):
-    from keyring.backends.OS_X import Keyring
+    try:
+        # keyring < 25
+        from keyring.backends.OS_X import Keyring
+    except ImportError:
+        # keyring >= 25
+        from keyring.backends.macOS import Keyring
 
 from foliage.folio import Folio
 from foliage.ui import confirm, note_info, notify, note_warn

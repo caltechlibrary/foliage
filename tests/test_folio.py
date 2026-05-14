@@ -21,22 +21,30 @@ class _FakeResponse:
 
 @pytest.fixture
 def define_env_vars(monkeypatch):
-    from os import path
-    monkeypatch.chdir(path.dirname(__file__))
-
-    from decouple import Config, RepositoryIni
-    source = Config(RepositoryIni(source = 'settings.ini'))
-    url = source.get('FOLIO_OKAPI_URL')
-    tenant = source.get('FOLIO_OKAPI_TENANT_ID')
-    token = source.get('FOLIO_OKAPI_TOKEN')
-
-    monkeypatch.setenv('FOLIO_OKAPI_URL', url)
-    monkeypatch.setenv('FOLIO_OKAPI_TENANT_ID', tenant)
-    monkeypatch.setenv('FOLIO_OKAPI_TOKEN', token)
+    # Use deterministic local values so tests don't depend on external files.
+    monkeypatch.setenv('FOLIO_OKAPI_URL', 'https://example')
+    monkeypatch.setenv('FOLIO_OKAPI_TENANT_ID', 'diku')
+    monkeypatch.setenv('FOLIO_OKAPI_TOKEN', 'token')
 
 
-def test_record_id_type(define_env_vars):
+def test_record_id_type(define_env_vars, monkeypatch):
+    from foliage import folio as folio_module
     from foliage.folio import Folio, IdKind
+
+    def fake_net(op, url, headers = None, data = None):
+        if '/item-storage/items/d893839b-0309-4856-b496-0db89a0a6a04' in url:
+            return _FakeResponse(200, '{"id":"d893839b-0309-4856-b496-0db89a0a6a04"}'), None
+        if '/item-storage/items/946cce1b-0451-460e-816f-51436182efaa' in url:
+            return _FakeResponse(404, 'not found'), None
+        if '/instance-storage/instances/946cce1b-0451-460e-816f-51436182efaa' in url:
+            return _FakeResponse(404, 'not found'), None
+        if '/holdings-storage/holdings/946cce1b-0451-460e-816f-51436182efaa' in url:
+            return _FakeResponse(200, '{"id":"946cce1b-0451-460e-816f-51436182efaa"}'), None
+        # For all other UUID probes, return 404 so id_kind can continue probing.
+        return _FakeResponse(404, 'not found'), None
+
+    monkeypatch.setattr(folio_module, 'net', fake_net)
+
     folio = Folio()
     assert folio.id_kind('35047019219716') == IdKind.ITEM_BARCODE
     assert folio.id_kind('d893839b-0309-4856-b496-0db89a0a6a04') == IdKind.ITEM_ID
@@ -63,8 +71,12 @@ def test_record_id_type(define_env_vars):
 
 def test_extracting_instance_id():
     from foliage.folio import instance_id_from_accession
-    instance_id_from_accession('cit.oai.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed') == '17c5c348-8796-4b11-90a8-6b31ff9509ed'
-    instance_id_from_accession('cit.oai.edge.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed') == '17c5c348-8796-4b11-90a8-6b31ff9509ed'
+    assert (instance_id_from_accession(
+        'cit.oai.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed'
+    ) == '17c5c348-8796-4b11-90a8-6b31ff9509ed')
+    assert (instance_id_from_accession(
+        'cit.oai.edge.caltech.folio.ebsco.com.fs00001057.17c5c348.8796.4b11.90a8.6b31ff9509ed'
+    ) == '17c5c348-8796-4b11-90a8-6b31ff9509ed')
 
 
 def test_new_login_with_expiry_parses_cookies(monkeypatch):
