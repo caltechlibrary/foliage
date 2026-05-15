@@ -98,11 +98,19 @@ jobs:
           rm -rf dist/macos/foliage
 
       - name: Build DMG
+        env:
+          CODESIGN_IDENTITY: ${{ vars.CODESIGN_IDENTITY || '' }}
         run: |
           cd dist/macos
-          create-dmg --overwrite --dmg-title="Foliage" Foliage.app
-          generated_dmg="$(find . -maxdepth 1 -name '*.dmg' -print -quit)"
-          mv "$generated_dmg" "Foliage.dmg"
+          if [ -n "$CODESIGN_IDENTITY" ]; then
+            echo "Building signed DMG with create-dmg."
+            create-dmg --overwrite --dmg-title="Foliage" --codesign "$CODESIGN_IDENTITY" Foliage.app
+            generated_dmg="$(find . -maxdepth 1 -name '*.dmg' -print -quit)"
+            mv "$generated_dmg" "Foliage.dmg"
+          else
+            echo "Building unsigned DMG with hdiutil (avoids create-dmg signing checks)."
+            hdiutil create -volname "Foliage" -srcfolder "Foliage.app" -ov -format UDZO "Foliage.dmg"
+          fi
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
