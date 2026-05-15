@@ -45,7 +45,7 @@
 # PyInstaller, which means you can do more than just set variables.
 # =============================================================================
 
-from   os import getcwd
+from   os import getcwd, getenv
 from   os.path import join, exists
 from   PyInstaller.building.datastruct import Tree
 import PyInstaller.config
@@ -139,6 +139,14 @@ application_pyz    = PYZ(configuration.pure,
                          cipher = None,
                         )
 
+# Optional code signing:
+# - Set CODESIGN_IDENTITY to a valid Apple identity string.
+# - If CODESIGN_IDENTITY is set, PyInstaller signs and applies entitlements.
+# - If CODESIGN_IDENTITY is unset/empty, build output is unsigned.
+
+codesign_identity = getenv('CODESIGN_IDENTITY')
+entitlements_file = 'entitlements.plist' if codesign_identity else None
+
 # Notes about the configuration below:
 # - As of PyInstaller 4.7, splash screens are not supported on macOS. That's
 #   why the windows configuration has a splash screen but this one doesn't.
@@ -156,8 +164,8 @@ executable         = EXE(application_pyz,
                          upx = True,
                          runtime_tmpdir = None,
                          bootloader_ignore_signals = False,
-                         codesign_identity = 'Developer ID Application: Michael Hucka (FBQTM3C6ZA)',
-                         entitlements_file = 'entitlements.plist',
+                         codesign_identity = codesign_identity,
+                         entitlements_file = entitlements_file,
                          # To debug run problems, first try setting console
                          # to True. If that doesn't reveal enough, then try
                          # setting debug to True. (Debug produces a lot of

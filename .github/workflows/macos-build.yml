@@ -1,0 +1,112 @@
+name: Build macOS DMG
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos-dmg:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 #v6.2.0
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+          brew install pandoc go
+          npm install --global inliner create-dmg
+
+      - name: Fetch custom PyWebIO fork
+        run: |
+          rm -rf ../PyWebIO
+          git clone https://github.com/mhucka/PyWebIO.git ../PyWebIO
+          git -C ../PyWebIO checkout 2af53fc
+
+      - name: Install custom PyWebIO fork
+        run: |
+          python -m pip install ../PyWebIO
+
+      - name: Build macOS systray widget
+        run: |
+          cd foliage/data/macos-systray-widget
+          go build -o macos-systray-widget macos-systray-widget.go
+
+      - name: Generate macOS packaging docs
+        run: |
+          pandoc --metadata title="Foliage" \
+                 --template=dev/one-page-docs/pandoc-template/template.html5 \
+                 -c dev/one-page-docs/sakura-css/sakura.css \
+                 -o tmp.html README.md
+          inliner -n < tmp.html > README.html
+          mv README.html ABOUT.html
+          rm -f tmp.html
+
+          pandoc --metadata title="Foliage" \
+                 --template=dev/one-page-docs/pandoc-template/template.html5 \
+                 -c dev/one-page-docs/sakura-css/sakura.css \
+                 -o tmp.html dev/one-page-docs/read-me-first-macos/read-me-first.md
+          inliner -n < tmp.html > dev/one-page-docs/read-me-first-macos/read-me-first.html
+          rm -f tmp.html
+
+
+      - name: Import Apple code signing certificate (if present)
+        # This step is only needed if you want to sign the app in CI.
+        # Required secrets:
+        #   BUILD_CERTIFICATE_BASE64: base64-encoded .p12 (exported from Keychain Access)
+        #   P12_PASSWORD: password for the .p12 file
+        # Required variable:
+        #   CODESIGN_IDENTITY: certificate subject string (e.g. Developer ID Application: Name (TEAMID))
+        if: env.BUILD_CERTIFICATE_BASE64 != '' && env.P12_PASSWORD != '' && env.CODESIGN_IDENTITY != ''
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 || '' }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD || '' }}
+          CODESIGN_IDENTITY: ${{ vars.CODESIGN_IDENTITY || '' }}
+        run: |
+          echo "$BUILD_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          security create-keychain -p temp-keychain build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p temp-keychain build.keychain
+          security import certificate.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k temp-keychain build.keychain
+          rm -f certificate.p12
+
+      - name: Build app bundle with PyInstaller
+        # Optional signing:
+        # - If repo/org variable CODESIGN_IDENTITY is set, pass it to PyInstaller.
+        # - If not set, leave it empty so pyinstaller-macos.spec builds unsigned.
+        env:
+          CODESIGN_IDENTITY: ${{ vars.CODESIGN_IDENTITY || '' }}
+        run: |
+          if [ -n "$CODESIGN_IDENTITY" ]; then
+            echo "Signing enabled (CODESIGN_IDENTITY provided)."
+          else
+            echo "Signing disabled (no CODESIGN_IDENTITY variable). Building unsigned."
+          fi
+
+          python -m PyInstaller --distpath dist/macos --clean --noconfirm pyinstaller-macos.spec
+          rm -rf dist/macos/foliage
+
+      - name: Build DMG
+        run: |
+          cd dist/macos
+          create-dmg --overwrite --dmg-title="Foliage" Foliage.app
+          generated_dmg="$(find . -maxdepth 1 -name '*.dmg' -print -quit)"
+          mv "$generated_dmg" "Foliage.dmg"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          archive: false
+          path: dist/macos/Foliage.dmg
+          if-no-files-found: error
