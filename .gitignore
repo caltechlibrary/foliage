@@ -25,9 +25,6 @@
 
 *.bak
 
-# InnoSetup-specific things to ignore:
-# .............................................................................
-
 *.~is
 
 # Python-specific things to ignore (relevant because this is a Python project).
@@ -54,7 +51,6 @@ foliage/data/macos-systray-widget/macos-systray-widget
 ABOUT.md
 ABOUT.html
 dev/installers/windows/version.py
-dev/installers/windows/foliage_innosetup_script.iss
 dev/installers/windows/Product.wxs
 dev/installers/macos/READ THIS PLEASE.html
 tests/settings.ini
