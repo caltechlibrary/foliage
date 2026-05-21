@@ -1,8 +1,8 @@
-# Windows installation info for Foliage
+# Windows MSI installation info for Foliage
 
-When you download the installer for Foliage from the Library Google Drive folder, your browser will produce security warnings because it doesn't recognize the origin and nature of the program. Foliage is safe to download and install if you get it from the Library's Google Drive. Here are the steps to get past the various Windows security warnings.
+When you download the Foliage MSI installer from the Library Google Drive folder, your browser will produce security warnings because it doesn't recognize the origin and nature of the program. Foliage is safe to download and install if you get it from the Library's Google Drive. Here are the steps to get past the various Windows security warnings.
 
-First, open on the Google Drive folder in your browser and right-click over the installer program's 
+First, open on the Google Drive folder in your browser and right-click over the MSI installer's
 name. You will get a pop-up menu in which one of the choices is "Download". Select "Download".
 
 <p align="center">
@@ -32,7 +32,7 @@ Do **not** click the "Discard" button. Instead, click the **⋁** symbol next to
 <img src="dev/one-page-docs/read-me-first-windows/google-keep.png">
 </p>
 
-Google Chrome will save the installer and you can proceed normally. (Find the installer where it was downloaded on your computer and start the installer program.)
+Google Chrome will save the installer and you can proceed normally. (Find the installer where it was downloaded on your computer and start the MSI installer.)
 
 
 ## Microsoft Edge
@@ -61,4 +61,4 @@ Do **not** click "Delete". Instead, **click "Show more "** to get a list of opti
 <img src="dev/one-page-docs/read-me-first-windows/keep-anyway.png">
 </p>
 
-It is only at this point, _finally_, that the browser will actually download the Foliage installer program to your computer.
+It is only at this point, _finally_, that the browser will actually download the Foliage MSI installer to your computer.

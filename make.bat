@@ -25,9 +25,9 @@ ECHO Generating version.py ...
 
 python dev/installers/windows/create-version.py
 
-ECHO Generating InnoSetup script.
+ECHO Generating WiX MSI script.
 
-python dev/installers/windows/create-innosetup-script.py
+python dev/installers/windows/create-wix-script.py
 
 ECHO Generating splash screen file ...
 
@@ -38,5 +38,5 @@ ECHO Running PyInstaller ...
 python -m PyInstaller --distpath dist/win --clean --noconfirm pyinstaller-win32.spec
 
 ECHO "make.bat" finished.
-ECHO The .exe will be in the "dist" subdirectory.
-ECHO Now run Innosetup to create an installer.
+ECHO The intermediate executable will be in the "dist" subdirectory.
+ECHO Run WiX (candle/light) to package the executable as an MSI installer.

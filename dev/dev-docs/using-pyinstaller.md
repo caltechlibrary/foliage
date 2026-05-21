@@ -16,12 +16,12 @@ If you do not have a Windows machine, use the workflow in `.github/workflows/win
 
 1. Open the repository on GitHub.
 2. Click **Actions**.
-3. Select **Build Windows Executable**.
+3. Select **Build Windows MSI**.
 4. Click **Run workflow**.
 5. Wait for the run to finish.
-6. Open the run and download the artifact named `foliage-windows-exe`.
+6. Open the run and download the MSI artifact.
 
-The artifact contains `Foliage.exe`, built with `pyinstaller-win32.spec`. The executable is unsigned, so Windows may display SmartScreen warnings on first launch.
+The workflow first builds `Foliage.exe` with `pyinstaller-win32.spec` and then packages it as a Windows MSI installer. The MSI package is the distribution artifact for end users.
 
 
 ## PyInstaller resources
@@ -37,7 +37,7 @@ Here is where I look for information when I need it:
 
 A typical Python application will have a directory structure somewhat like this:
 
-```
+```text
 ├── Makefile
 ├── make.bat
 ├── foliage

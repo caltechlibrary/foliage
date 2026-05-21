@@ -33,12 +33,12 @@ Although Foliage is a desktop application and not a web service, it uses a web p
 
 ## Installation
 
-There are multiple ways of installing Foliage, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+There are multiple ways of installing Foliage, ranging from downloading a ready-to-install package for Windows, to installing it as a typical Python program using `pip`. Please choose the alternative that suits you.
 
 
-### _Alternative 1: installing the ready-to-run executable programs_
+### _Alternative 1: installing the Windows MSI package_
 
-For the Caltech Library, we provide Foliage in a ready-to-run form for Windows computers. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.
+For the Caltech Library, we provide Foliage as a Windows MSI installer package. This is the easiest and preferred way of getting a copy of Foliage on Windows. Please contact the author for more information.
 
 
 ### _Alternative 2: installing Foliage using `pip`_

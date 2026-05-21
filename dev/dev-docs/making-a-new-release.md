@@ -24,9 +24,10 @@ Start up a Window environment, then in a terminal emulator:
 
 1. Cd to the top level of the Foliage source directory
 2. Run `make`
-3. Test the binary that gets built:
+3. Test the intermediate executable that gets built:
    1. Run it from the command line by starting `dist/win/Foliage.exe`
    2. Run it by double-clicking `dist/win/Foliage.exe` in the Windows File Explorer.
+4. Build the Windows MSI installer from the executable, then test install/uninstall behavior.
 
 
 ## 3. If all seems to work, only then make a release

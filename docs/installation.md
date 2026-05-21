@@ -1,6 +1,6 @@
 # Installation
 
-There are multiple ways of installing Foliage, ranging from downloading a self-contained, single-file, ready-to-run program, to installing it as a typical Python program using `pip`.  Please choose the alternative that suits you.
+There are multiple ways of installing Foliage, ranging from downloading ready-to-install application packages, to installing it as a typical Python program using `pip`. Please choose the alternative that suits you.
 
 
 ## Preliminary requirements
@@ -10,9 +10,9 @@ Foliage is written in [Python 3](https://www.python.org) and makes use of some a
 
 ## Installation instructions
 
-### _Alternative 1: installing the ready-to-run version_
+### _Alternative 1: installing the ready-to-run packaged version_
 
-For the Caltech Library, we provide Foliage in a ready-to-run form for Windows and macOS computers. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.
+For the Caltech Library, we provide Foliage in packaged form for Windows and macOS computers. On Windows, this is an MSI installer package. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.
 
 
 ### _Alternative 2: installing Foliage using `pipx`_
