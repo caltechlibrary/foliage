@@ -23,24 +23,36 @@
                 Name="Foliage.exe"
                 Source="dist\win\Foliage.exe"
                 KeyPath="yes"
-                Checksum="yes">
-              <Shortcut
-                  Id="ApplicationStartMenuShortcut"
-                  Directory="ApplicationProgramsFolder"
-                  Name="Foliage"
-                  Description="Foliage"
-                  WorkingDirectory="INSTALLFOLDER" />
-            </File>
+                Checksum="yes" />
           </Component>
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramsFolder" Name="Foliage" />
+        <Directory Id="ApplicationProgramsFolder" Name="Foliage">
+          <Component Id="StartMenuShortcutComponent" Guid="*">
+            <Shortcut
+                Id="ApplicationStartMenuShortcut"
+                Name="Foliage"
+                Description="Foliage"
+                Target="[INSTALLFOLDER]Foliage.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+            <RemoveFile Id="RemoveStartMenuItems" Name="*" On="uninstall" />
+            <RemoveFolder Id="RemoveStartMenuFolder" On="uninstall" />
+            <RegistryValue
+                Root="HKCU"
+                Key="Software\Caltech Library\Foliage"
+                Name="StartMenuShortcut"
+                Type="integer"
+                Value="1"
+                KeyPath="yes" />
+          </Component>
+        </Directory>
       </Directory>
     </Directory>
 
     <Feature Id="ProductFeature" Title="Foliage" Level="1">
       <ComponentRef Id="MainExecutableComponent" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
     </Feature>
   </Product>
 </Wix>
