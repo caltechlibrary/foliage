@@ -1,10 +1,10 @@
-name: Build Windows Executable
+name: Build Windows MSI
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-windows-exe:
+  build-windows-msi:
     runs-on: windows-latest
 
     steps:
@@ -40,15 +40,32 @@ jobs:
       - name: Generate Windows build metadata
         run: |
           python dev/installers/windows/create-version.py
-          python dev/installers/windows/create-innosetup-script.py
+          python dev/installers/windows/create-wix-script.py
 
       - name: Build executable with PyInstaller
         run: |
           python -m PyInstaller --distpath dist/win --clean --noconfirm pyinstaller-win32.spec
 
-      - name: Upload executable artifact
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          choco install wixtoolset --no-progress -y
+
+      - name: Set MSI version variable
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path setup.cfg -Pattern '^version\s*=\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+          "FOLIAGE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build MSI with WiX
+        shell: pwsh
+        run: |
+          candle -nologo -out dist\win\ dev\installers\windows\Product.wxs
+          light -nologo -out dist\win\foliage_${env:FOLIAGE_VERSION}_windows_x64.msi dist\win\Product.wixobj
+
+      - name: Upload MSI artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
           archive: false
-          path: dist/win/Foliage.exe
+          path: dist/win/foliage_*.msi
           if-no-files-found: error

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product
+      Id="*"
+      Name="Foliage"
+      Language="1033"
+      Version="@@MSI_VERSION@@"
+      Manufacturer="Caltech DLD"
+      UpgradeCode="0F911487-945E-4CC2-A5D8-30BDEEE0E580">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="IconFoliage" SourceFile="dev\icon\foliage-icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="IconFoliage" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Foliage">
+          <Component Id="MainExecutableComponent" Guid="*">
+            <File
+                Id="FoliageExeFile"
+                Name="Foliage.exe"
+                Source="dist\win\Foliage.exe"
+                KeyPath="yes"
+                Checksum="yes">
+              <Shortcut
+                  Id="ApplicationStartMenuShortcut"
+                  Directory="ApplicationProgramsFolder"
+                  Name="Foliage"
+                  Description="Foliage"
+                  Target="[INSTALLFOLDER]Foliage.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+            </File>
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Foliage" />
+      </Directory>
+    </Directory>
+
+    <Feature Id="ProductFeature" Title="Foliage" Level="1">
+      <ComponentRef Id="MainExecutableComponent" />
+    </Feature>
+  </Product>
+</Wix>
