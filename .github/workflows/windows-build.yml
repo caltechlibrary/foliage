@@ -2,6 +2,9 @@ name: Build Windows MSI
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - v*
 
 jobs:
   build-windows-msi:

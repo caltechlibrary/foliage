@@ -1,0 +1,47 @@
+name: Release from Tag
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      tag: ${{ steps.extract.outputs.tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Extract and validate tag vs [setup.cfg](http://_vscodecontentref_/0)
+        id: extract
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION_IN_TAG="${TAG#v}"
+          VERSION_IN_CFG="$(awk -F '=' '/^version[[:space:]]*=/{gsub(/[[:space:]]/,"",$2); print $2; exit}' setup.cfg)"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION_IN_TAG" >> "$GITHUB_OUTPUT"
+
+          if [ "$VERSION_IN_TAG" != "$VERSION_IN_CFG" ]; then
+            echo "Tag version ($VERSION_IN_TAG) does not match [setup.cfg](http://_vscodecontentref_/1) version ($VERSION_IN_CFG)."
+            exit 1
+          fi
+
+  create-release:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          tag_name: ${{ needs.validate-version.outputs.tag }}
+          name: Release ${{ needs.validate-version.outputs.version }}
+          generate_release_notes: true

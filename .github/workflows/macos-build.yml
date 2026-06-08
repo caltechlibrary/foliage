@@ -2,6 +2,9 @@ name: Build macOS DMG
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - v*
 
 jobs:
   build-macos-dmg:
