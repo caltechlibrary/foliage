@@ -1,5 +1,14 @@
 # Change log for Foliage
 
+## ★ Version 1.9.0rc2 (2026-06-08) ★
+
+This release candidate updates packaging/build automation after issues found in 1.9.0rc1.
+
+Changes in this version:
+
+* Fixed the Windows build workflow and installer packaging steps to address failures discovered during rc1 validation.
+* No intended user-facing runtime changes beyond release/build reliability updates.
+
 ## ★ Version 1.9.0rc1 (2026-06-08) ★
 
 This is a release candidate for the next formally published release line.
