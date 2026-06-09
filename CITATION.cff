@@ -12,7 +12,7 @@ authors:
     given-names: Tommy
     family-names: Keswick
     orcid: "0000-0001-5644-440X"
-version: "1.9.0rc2"
+version: "1.9.0"
 abstract: "Foliage (FOLIo chAnGe Editor): a tool to do bulk changes in FOLIO using the API"
 repository-code: "https://github.com/caltechlibrary/foliage"
 type: software
@@ -21,4 +21,4 @@ keywords:
   - FOLIO
   - batch operations
   - desktop software
-date-released: 2026-06-08
+date-released: 2026-06-09
