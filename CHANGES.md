@@ -1,5 +1,18 @@
 # Change log for Foliage
 
+## ★ Version 1.9.0rc1 (2026-06-08) ★
+
+This is a release candidate for the next formally published release line.
+
+Note on version history: version 1.8.0 was built and distributed locally at Caltech Library but was not formally published via GitHub Releases or PyPI. This 1.9.0 release line supersedes that local-only distribution.
+
+Changes in this version:
+
+* Added tag-driven release automation to create GitHub Releases and validate tag/version consistency.
+* Added PyPI Trusted Publishing workflow for tag-based package publication.
+* Updated Windows MSI and macOS DMG build workflows to run on version tags.
+* Added a release runbook documenting version bump files, tagging, and post-release follow-up.
+
 ## ★ Version 1.8.0 (2024-06-07) ★
 
 This release fixes a problem with deletion of instance records. Foliage now correctly handles preceding/succeeding title relationships when deleting instance records.

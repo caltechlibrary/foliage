@@ -4,7 +4,7 @@ __init__.py for foliage
 Copyright
 ---------
 
-Copyright (c) 2021-2022 by the California Institute of Technology.  This code
+Copyright (c) 2021-2026 by the California Institute of Technology.  This code
 is open-source software released under a 3-clause BSD license.  Please see the
 file "LICENSE" for more information.
 '''
@@ -17,10 +17,10 @@ file "LICENSE" for more information.
 #  |    by the Makefile. Manual changes to these values will be lost.      |
 #  ╰────────────────────── Notice ── Notice ── Notice ─────────────────────╯
 
-__version__     = '1.8.0'
-__description__ = 'Foliage: a tool to do bulk changes in FOLIO using the OKAPI API'
+__version__     = '1.9.0rc1'
+__description__ = 'Foliage: a tool to do bulk changes in FOLIO using the API'
 __url__         = 'https://github.com/caltechlibrary/foliage'
-__author__      = 'Mike Hucka'
+__author__      = 'Tommy Keswick'
 __email__       = 'helpdesk@library.caltech.edu'
 __license__     = 'BSD 3-clause license'
 

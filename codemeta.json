@@ -1,12 +1,12 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "description": "Foliage: a tool to do bulk changes in FOLIO using the OKAPI API",
+  "description": "Foliage: a tool to do bulk changes in FOLIO using the API",
   "name": "foliage",
   "codeRepository": "https://github.com/caltechlibrary/foliage",
   "issueTracker": "https://github.com/caltechlibrary/foliage/issues",
   "license": "https://github.com/caltechlibrary/foliage/blob/main/LICENSE",
-  "version": "1.8.0",
+  "version": "1.9.0rc1",
   "author": [
     {
       "@type": "Person",
@@ -15,6 +15,14 @@
       "affiliation": "California Institute of Technology Library",
       "email": "mhucka@library.caltech.edu",
       "@id": "https://orcid.org/0000-0001-9105-5960"
+    },
+    {
+      "@type": "Person",
+      "givenName": "Tommy",
+      "familyName": "Keswick",
+      "affiliation": "California Institute of Technology Library",
+      "email": "tkeswick@library.caltech.edu",
+      "@id": "https://orcid.org/0000-0001-5644-440X"
     }],
   "developmentStatus": "active",
   "downloadUrl": "https://github.com/caltechlibrary/foliage/archive/main.zip",
@@ -22,7 +30,7 @@
     "software",
     "science"
   ],
-  "maintainer": "https://orcid.org/0000-0001-9105-5960",
+  "maintainer": "https://orcid.org/0000-0001-5644-440X",
   "funder": { 
           "@id": "https://doi.org/10.13039/100006961",
           "@type": "Organization",

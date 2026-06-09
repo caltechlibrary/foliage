@@ -17,7 +17,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - name: Extract and validate tag vs [setup.cfg](http://_vscodecontentref_/0)
+      - name: Extract and validate tag vs setup.cfg
         id: extract
         shell: bash
         run: |
@@ -29,7 +29,7 @@ jobs:
           echo "version=$VERSION_IN_TAG" >> "$GITHUB_OUTPUT"
 
           if [ "$VERSION_IN_TAG" != "$VERSION_IN_CFG" ]; then
-            echo "Tag version ($VERSION_IN_TAG) does not match [setup.cfg](http://_vscodecontentref_/1) version ($VERSION_IN_CFG)."
+            echo "Tag version ($VERSION_IN_TAG) does not match setup.cfg version ($VERSION_IN_CFG)."
             exit 1
           fi
 
