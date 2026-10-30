@@ -13,7 +13,7 @@ This repository uses a tag-driven release flow:
 
 ## Files to update for each release
 
-- [CHANGES.md](CHANGES.md)
+- [CHANGELOG.md](CHANGELOG.md)
 - [setup.cfg](setup.cfg)
 - [foliage/__init__.py](foliage/__init__.py)
 - [CITATION.cff](CITATION.cff)
@@ -26,8 +26,13 @@ This repository uses a tag-driven release flow:
    git pull --ff-only
 
 2. Update release metadata:
-   - Add a new top entry in [CHANGES.md](CHANGES.md) using:
-     `## ★ Version X.Y.Z (YYYY-MM-DD) ★`
+   - In [CHANGELOG.md](CHANGELOG.md), which follows
+     [Keep a Changelog](https://keepachangelog.com/en/1.1.0/):
+     - Rename the `## [Unreleased]` heading to `## [X.Y.Z] - YYYY-MM-DD`
+     - Add a new, empty `## [Unreleased]` heading above it
+     - At the bottom of the file, point the `[Unreleased]` link at
+       `compare/vX.Y.Z...HEAD` and add an `[X.Y.Z]` link to
+       `compare/vPREVIOUS...vX.Y.Z`
    - Set version in [setup.cfg](setup.cfg) to X.Y.Z
    - Set __version__ and metadata fields in [foliage/__init__.py](foliage/__init__.py)
    - Set version and date-released in [CITATION.cff](CITATION.cff)
@@ -37,7 +42,7 @@ This repository uses a tag-driven release flow:
    pytest -v --cov=foliage -l tests/
 
 4. Commit release prep:
-   git add CHANGES.md setup.cfg foliage/__init__.py CITATION.cff codemeta.json
+   git add CHANGELOG.md setup.cfg foliage/__init__.py CITATION.cff codemeta.json
    git commit -m "chore(release): X.Y.Z"
 
 5. Create annotated tag:
