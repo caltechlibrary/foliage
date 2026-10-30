@@ -1,10 +1,10 @@
 name: Build Windows MSI
 
+# Release from Tag calls this workflow for version tags and attaches the MSI
+# to the GitHub Release. Run it by hand to test a build without releasing.
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - v*
+  workflow_call:
 
 jobs:
   build-windows-msi:

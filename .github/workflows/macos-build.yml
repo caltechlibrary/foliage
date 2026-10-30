@@ -1,10 +1,10 @@
 name: Build macOS DMG
 
+# Release from Tag calls this workflow for version tags and attaches the DMG
+# to the GitHub Release. Run it by hand to test a build without releasing.
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - v*
+  workflow_call:
 
 jobs:
   build-macos-dmg:
@@ -115,9 +115,14 @@ jobs:
             hdiutil create -volname "Foliage" -srcfolder "Foliage.app" -ov -format UDZO "Foliage.dmg"
           fi
 
+          # Name the DMG like the Windows MSI. The app only runs on the
+          # architecture of the runner that built it.
+          version="$(awk -F '=' '/^version[[:space:]]*=/{gsub(/[[:space:]]/,"",$2); print $2; exit}' ../../setup.cfg)"
+          mv Foliage.dmg "foliage_${version}_macos_$(uname -m).dmg"
+
       - name: Upload DMG artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
           archive: false
-          path: dist/macos/Foliage.dmg
+          path: dist/macos/foliage_*.dmg
           if-no-files-found: error

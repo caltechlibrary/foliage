@@ -6,13 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+* Each GitHub release now includes the macOS DMG and Windows MSI installers.
+
 ### Changed
 
 * Python 3.11 is now the minimum supported version, as required by Tornado 6.6.
+* The macOS DMG is now named like the Windows MSI, with the version and architecture: `foliage_X.Y.Z_macos_arm64.dmg`.
 
 ### Removed
 
 * Support for Python 3.9 and 3.10.
+* Publishing to PyPI. The packages on PyPI installed none of Foliage’s dependencies and couldn’t include the modified PyWebIO that Foliage needs. Install the macOS or Windows application from the GitHub release, or run Foliage from the source code.
+
+### Fixed
+
+* Foliage no longer fails at startup with `module 'importlib' has no attribute 'util'` when installed with `pip install .`.
 
 ## [1.9.0] - 2026-06-09
 

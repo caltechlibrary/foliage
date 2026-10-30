@@ -128,7 +128,7 @@ if sys.version_info <= (3, 8):
           + str(sys.version_info.major) + '.' + str(sys.version_info.minor) + '.')
     sys.exit(1)
 
-import importlib
+import importlib.util
 if not (spec := importlib.util.find_spec('pywebio')):
     print('Foliage requires the PyWebIO package, but the package cannot be '
           'found. Something is wrong with the installation of Foliage or the '
