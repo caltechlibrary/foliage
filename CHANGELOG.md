@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-30
+
 ### Added
 
 * Each GitHub release now includes the macOS DMG and Windows MSI installers.
@@ -288,7 +290,8 @@ First internal release at the Caltech Library.
 Project repository created at <https://github.com/caltechlibrary/foliage>
 by Mike Hucka.
 
-[Unreleased]: https://github.com/caltechlibrary/foliage/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/caltechlibrary/foliage/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/caltechlibrary/foliage/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/caltechlibrary/foliage/compare/v1.9.0rc2...v1.9.0
 [1.9.0rc2]: https://github.com/caltechlibrary/foliage/compare/v1.9.0rc1...v1.9.0rc2
 [1.9.0rc1]: https://github.com/caltechlibrary/foliage/compare/v1.7.2...v1.9.0rc1
