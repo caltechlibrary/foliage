@@ -132,8 +132,10 @@ def test_refresh_token_if_needed(monkeypatch):
     monkeypatch.setenv('FOLIO_OKAPI_TENANT_ID', 'diku')
     monkeypatch.setenv('FOLIO_OKAPI_TOKEN', 'old-access.jwt')
     monkeypatch.setenv('FOLIO_OKAPI_REFRESH_TOKEN', 'refresh.jwt')
+    # The access token must look expired and the refresh token must not, or
+    # _refresh_token_if_needed() won't try to refresh.
     monkeypatch.setenv('FOLIO_OKAPI_ACCESS_TOKEN_EXPIRES', '2026-05-12T11:00:00Z')
-    monkeypatch.setenv('FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES', '2026-05-19T13:00:00Z')
+    monkeypatch.setenv('FOLIO_OKAPI_REFRESH_TOKEN_EXPIRES', '2999-01-01T00:00:00Z')
     monkeypatch.setattr(folio_module, 'net', fake_net)
 
     assert folio_module.Folio()._refresh_token_if_needed(force = False)
