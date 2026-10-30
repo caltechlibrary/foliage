@@ -369,50 +369,32 @@
             
   <section id="installation">
 <h1 id="installation--page-root">Installation<a class="headerlink" href="#installation--page-root" title="Link to this heading">¶</a></h1>
-<p>There are multiple ways of installing Foliage, ranging from downloading ready-to-install application packages, to installing it as a typical Python program using <code class="docutils literal notranslate"><span class="pre">pip</span></code>. Please choose the alternative that suits you.</p>
+<p>Most people should install the ready-to-run application for macOS or Windows. Developers can run Foliage from a copy of the source code.</p>
 <section id="preliminary-requirements">
 <h2 id="preliminary-requirements">Preliminary requirements<a class="headerlink" href="#preliminary-requirements" title="Link to this heading">¶</a></h2>
-<p>Foliage is written in <a class="reference external" href="https://www.python.org">Python 3</a> and makes use of some additional Python software libraries that are installed automatically during the <a class="reference internal" href="#installation"><span class="std std-ref">installation steps</span></a>. It also assumes a macOS, Windows or Linux environment, and a working Internet connection.</p>
+<p>Foliage runs on macOS, Windows, and Linux, and needs a working Internet connection. The macOS and Windows applications include everything they need. Running Foliage from the source code requires <a class="reference external" href="https://www.python.org">Python</a> 3.11 or later.</p>
 </section>
 <section id="installation-instructions">
 <h2 id="installation-instructions">Installation instructions<a class="headerlink" href="#installation-instructions" title="Link to this heading">¶</a></h2>
-<section id="alternative-1-installing-the-ready-to-run-packaged-version">
-<h3 id="alternative-1-installing-the-ready-to-run-packaged-version"><em>Alternative 1: installing the ready-to-run packaged version</em><a class="headerlink" href="#alternative-1-installing-the-ready-to-run-packaged-version" title="Link to this heading">¶</a></h3>
-<p>For the Caltech Library, we provide Foliage in packaged form for Windows and macOS computers. On Windows, this is an MSI installer package. This is the easiest and preferred way of getting a copy of Foliage. Please contact the author for more information.</p>
+<section id="alternative-1-installing-the-macos-or-windows-application">
+<h3 id="alternative-1-installing-the-macos-or-windows-application"><em>Alternative 1: installing the macOS or Windows application</em><a class="headerlink" href="#alternative-1-installing-the-macos-or-windows-application" title="Link to this heading">¶</a></h3>
+<p>Download the installer for your computer from the <a class="reference external" href="https://github.com/caltechlibrary/foliage/releases/latest">latest release</a>:</p>
+<ul class="simple">
+<li><p><strong>macOS:</strong> <code class="docutils literal notranslate"><span class="pre">foliage_X.Y.Z_macos_arm64.dmg</span></code>, for Macs with Apple silicon. Open the DMG and drag Foliage to your Applications folder. The first time you open it, macOS may say it can’t verify the app. If so, go to <em>System Settings</em> → <em>Privacy &amp; Security</em>, and click <em>Open Anyway</em>.</p></li>
+<li><p><strong>Windows:</strong> <code class="docutils literal notranslate"><span class="pre">foliage_X.Y.Z_windows_x64.msi</span></code>. Double-click it to install Foliage. If Windows says it protected your PC, click <em>More info</em>, then <em>Run anyway</em>.</p></li>
+</ul>
 </section>
-<section id="alternative-2-installing-foliage-using-pipx">
-<h3 id="alternative-2-installing-foliage-using-pipx"><em>Alternative 2: installing Foliage using <code class="docutils literal notranslate"><span class="pre">pipx</span></code></em><a class="headerlink" href="#alternative-2-installing-foliage-using-pipx" title="Link to this heading">¶</a></h3>
-<p>You can use <a class="reference external" href="https://pypa.github.io/pipx/">pipx</a> to install Foliage. Pipx will install it into a separate Python environment that isolates the dependencies needed by Foliage from other Python programs on your system, and yet the resulting <code class="docutils literal notranslate"><span class="pre">foliage</span></code> command wil be executable from any shell – like any normal program on your computer. If you do not already have <code class="docutils literal notranslate"><span class="pre">pipx</span></code> on your system, it can be installed in a variety of easy ways and it is best to consult <a class="reference external" href="https://pypa.github.io/pipx/installation/">Pipx’s installation guide</a> for instructions. Once you have pipx on your system, you can install Foliage with the following command:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pipx<span class="w"> </span>install<span class="w"> </span>foliage
-</pre></div>
-</div>
-<p>Pipx can also let you run Foliage directly using <code class="docutils literal notranslate"><span class="pre">pipx</span> <span class="pre">run</span> <span class="pre">foliage</span></code>, although in that case, you must always prefix every <code class="docutils literal notranslate"><span class="pre">foliage</span></code> command with <code class="docutils literal notranslate"><span class="pre">pipx</span> <span class="pre">run</span></code>.  Consult the <a class="reference external" href="https://github.com/pypa/pipx#walkthrough-running-an-application-in-a-temporary-virtual-environment">documentation for <code class="docutils literal notranslate"><span class="pre">pipx</span> <span class="pre">run</span></code></a> for more information.</p>
-</section>
-<section id="alternative-3-installing-foliage-using-pip">
-<h3 id="alternative-3-installing-foliage-using-pip"><em>Alternative 3: installing Foliage using <code class="docutils literal notranslate"><span class="pre">pip</span></code></em><a class="headerlink" href="#alternative-3-installing-foliage-using-pip" title="Link to this heading">¶</a></h3>
-<p>The instructions below assume you have a Python 3 interpreter installed on your computer.  Note that the default on macOS at least through 10.14 (Mojave) is Python <strong>2</strong> – please first install Python version 3 and familiarize yourself with running Python programs on your system before proceeding further.</p>
-<p>You should be able to install <code class="docutils literal notranslate"><span class="pre">foliage</span></code> with <a class="reference external" href="https://pip.pypa.io/en/stable/installing/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a> for Python 3.  To install <code class="docutils literal notranslate"><span class="pre">foliage</span></code> from the <a class="reference external" href="https://pypi.org">Python package repository (PyPI)</a>, run the following command:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>foliage
-</pre></div>
-</div>
-<p>As an alternative to getting it from <a class="reference external" href="https://pypi.org">PyPI</a>, you can use <code class="docutils literal notranslate"><span class="pre">pip</span></code> to install <code class="docutils literal notranslate"><span class="pre">foliage</span></code> directly from GitHub:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/calitechlibrary/foliage.git
-</pre></div>
-</div>
-<p><em>If you already installed Foliage once before</em>, and want to update to the latest version, add <code class="docutils literal notranslate"><span class="pre">--upgrade</span></code> to the end of either command line above.</p>
-</section>
-<section id="alternative-4-installing-foliage-from-sources">
-<h3 id="alternative-4-installing-foliage-from-sources"><em>Alternative 4: installing Foliage from sources</em><a class="headerlink" href="#alternative-4-installing-foliage-from-sources" title="Link to this heading">¶</a></h3>
-<p>If  you prefer to install Foliage directly from the source code, you can do that too. To get a copy of the files, you can clone the GitHub repository:</p>
+<section id="alternative-2-running-foliage-from-the-source-code">
+<h3 id="alternative-2-running-foliage-from-the-source-code"><em>Alternative 2: running Foliage from the source code</em><a class="headerlink" href="#alternative-2-running-foliage-from-the-source-code" title="Link to this heading">¶</a></h3>
+<p>Foliage needs a <a class="reference external" href="https://github.com/mhucka/PyWebIO">modified copy of PyWebIO</a>, which has to be installed separately before Foliage:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/caltechlibrary/foliage
+<span class="nb">cd</span><span class="w"> </span>foliage
+python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/mhucka/PyWebIO.git@2af53fc
+python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
-<p>Alternatively, you can download the files as a ZIP archive using this link directly from your browser using this link: <a class="reference external" href="https://github.com/caltechlibrary/foliage/archive/refs/heads/main.zip">https://github.com/caltechlibrary/foliage/archive/refs/heads/main.zip</a></p>
-<p>Next, after getting a copy of the files,  run <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> inside the code directory:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>foliage
-python3<span class="w"> </span>setup.py<span class="w"> </span>install
-</pre></div>
-</div>
+<p>To update later, run <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">pull</span></code> in the <code class="docutils literal notranslate"><span class="pre">foliage</span></code> folder, then run the last command again.</p>
+<p>Foliage isn’t published on PyPI.</p>
 </section>
 </section>
 </section>
