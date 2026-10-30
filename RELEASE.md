@@ -1,4 +1,4 @@
-# Foliage Release Runbook (GitHub Actions + Trusted Publishing)
+# Foliage Release Runbook (GitHub Actions)
 
 > [!NOTE]
 > This file has been generated primarily by Copilot. *Caveat lector.*
@@ -9,7 +9,8 @@ This repository uses a tag-driven release flow:
 
 1. Prepare and merge release commit on main.
 2. Push annotated tag vX.Y.Z.
-3. GitHub Actions creates GitHub Release, builds platform artifacts, and publishes to PyPI.
+3. GitHub Actions builds the macOS DMG and Windows MSI, then creates the GitHub Release
+   with both installers attached. Foliage is not published to PyPI.
 
 ## Files to update for each release
 
@@ -53,15 +54,18 @@ This repository uses a tag-driven release flow:
    git push origin vX.Y.Z
 
 7. Verify Actions:
-   - Release from Tag workflow succeeds.
-   - Build macOS DMG workflow succeeds.
-   - Build Windows MSI workflow succeeds.
-   - Publish to PyPI workflow succeeds.
+   - Release from Tag workflow succeeds, including its macOS and Windows
+     build jobs. If either build fails, no release is created; fix the
+     problem, then delete and push the tag again.
 
 8. Verify outputs:
    - GitHub Release exists for vX.Y.Z
-   - PyPI shows version X.Y.Z
-   - Artifact workflows produced expected DMG and MSI artifacts
+   - The release has `foliage_X.Y.Z_macos_arm64.dmg` and
+     `foliage_X.Y.Z_windows_x64.msi` attached
+
+To test the installers before tagging, run the Build macOS DMG and Build
+Windows MSI workflows by hand from the Actions tab. Their installers are
+kept as workflow artifacts and are not attached to any release.
 
 ## DOI follow-up (if needed)
 

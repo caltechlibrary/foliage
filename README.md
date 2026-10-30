@@ -33,45 +33,29 @@ Although Foliage is a desktop application and not a web service, it uses a web p
 
 ## Installation
 
-There are multiple ways of installing Foliage, ranging from downloading a ready-to-install package for Windows, to installing it as a typical Python program using `pip`. Please choose the alternative that suits you.
+Most people should install the ready-to-run application for macOS or Windows. Developers can run Foliage from a copy of the source code.
 
 
-### _Alternative 1: installing the Windows MSI package_
+### _Alternative 1: installing the macOS or Windows application_
 
-For the Caltech Library, we provide Foliage as a Windows MSI installer package. This is the easiest and preferred way of getting a copy of Foliage on Windows. Please contact the author for more information.
+Download the installer for your computer from the [latest release](https://github.com/caltechlibrary/foliage/releases/latest):
 
-
-### _Alternative 2: installing Foliage using `pip`_
-
-The instructions below assume you have a Python 3 interpreter installed on your computer.  Note that the default on macOS at least through 10.14 (Mojave) is Python **2** &ndash; please first install Python version 3 and familiarize yourself with running Python programs on your system before proceeding further.
-
-You should be able to install `foliage` with [`pip`](https://pip.pypa.io/en/stable/installing/) for Python&nbsp;3.  To install `foliage` from the [Python package repository (PyPI)](https://pypi.org), run the following **two** commands:
-
-```sh
-python3 -m pip install git+https://github.com/mhucka/PyWebIO.git@2af53fc
-python3 -m pip install foliage
-```
-
-_If you already installed Foliage once before_, and want to update to the latest version, add `--upgrade` to the ends the commands above.
+* **macOS:** `foliage_X.Y.Z_macos_arm64.dmg`, for Macs with Apple silicon. Open the DMG and drag Foliage to your Applications folder. The first time you open it, macOS may say it can’t verify the app. If so, go to _System Settings_ → _Privacy & Security_, and click _Open Anyway_.
+* **Windows:** `foliage_X.Y.Z_windows_x64.msi`. Double-click it to install Foliage. If Windows says it protected your PC, click _More info_, then _Run anyway_.
 
 
-### _Alternative 3: installing Foliage from sources_
+### _Alternative 2: running Foliage from the source code_
 
-If  you prefer to install Foliage directly from the source code, you can do that too. To get a copy of the files, you can clone the GitHub repository:
+This requires Python 3.11 or later. Foliage needs a [modified copy of PyWebIO](https://github.com/mhucka/PyWebIO), which has to be installed separately before Foliage:
 
 ```sh
 git clone https://github.com/caltechlibrary/foliage
-```
-
-Alternatively, you can download the files as a ZIP archive using this link directly from your browser using this link: <https://github.com/caltechlibrary/foliage/archive/refs/heads/main.zip>
-
-Next, after getting a copy of the files,  run `setup.py` inside the code directory:
-
-```sh
 cd foliage
 python3 -m pip install git+https://github.com/mhucka/PyWebIO.git@2af53fc
-python3 setup.py install
+python3 -m pip install .
 ```
+
+Foliage isn’t published on PyPI.
 
 
 ## Usage
