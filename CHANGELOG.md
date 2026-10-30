@@ -1,6 +1,20 @@
-# Change log for Foliage
+# Changelog
 
-## ★ Version 1.9.0 (2026-06-09) ★
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Changed
+
+* Python 3.11 is now the minimum supported version, as required by Tornado 6.6.
+
+### Removed
+
+* Support for Python 3.9 and 3.10.
+
+## [1.9.0] - 2026-06-09
 
 This release finalizes the 1.9.0 release candidate cycle.
 
@@ -9,7 +23,7 @@ Changes in this version:
 * Promoted 1.9.0rc2 to stable release.
 * Includes release automation improvements introduced in 1.9.0rc1 and Windows build/installer reliability fixes validated in 1.9.0rc2.
 
-## ★ Version 1.9.0rc2 (2026-06-08) ★
+## [1.9.0rc2] - 2026-06-08
 
 This release candidate updates packaging/build automation after issues found in 1.9.0rc1.
 
@@ -18,7 +32,7 @@ Changes in this version:
 * Fixed the Windows build workflow and installer packaging steps to address failures discovered during rc1 validation.
 * No intended user-facing runtime changes beyond release/build reliability updates.
 
-## ★ Version 1.9.0rc1 (2026-06-08) ★
+## [1.9.0rc1] - 2026-06-08
 
 This is a release candidate for the next formally published release line.
 
@@ -31,22 +45,22 @@ Changes in this version:
 * Updated Windows MSI and macOS DMG build workflows to run on version tags.
 * Added a release runbook documenting version bump files, tagging, and post-release follow-up.
 
-## ★ Version 1.8.0 (2024-06-07) ★
+## [1.8.0] - 2024-06-07
 
 This release fixes a problem with deletion of instance records. Foliage now correctly handles preceding/succeeding title relationships when deleting instance records.
 
 
-## ★ Version 1.7.2 (2023-10-25) ★
+## [1.7.2] - 2023-10-25
 
 Fix botched version number update in just-released version.
 
 
-## ★ Version 1.7.1 (2023-10-25) ★
+## [1.7.1] - 2023-10-25
 
 With this version, Foliage now increments the value of the `_version` field when performing change operations. This solves an error involving optimistic locking and versions when performing multistep operations in the _Change records_ tab.
 
 
-## ★ Version 1.7.0 (2023-07-26) ★
+## [1.7.0] - 2023-07-26
 
 Changes in this version:
 
@@ -55,7 +69,7 @@ Changes in this version:
 * The minimum version of Python has been increased to 3.9.
 
 
-## ★ Version 1.6.0 (2023-05-23) ★
+## [1.6.0] - 2023-05-23
 
 Changes in this version:
 
@@ -66,32 +80,32 @@ Changes in this version:
 * The file `requirements.txt` has updates to versions of dependencies.
 
 
-## ★ Version 1.5.5 (2023-03-09) ★
+## [1.5.5] - 2023-03-09
 
 Externally, this release only updates copyright years inside files such as the LICENSE file. Internally, the Makefile commands for producing the macOS installer have been slightly tweaked.
 
 
-## ★ Version 1.5.4 (2023-03-08) ★
+## [1.5.4] - 2023-03-08
 
 This version fixes another bug in the _Lookup_ tab, one that occurs when printing a summary of an instance record that has an incomplete note field.
 
 
-## ★ Version 1.5.3 (2022-12-02) ★
+## [1.5.3] - 2022-12-02
 
 This version fixes a bug in the _Lookup_ tab that occurs when printing a summary of an instance record that has a `None` value in the tag data field.
 
 
-## ★ Version 1.5.2 (2022-12-02) ★
+## [1.5.2] - 2022-12-02
 
 This version catches an error than can result when the user tries to upload a `.xlsx` file that is not truly an Excel spreadsheet.
 
 
-## ★ Version 1.5.1 (2022-11-16) ★
+## [1.5.1] - 2022-11-16
 
 This release has no user-visible or functional changes. It only updates the `Makefile` and some GitHub workflows.
 
 
-## ★ Version 1.5.0 (2022-09-29) ★
+## [1.5.0] - 2022-09-29
 
 User-visible changes in this version:
 
@@ -105,17 +119,17 @@ User-visible changes in this version:
 This version also includes some internal code cleanup that has no impact on functionality.
 
 
-## ★ Version 1.4.1 (2022-08-04) ★
+## [1.4.1] - 2022-08-04
 
 This version fixes a bug in detecting errors when attempting to delete instances from the SRS subsystem. (Thanks to Mel Ray for reporting the problem.)
 
 
-## ★ Version 1.4.0 (2022-07-29) ★
+## [1.4.0] - 2022-07-29
 
 This version fixes a serious bug in how deletions of instance records were done (or rather, not done). The previous code failed to correctly issue the deletion to SRS, which meant deletions were not actually being effectuated in EDS.
 
 
-## ★ Version 1.3.0 (2022-07-13) ★
+## [1.3.0] - 2022-07-13
 
 This version adds new new features:
 
@@ -123,14 +137,14 @@ This version adds new new features:
 * A new tab, _Clean Records_, is available. It currently has one capability: to delete "phantom" loans based on user id's, meaning loan records associated with users but for items that no longer exist in Folio.
 
 
-## ★ Version 1.2.8 (2022-06-10) ★
+## [1.2.8] - 2022-06-10
 
 Changes in this version:
 
 * Fix a bug reported by Donna W. on 2022-06-09, in which it would incorrectly report all loans on the instance associated with a given holdings record, instead of only considering the items attached to the given holdings record.
 
 
-## ★ Version 1.2.7 (2022-06-03) ★
+## [1.2.7] - 2022-06-03
 
 Changes in this version:
 
@@ -139,12 +153,12 @@ Changes in this version:
 * Updates some dependency versions in `requirements.txt`.
 
 
-## ★ Version 1.2.6 (2022-05-11) ★
+## [1.2.6] - 2022-05-11
 
 A late-breaking discovery forced another release. It turns out that PyPI will not accept a package that uses a `git+https://` package dependency, which means Foliage can't be uploaded as it was. So, this release changes the `requirements.txt` file again, changes the installation process, and reduces the installation options.
 
 
-## ★ Version 1.2.5 (2022-05-11) ★
+## [1.2.5] - 2022-05-11
 
 Changes in this version:
 
@@ -153,7 +167,7 @@ Changes in this version:
 * Fix a UI bug in the _Look up records_ tab, wherein clicking the _Look up records_ button while it was already running could result in multiple output streams and confusing output.
 
 
-## ★ Version 1.2.4 (2022-04-01) ★
+## [1.2.4] - 2022-04-01
 
 Changes in this version:
 
@@ -162,17 +176,17 @@ Changes in this version:
 * Changed the Lookup tab to print the total number of records found (in addition to the number looked up).
 
 
-## ★ Version 1.2.3 (2022-02-10) ★
+## [1.2.3] - 2022-02-10
 
 This version fixes a bug in exporting storage (rather than inventory) records.
 
 
-## ★ Version 1.2.2 (2022-02-10) ★
+## [1.2.2] - 2022-02-10
 
 This version fixes a bug in printing inventory records in summary form in the _Look up records_ tab.
 
 
-## ★ Version 1.2.1 (2022-02-08) ★
+## [1.2.1] - 2022-02-08
 
 Changes:
 
@@ -180,7 +194,7 @@ Changes:
 * Print notes for instance records in the summary view in the _Look up records_ tab.
 
 
-## ★ Version 1.2.0 (2022-02-03) ★
+## [1.2.0] - 2022-02-03
 
 Changes:
 
@@ -193,7 +207,7 @@ Changes:
 * The _Other_ tab provides a link to the online help pages.
 
 
-## ★ Version 1.1.0 (2022-01-21) ★
+## [1.1.0] - 2022-01-21
 
 Changes:
 
@@ -209,17 +223,17 @@ Changes:
 * Add "read me first" file to mac installer.
 
 
-## ★ Version 1.0.2 (2022-01-20) ★
+## [1.0.2] - 2022-01-20
 
 This verion fixes some minor internal bugs.
 
 
-## ★ Version 1.0.1 (2022-01-05) ★
+## [1.0.1] - 2022-01-05
 
 This version fixes a bug when retrieving user records.
 
 
-## ★ Version 1.0.0 (2021-12-22) ★
+## [1.0.0] - 2021-12-22
 
 Highlights of the changes in this release:
 
@@ -235,7 +249,7 @@ Highlights of the changes in this release:
 Finally, documentation is now available at <https://caltechlibrary.github.io/foliage/>
 
 
-## ★ Version 0.0.5 (2021-12-06) ★
+## [0.0.5] - 2021-12-06
 
 Changes relative to the previous release:
 
@@ -244,7 +258,7 @@ Changes relative to the previous release:
 * Make it so that exiting the taskbar widget will exit Foliage.
 
 
-## ★ Version 0.0.4 (2021-12-02) ★
+## [0.0.4] - 2021-12-02
 
 Changes relative to the previous release:
 
@@ -254,12 +268,45 @@ Changes relative to the previous release:
 * Fixed various internal coding bugs.
 
 
-## ★ Version 0.0.3 (2021-10-16) ★
+## [0.0.3] - 2021-10-16
 
 First internal release at the Caltech Library.
 
 
-## ★ Version 0.0.0 (2021-10-16) ★
+## [0.0.0] - 2021-10-16
 
 Project repository created at <https://github.com/caltechlibrary/foliage>
 by Mike Hucka.
+
+[Unreleased]: https://github.com/caltechlibrary/foliage/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/caltechlibrary/foliage/compare/v1.9.0rc2...v1.9.0
+[1.9.0rc2]: https://github.com/caltechlibrary/foliage/compare/v1.9.0rc1...v1.9.0rc2
+[1.9.0rc1]: https://github.com/caltechlibrary/foliage/compare/v1.7.2...v1.9.0rc1
+[1.7.2]: https://github.com/caltechlibrary/foliage/compare/v1.7.1...v1.7.2
+[1.7.1]: https://github.com/caltechlibrary/foliage/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/caltechlibrary/foliage/compare/v1.6.0...v1.7.0
+[1.6.0]: https://github.com/caltechlibrary/foliage/compare/v1.5.5...v1.6.0
+[1.5.5]: https://github.com/caltechlibrary/foliage/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/caltechlibrary/foliage/compare/v1.5.3...v1.5.4
+[1.5.3]: https://github.com/caltechlibrary/foliage/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/caltechlibrary/foliage/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/caltechlibrary/foliage/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/caltechlibrary/foliage/compare/v1.4.1...v1.5.0
+[1.4.1]: https://github.com/caltechlibrary/foliage/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/caltechlibrary/foliage/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/caltechlibrary/foliage/compare/v1.2.8...v1.3.0
+[1.2.8]: https://github.com/caltechlibrary/foliage/compare/v1.2.7...v1.2.8
+[1.2.7]: https://github.com/caltechlibrary/foliage/compare/v1.2.6...v1.2.7
+[1.2.6]: https://github.com/caltechlibrary/foliage/compare/v1.2.5...v1.2.6
+[1.2.5]: https://github.com/caltechlibrary/foliage/compare/v1.2.4...v1.2.5
+[1.2.4]: https://github.com/caltechlibrary/foliage/compare/v1.2.3...v1.2.4
+[1.2.3]: https://github.com/caltechlibrary/foliage/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/caltechlibrary/foliage/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/caltechlibrary/foliage/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/caltechlibrary/foliage/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/caltechlibrary/foliage/compare/v1.0.2...v1.1.0
+[1.0.2]: https://github.com/caltechlibrary/foliage/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/caltechlibrary/foliage/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/caltechlibrary/foliage/compare/v0.0.5...v1.0.0
+[0.0.5]: https://github.com/caltechlibrary/foliage/compare/v0.0.4...v0.0.5
+[0.0.4]: https://github.com/caltechlibrary/foliage/releases/tag/v0.0.4
